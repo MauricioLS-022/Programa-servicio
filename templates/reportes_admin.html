@@ -1,0 +1,154 @@
+{% extends 'admin_layout.html' %}
+
+{% block title %} - Reportes{% endblock %}
+{% block custom_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='./admin/reportes.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<main class="container">
+    <div class="hero">
+        <h1 class="hero-title">Reportes de Administración</h1>
+        <p class="hero-subtitle">Gestión y análisis de actividad ministerial</p>
+    </div>
+
+    <section class="filter-section">
+        <div class="filter-group">
+            <label>Rango de Fecha</label>
+            <div class="date-inputs">
+                <input type="date"/>
+                <input type="date"/>
+            </div>
+        </div>
+        
+        <div class="filter-group">
+            <label>Filtrar por Líder</label>
+            <select>
+                <option>Todos los líderes</option>
+                <option>Molina, Ricardo</option>
+                <option>Pérez, Elena</option>
+                <option>Sánchez, David</option>
+            </select>
+        </div>
+        
+        <button class="btn-filter">
+            <span class="material-symbols-outlined icon-small">filter_alt</span>
+            Aplicar Filtros
+        </button>
+    </section>
+
+    <section class="table-wrapper">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Líder</th>
+                        <th>Casa de Paz</th>
+                        <th class="text-center">Asistencia</th>
+                        <th class="text-right">Ofrendas</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-bold text-variant">24 Oct 2023</td>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-primary-light text-primary">RM</div>
+                                <span class="font-semibold">Ricardo Molina</span>
+                            </div>
+                        </td>
+                        <td class="font-italic text-variant">Bethel - Sector Sur</td>
+                        <td class="text-center"><span class="badge">24</span></td>
+                        <td class="text-right font-bold text-secondary">$1,250.00</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
+                            
+                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-variant">22 Oct 2023</td>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-secondary-light text-secondary">EP</div>
+                                <span class="font-semibold">Elena Pérez</span>
+                            </div>
+                        </td>
+                        <td class="font-italic text-variant">Sion - Los Olivos</td>
+                        <td class="text-center"><span class="badge">18</span></td>
+                        <td class="text-right font-bold text-secondary">$840.50</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
+                            
+                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-variant">20 Oct 2023</td>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-primary-light text-primary">DS</div>
+                                <span class="font-semibold">David Sánchez</span>
+                            </div>
+                        </td>
+                        <td class="font-italic text-variant">Manantial - Centro</td>
+                        <td class="text-center"><span class="badge">31</span></td>
+                        <td class="text-right font-bold text-secondary">$2,100.00</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
+                            
+                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-variant">19 Oct 2023</td>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-secondary-light text-secondary">RM</div>
+                                <span class="font-semibold">Ricardo Molina</span>
+                            </div>
+                        </td>
+                        <td class="font-italic text-variant">Bethel - Sector Sur</td>
+                        <td class="text-center"><span class="badge">22</span></td>
+                        <td class="text-right font-bold text-secondary">$1,100.00</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
+
+                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <span class="pagination-info">Mostrando 4 de 45 registros encontrados</span>
+            <div class="pagination-controls">
+                <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer-info">
+        <div class="footer-quote">
+            <p class="quote-text">"Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos."</p>
+            <p class="quote-author">Mateo 18:20</p>
+        </div>
+        <div class="footer-actions">
+            <button class="btn-outline">
+                <span class="material-symbols-outlined">download</span> Exportar PDF
+            </button>
+            <button class="btn-outline">
+                <span class="material-symbols-outlined">table_chart</span> Excel
+            </button>
+        </div>
+    </footer>
+</main>
+{% endblock %}

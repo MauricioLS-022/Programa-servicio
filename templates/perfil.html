@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil</title>
+    {% if rol == 'admin' %}
+        <link rel="stylesheet" href="/static/admin/admin.css">
+    {% elif rol == 'lider' %}
+        <link rel="stylesheet" href="/static/style.css">
+    {% else %}
+        <link rel="stylesheet" href="/static/supervisor.css">
+    {% endif %}
+    <link rel="icon" href="/static/logo 2.png" type="image/png">
+</head>
+<body>
+    {% if rol == 'admin' %}
+        {% include 'header_admin.html' %}
+    {% elif rol == 'supervisor' %}
+        {% include 'header_supervisor.html' %}
+    {% else %}
+        {% include 'encabezado lider.html' %}
+    {% endif %}
+    <div class="centro">
+        <div class="perfil">
+            {% if rol == 'admin' %}
+                <img class="img_perfil" src="/static/iconos/administrador.png" alt="imagen">
+            {% elif rol == 'supervisor' %}
+                <img class="img_perfil" src="/static/iconos/supervisor.png" alt="imagen">
+            {% else %}
+                <img class="img_perfil" src="/static/iconos/casa de paz.png" alt="imagen">
+            {% endif %}
+            <p class="texto2"><b>Usuario:</b> {{ usuario }}</p>
+            <p class="texto2"><b>Rol:</b> {{ rol }}</p>
+        </div>
+    </div>
+</body>
+</html>

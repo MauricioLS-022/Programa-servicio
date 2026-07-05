@@ -1,0 +1,220 @@
+{% extends "admin_layout.html" %} {% block title %}- Estructura{% endblock %}
+
+{% block custom_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/estructura.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="estructura-main">
+    <header class="page-header">
+        <div class="header-text">
+            <h1 class="title">Estructura Organizacional</h1>
+            <p class="subtitle">
+                Gestiona la arquitectura de tu comunidad a través de <span class="highlight">Redes</span> y <span class="highlight">Casas de Paz</span>. Define jerarquías y supervisa el crecimiento espiritual de cada grupo.
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline">
+                <span class="material-symbols-outlined icon">hub</span> Nueva Red
+            </button>
+            <button class="btn btn-primary">
+                <span class="material-symbols-outlined icon filled">add_home</span> Nueva Casa de Paz
+            </button>
+        </div>
+    </header>
+
+    <div class="estructura-grid">
+        <aside class="redes-sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Redes Activas</h2>
+                <span class="badge badge-secondary">4 Redes</span>
+            </div>
+
+            <div class="redes-list">
+                <div class="red-card active">
+                    <div class="red-header">
+                        <span class="red-name">Red Hebrón</span>
+                        <span class="material-symbols-outlined icon-more">more_vert</span>
+                    </div>
+                    <p class="red-leader">Líder: Juan Carlos Pérez</p>
+                    <div class="red-stats">
+                        <div class="avatars">
+                            <img src="{{ url_for('static', filename='img/avatar1.jpg') }}" alt="Avatar 1">
+                            <img src="{{ url_for('static', filename='img/avatar2.jpg') }}" alt="Avatar 2">
+                            <div class="avatar-more">+12</div>
+                        </div>
+                        <span class="red-count">14 Casas Vinculadas</span>
+                    </div>
+                </div>
+
+                <div class="red-card">
+                    <div class="red-header">
+                        <span class="red-name">Red Cielos Abiertos</span>
+                        <span class="material-symbols-outlined icon-more">more_vert</span>
+                    </div>
+                    <p class="red-leader">Líder: Maria Fernanda S.</p>
+                    <div class="red-stats">
+                        <span class="red-count">8 Casas Vinculadas</span>
+                    </div>
+                </div>
+
+                <div class="red-card">
+                    <div class="red-header">
+                        <span class="red-name">Red Enmanuel</span>
+                        <span class="material-symbols-outlined icon-more">more_vert</span>
+                    </div>
+                    <p class="red-leader">Líder: Fam. Rodriguez</p>
+                    <div class="red-stats">
+                        <span class="red-count">11 Casas Vinculadas</span>
+                    </div>
+                </div>
+
+                <div class="red-card">
+                    <div class="red-header">
+                        <span class="red-name">Red Yahweh</span>
+                        <span class="material-symbols-outlined icon-more">more_vert</span>
+                    </div>
+                    <p class="red-leader">Líder: Ing. Roberto Gil</p>
+                    <div class="red-stats">
+                        <span class="red-count">5 Casas Vinculadas</span>
+                    </div>
+                </div>
+                </div>
+
+            <div class="impact-card">
+                <div class="impact-content">
+                    <h3>Resumen de Impacto</h3>
+                    <p class="impact-subtitle">Total alcance de redes</p>
+                    <div class="impact-number">1,402</div>
+                    <p class="impact-note">Miembros activos este mes</p>
+                </div>
+                <span class="material-symbols-outlined watermark-icon">diversity_3</span>
+            </div>
+        </aside>
+
+        <section class="casas-section">
+            <div class="casas-header">
+                <div>
+                    <h3 class="section-title">Casas de Paz</h3>
+                    <p class="section-subtitle">Mostrando todas las casas de la <strong>Red Familiar</strong></p>
+                </div>
+                <div class="search-bar">
+                    <span class="material-symbols-outlined icon-search">search</span>
+                    <input type="text" placeholder="Buscar por anfitrión o zona...">
+                </div>
+            </div>
+
+            <div class="casas-grid">
+                <article class="casa-card">
+                    <div class="casa-header">
+                        <div class="casa-info-top">
+                            <div class="casa-icon">
+                                <span class="material-symbols-outlined filled">home</span>
+                            </div>
+                            <div>
+                                <h4 class="casa-name">Casa "CA-5"</h4>
+                                <span class="casa-zone">Sector 4 - Zona Norte</span>
+                            </div>
+                        </div>
+                        <span class="status status-active">ACTIVA</span>
+                    </div>
+                    
+                    <div class="casa-details">
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">person</span>
+                            <span>Anfitrión: <strong>David G. & Elena R.</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">calendar_today</span>
+                            <span>Martes • 7:30 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="casa-footer">
+                        <div class="attendance">
+                            <span class="material-symbols-outlined">groups</span>
+                            <span>12 Asistentes promedio</span>
+                        </div>
+                        <a href="#" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                    </div>
+                </article>
+
+                <article class="casa-card">
+                    <div class="casa-header">
+                        <div class="casa-info-top">
+                            <div class="casa-icon">
+                                <span class="material-symbols-outlined filled">home</span>
+                            </div>
+                            <div>
+                                <h4 class="casa-name">Casa "HB-6"</h4>
+                                <span class="casa-zone">Colonia Los Alamos</span>
+                            </div>
+                        </div>
+                        <span class="status status-active">ACTIVA</span>
+                    </div>
+                    
+                    <div class="casa-details">
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">person</span>
+                            <span>Anfitrión: <strong>Ricardo Morales</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">calendar_today</span>
+                            <span>Jueves • 8:00 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="casa-footer">
+                        <div class="attendance">
+                            <span class="material-symbols-outlined">groups</span>
+                            <span>8 Asistentes promedio</span>
+                        </div>
+                        <a href="#" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                    </div>
+                </article>
+
+                <article class="casa-card">
+                    <div class="casa-header">
+                        <div class="casa-info-top">
+                            <div class="casa-icon">
+                                <span class="material-symbols-outlined filled">home</span>
+                            </div>
+                            <div>
+                                <h4 class="casa-name">Casa "EM-3"</h4>
+                                <span class="casa-zone">Residencial del Valle</span>
+                            </div>
+                        </div>
+                        <span class="status status-paused">EN PAUSA</span>
+                    </div>
+                    
+                    <div class="casa-details">
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">person</span>
+                            <span>Anfitrión: <strong>Beatriz Valdéz</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="material-symbols-outlined">calendar_today</span>
+                            <span>Lunes • 7:00 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="casa-footer">
+                        <div class="attendance">
+                            <span class="material-symbols-outlined">groups</span>
+                            <span>15 Asistentes promedio</span>
+                        </div>
+                        <a href="#" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                    </div>
+                </article>
+                <div class="casa-add-card">
+                    <div class="add-icon">
+                        <span class="material-symbols-outlined">add</span>
+                    </div>
+                    <h4>Registrar Nueva Casa</h4>
+                    <p>Asigna un nuevo anfitrión y vincula la ubicación a esta red.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

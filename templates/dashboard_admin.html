@@ -1,0 +1,162 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}- Dashboard{% endblock %}
+{% block custom_styles %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-main">
+    <!-- Header Section -->
+    <header class="page-header">
+        <div>
+            <h1 class="title">Panel Administrativo</h1>
+            <p class="subtitle">Bienvenido de vuelta. Aquí está el resumen de la actividad ministerial.</p>
+        </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="summary-grid">
+        <article class="summary-card fade-in-1">
+            <span class="material-symbols-outlined card-icon text-primary">description</span>
+            <h3 class="card-title">Total Reportes</h3>
+            <div class="card-number">1,248</div>
+            <span class="material-symbols-outlined watermark-icon">raven</span>
+        </article>
+
+        <article class="summary-card fade-in-2">
+            <span class="material-symbols-outlined card-icon text-secondary">groups</span>
+            <h3 class="card-title">Usuarios Líderes</h3>
+            <div class="card-number">86</div>
+            <span class="material-symbols-outlined watermark-icon">raven</span>
+        </article>
+
+        <article class="summary-card fade-in-3">
+            <span class="material-symbols-outlined card-icon text-primary-container">home_work</span>
+            <h3 class="card-title">Casas de Paz</h3>
+            <div class="card-number">42</div>
+            <span class="material-symbols-outlined watermark-icon">raven</span>
+        </article>
+
+        <article class="summary-card fade-in-4">
+            <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
+            <h3 class="card-title">Nuevas Reconciliaciones</h3>
+            <div class="card-number">312</div>
+            <span class="material-symbols-outlined watermark-icon">raven</span>
+        </article>
+    </section>
+
+    <!-- Main Content Area -->
+    <div class="dashboard-grid">
+        
+        <!-- Chart Area (Left) -->
+        <section class="chart-card fade-in-5">
+            <div class="chart-header">
+                <div>
+                    <h2 class="section-title">Estadísticas de Reportes</h2>
+                    <p class="section-subtitle">Seguimiento de crecimiento ministerial por periodo</p>
+                </div>
+                <div class="toggle-group">
+                    <button class="toggle-btn active">Semanal</button>
+                    <button class="toggle-btn">Mensual</button>
+                    <button class="toggle-btn">Anual</button>
+                </div>
+            </div>
+
+            <!-- Simulated Chart -->
+            <div class="chart-area">
+                <!-- Líneas de fondo -->
+                <div class="chart-grid-lines">
+                    <div></div><div></div><div></div><div></div><div></div>
+                </div>
+                
+                <!-- Barras (Las alturas están en línea simulando datos de DB) -->
+                <div class="chart-bars">
+                    <div class="bar-container" style="height: 45%;">
+                        <div class="bar bar-opacity-40"></div>
+                        <span class="bar-tooltip">Lun</span>
+                    </div>
+                    <div class="bar-container" style="height: 70%;">
+                        <div class="bar bar-opacity-60"></div>
+                        <span class="bar-tooltip">Mar</span>
+                    </div>
+                    <div class="bar-container" style="height: 60%;">
+                        <div class="bar bar-opacity-40"></div>
+                        <span class="bar-tooltip">Mié</span>
+                    </div>
+                    <div class="bar-container" style="height: 90%;">
+                        <div class="bar bar-opacity-90"></div>
+                        <span class="bar-tooltip">Jue</span>
+                    </div>
+                    <div class="bar-container" style="height: 65%;">
+                        <div class="bar bar-opacity-50"></div>
+                        <span class="bar-tooltip">Vie</span>
+                    </div>
+                    <div class="bar-container" style="height: 100%;">
+                        <div class="bar bar-solid"></div>
+                        <span class="bar-tooltip">Sáb</span>
+                    </div>
+                    <div class="bar-container" style="height: 80%;">
+                        <div class="bar bar-opacity-70"></div>
+                        <span class="bar-tooltip">Dom</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activity (Right) -->
+        <!-- <aside class="activity-card fade-in-6">
+            <h2 class="section-title mb-custom">Actividad Reciente</h2>
+            
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper">
+                        <span class="material-symbols-outlined">person_add</span>
+                    </div>
+                    <div class="activity-info">
+                        <h4>Nuevo Líder Registrado</h4>
+                        <p>Marta Jimenez se unió a la red.</p>
+                        <span class="activity-time">Hace 12 mins</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper">
+                        <span class="material-symbols-outlined">fact_check</span>
+                    </div>
+                    <div class="activity-info">
+                        <h4>Reporte Semanal Aprobado</h4>
+                        <p>Casa de Paz 'Bethel' envió su resumen.</p>
+                        <span class="activity-time">Hace 1 hora</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper">
+                        <span class="material-symbols-outlined">location_on</span>
+                    </div>
+                    <div class="activity-info">
+                        <h4>Nueva Casa de Paz</h4>
+                        <p>Inauguración en sector Norponiente.</p>
+                        <span class="activity-time">Hace 3 horas</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper">
+                        <span class="material-symbols-outlined">chat_bubble</span>
+                    </div>
+                    <div class="activity-info">
+                        <h4>Comentario de Administrador</h4>
+                        <p>Se requiere revisión de asistencia.</p>
+                        <span class="activity-time">Hace 5 horas</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-full-outline">Ver todo el historial</button>
+        </aside> -->
+
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Usuarios{% endblock %}
+
+{% block custom_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='./admin/usuario.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+{% endblock %}
+{% block content %}
+
+<main class="main-content">
+    <header class="page-header">
+        <div class="header-text">
+            <p class="subtitle">Gestión Administrativa</p>
+            <h1 class="title">Usuarios del Sistema</h1>
+            <p class="description">Administra los accesos y roles de la comunidad Vino Nuevo desde un panel centralizado y seguro.</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-primary shadow-xl">
+                <span class="material-symbols-outlined">person_add</span>
+                Agregar Usuario
+            </button>
+        </div>
+    </header>
+
+    <div class="bento-grid">
+        
+        <aside class="stats-sidebar">
+            <div class="stat-card stat-primary">
+                <div class="icon-box">
+                    <span class="material-symbols-outlined">group</span>
+                </div>
+                <div>
+                    <h3>124</h3>
+                    <p>Usuarios Activos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-info">
+                <span class="material-symbols-outlined watermark-icon">verified_user</span>
+                <h3 class="info-title">Seguridad de Roles</h3>
+                <p class="info-desc">Solo los administradores pueden modificar estructuras de jerarquía y reportes financieros.</p>
+            </div>
+        </aside>
+
+        <section class="table-section shadow-2xl">
+            <div class="table-header">
+                <h2>Directorio General</h2>
+                <div class="table-actions">
+                    <span class="material-symbols-outlined">filter_list</span>
+                    <span class="material-symbols-outlined">search</span>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Username</th>
+                            <th>Rol</th>
+                            <th>Status</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-details">
+                                        <strong>Mateo Rodriguez</strong>
+                                        <span>m.rodriguez@vinonuevo.org</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-muted">@mrodriguez</td>
+                            <td><span class="badge badge-admin">Admin</span></td>
+                            <td>
+                                <div class="status">
+                                    <span class="dot dot-active"></span>
+                                    <span class="text-active">Activo</span>
+                                </div>
+                            </td>
+                            <td class="text-right">
+                                <div class="action-buttons">
+                                    <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-details">
+                                        <strong>Lucía Mendoza</strong>
+                                        <span>l.mendoza@vinonuevo.org</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-muted">@lumendoza</td>
+                            <td><span class="badge badge-supervisor">Supervisor</span></td>
+                            <td>
+                                <div class="status">
+                                    <span class="dot dot-active"></span>
+                                    <span class="text-active">Activo</span>
+                                </div>
+                            </td>
+                            <td class="text-right">
+                                <div class="action-buttons">
+                                    <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-details">
+                                        <strong>Andrés Soler</strong>
+                                        <span>a.soler@vinonuevo.org</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-muted">@asoler</td>
+                            <td><span class="badge badge-lider">Lider</span></td>
+                            <td>
+                                <div class="status">
+                                    <span class="dot dot-inactive"></span>
+                                    <span class="text-inactive">Inactivo</span>
+                                </div>
+                            </td>
+                            <td class="text-right">
+                                <div class="action-buttons">
+                                    <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination-footer">
+                <span>Mostrando 3 de 124 usuarios</span>
+                <div class="pagination-controls">
+                    <button class="btn-page"><span class="material-symbols-outlined">chevron_left</span></button>
+                    <button class="btn-page active">1</button>
+                    <button class="btn-page">2</button>
+                    <button class="btn-page">3</button>
+                    <button class="btn-page"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "admin_form_layout.html" %} 
+{% block content %}
+<header class="form-header">
+    <h2 class="form-title">Gestión de {{ title }}</h2>
+    <p class="form-description">Defina los parámetros de gestión y asigne la supervisión correspondiente para esta unidad organizativa.</p>
+</header>
+
+<form class="crud-form">
+    <span class="material-symbols-outlined form-watermark" style="font-variation-settings: 'FILL' 1;">nest_eco_leaf</span>
+
+    <div class="form-grid">
+        
+        <!-- Campo sin ícono: lo envolvemos en input-wrapper para mantener la consistencia del CSS -->
+        <div class="form-group full-width">
+            <label>Nombre de la Red</label>
+            <div class="input-wrapper">
+                <input type="text" value="Red de Jóvenes Adultos" placeholder="Ej. Red de Crecimiento Norte">
+            </div>
+        </div>
+
+        <!-- Selector: Aplicamos input-wrapper e icon-right -->
+        <div class="form-group full-width">
+            <label>Supervisor Asignado</label>
+            <div class="input-wrapper icon-right">
+                <select>
+                    <option selected>Carlos Eduardo Méndez</option>
+                    <option>Ana María Restrepo</option>
+                    <option>Roberto Villagrán</option>
+                    <option>Lucía Fernández</option>
+                </select>
+                <span class="material-symbols-outlined input-icon">expand_more</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <div class="actions-left">
+            <!-- Se removió la clase with-icon sobrante -->
+            <button type="submit" class="btn-save">
+                <span class="material-symbols-outlined">save</span>
+                Guardar Red
+            </button>
+            <button type="button" class="btn-cancel">Cancelar</button>
+        </div>
+        <button type="button" class="btn-delete-text">
+            <span class="material-symbols-outlined">delete_outline</span>
+            Eliminar Red
+        </button>
+        
+    </div>
+</form>
+{% endblock %}

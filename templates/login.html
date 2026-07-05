@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="/static/logo 2.png" type="image/png">
+</head>
+<body class="centro">
+    <dialog class="login">
+        <img src="/static/logo 3.png" alt="logo" style="width: 80px; margin: 0px;">
+        <h1>Iniciar sesión</h1>
+        <form class="form" method="post">
+            <input type="text" name="usuario" placeholder="Usuario" required>
+            <input type="password" name="contrasena" placeholder="Contraseña" required>
+            <button type="submit">Iniciar sesión</button>
+        </form>
+        <p class="p">{{ p }}</p>
+    </dialog>
+</body>
+</html>

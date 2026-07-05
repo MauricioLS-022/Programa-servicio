@@ -1,0 +1,75 @@
+{% extends "admin_form_layout.html" %}
+
+{% block content %}
+<div class="form-header-row">
+    <header class="form-header" style="margin-bottom: 0;">
+        <h2 class="form-title">Gestionar Usuario</h2>
+        <p class="form-description">Configura los permisos y la identidad digital dentro de la plataforma Vino Nuevo. Un usuario bien gestionado fortalece la comunidad.</p>
+    </header>
+</div>
+
+<div class="user-bento-grid">
+    <div class="user-main-form">
+        <form class="crud-form">
+            <span class="material-symbols-outlined form-watermark" style="font-variation-settings: 'FILL' 1;">pigeon</span>
+
+            <div class="form-grid">
+                
+                <div class="form-group full-width">
+                    <label for="fullname">Full Name</label>
+                    <div class="input-wrapper icon-left">
+                        <span class="material-symbols-outlined input-icon">person</span>
+                        <input type="text" id="fullname" name="fullname" value="Daniel Alejandro Rivera" placeholder="Nombre completo">
+                    </div>
+                </div>
+
+                <div class="form-group half-width">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper icon-left">
+                        <span class="material-symbols-outlined input-icon">alternate_email</span>
+                        <input type="text" id="username" name="username" value="daniel.rivera" placeholder="usuario">
+                    </div>
+                </div>
+
+                <div class="form-group half-width">
+                    <label for="role">Role</label>
+                    <div class="input-wrapper icon-left icon-right">
+                        <span class="material-symbols-outlined input-icon">badge</span>
+                        <select id="role" name="role">
+                            <option value="Admin">Admin</option>
+                            <option value="Supervisor" selected>Supervisor</option>
+                            <option value="Lider">Lider</option>
+                        </select>
+                        <span class="material-symbols-outlined input-icon">expand_more</span>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper both-icons">
+                        <span class="material-symbols-outlined input-icon">lock</span>
+                        <input type="password" id="password" name="password" value="••••••••••••" placeholder="Contraseña">
+                        <span class="material-symbols-outlined input-icon clickable">visibility</span>
+                    </div>
+                    <span class="input-hint">Mínimo 8 caracteres, incluir mayúsculas y símbolos.</span>
+                </div>
+
+            </div>
+
+            <div class="form-actions" >
+                <div class="actions-left">
+                  <button type="submit" class="btn-save">
+                      <span class="material-symbols-outlined">save</span>
+                      Guardar Usuario
+                  </button>
+                    <button type="button" class="btn-cancel">Cancelar Cambios</button>
+                </div>
+                <button type="button" class="btn-delete-text">
+                    <span class="material-symbols-outlined">delete</span>
+                    Eliminar Usuario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

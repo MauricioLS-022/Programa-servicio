@@ -1,0 +1,93 @@
+{% extends "admin_form_layout.html" %} 
+
+{% block content %}
+<header class="form-header">
+  <h2 class="form-title">Gestión de {{ title }}</h2>
+  <p class="form-description">
+  Actualiza los detalles de ubicación, liderazgo y red ministerial para esta
+  Casa de Paz. Los cambios se reflejarán inmediatamente en los reportes de
+  asistencia.
+  </p>
+</header>
+
+<form class="crud-form">
+  <span
+    class="material-symbols-outlined form-watermark"
+    style="font-variation-settings: 'FILL' 1"
+    >nest_eco_leaf</span
+  >
+
+  <div class="form-grid">
+    <!-- Campo sin ícono (Opcionalmente puedes envolverlo en input-wrapper o dejarlo solo) -->
+    <div class="form-group full-width">
+      <label for="nombre_cdp">Nombre de la Casa</label>
+      <div class="input-wrapper">
+        <input
+          id="nombre_cdp"
+          name="nombre_cdp"
+          type="text"
+          value="Casa de Paz Belén"
+          placeholder="Ej. Casa de Paz Belén"
+        />
+      </div>
+    </div>
+
+    <!-- Campo con ícono a la izquierda -->
+    <div class="form-group full-width">
+      <label for="direccion_cdp">Dirección Completa</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">location_on</span>
+        <input
+          id="direccion_cdp"
+          name="direccion_cdp"
+          type="text"
+          value="Calle Principal #452, Col. San Juan"
+          placeholder="Dirección física"
+        />
+      </div>
+    </div>
+
+    <!-- Selectores con ícono de flecha a la derecha -->
+    <div class="form-group half-width">
+      <label for="red_cdp">Red Ministerial</label>
+      <div class="input-wrapper icon-right">
+        <select id="red_cdp" name="red_cdp">
+          <option value="jovenes">Red de Jóvenes</option>
+          <option value="matrimonios" selected>Red de Matrimonios</option>
+          <option value="mujeres">Red de Mujeres</option>
+          <option value="hombres">Red de Varones</option>
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+
+    <div class="form-group half-width">
+      <label for="lider_cdp">Líder Asignado</label>
+      <div class="input-wrapper icon-right">
+        <select id="lider_cdp" name="lider_cdp">
+          <option value="1">Carlos & Martha Rodríguez</option>
+          <option value="2" selected>Juan Pérez & Elena Gómez</option>
+          <option value="3">Ricardo Luna</option>
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <div class="actions-left">
+      <!-- Se removió la clase vieja "with-icon" porque ya está integrada en btn-save -->
+      <button type="submit" class="btn-save">
+        <span class="material-symbols-outlined">save</span>
+        Guardar Red
+      </button>
+      <button type="button" class="btn-cancel">Cancelar</button>
+    </div>
+    <button type="button" class="btn-delete-text">
+      <span class="material-symbols-outlined">delete_outline</span>
+      Eliminar Red
+    </button>
+  </div>
+</form>
+
+{% endblock %}

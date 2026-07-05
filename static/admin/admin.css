@@ -1,0 +1,136 @@
+:root{
+    --color1: #4A0203;
+    --color2: #780204;
+    --color3: #290101;
+    --color4: white;
+    --color5: #96292b;
+}
+
+body{
+  height: 100vh;
+  background-color: white;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.87)),  url("../fondo.png");
+  background-repeat: repeat;
+  background-size: 12.5%;
+  background-attachment: fixed;
+  padding: 0px;
+  margin: 0px;
+  font-family: 'Times New Roman', Times, serif;
+  box-sizing: border-box;
+
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background-color: var(--color4);
+  flex-direction: row;
+  box-shadow: 0 -2px 5px var(--color3);
+  margin: 0px;
+  padding: 0px 20px;
+}
+
+.link-container {
+  display: flex;
+  gap: 30px;
+}
+.botones {
+  display: flex;
+  align-items: center;
+  background-color: var(--color4);
+  border: 1px solid white;
+  padding: 20px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: 0.3s ease;
+}
+.botones:hover{
+  border-bottom: 1px solid var(--color2);
+}
+.icono{
+  width: 18px;
+  margin-right: 10px;
+}
+.texto{
+  color: var(--color1);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 18px;
+}
+
+.texto2{
+  color: var(--color1);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 18px;
+  margin: 10px;
+}
+
+.logo {
+  display: inline-block;
+  width: 130px;
+  height: 50px;
+  background-image: url("../logo.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  text-decoration: none;
+  margin-right: 10px;
+}
+
+.centro{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.perfil{
+    background-color: var(--color4);
+    width: 500px;
+    height: 79.5vh;
+    margin: 2.3% 2.3%;
+    display: flex;
+    box-shadow: 0 0 3px #29010180;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.img_perfil{
+    width: 50%;
+    margin: 10px;
+    background-color: var(--color5);
+    border-radius: 100%;
+    border: 10px solid var(--color1);
+}
+
+@media (max-width: 745px){
+    .texto{
+        display: none;
+    }
+    .icono{
+        display: block;
+        margin-right: 0px;
+    }
+    .botones{
+        padding: 20px 20px;
+    }
+    .logo{
+        width: 50px;
+        height: 50px;
+        background-image: url("logo 3.png");
+    }
+}
+@media screen and (max-width: 910px) and (min-width: 745px){
+    .icono{
+        display: none;
+    }
+
+    .link-container{
+    gap: 10px;
+  }
+
+  .botones{
+    padding: 20px 5px;
+  }
+}

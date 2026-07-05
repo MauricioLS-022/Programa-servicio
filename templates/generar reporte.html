@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vino Nuevo</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="/static/logo 2.png" type="image/png">
+</head>
+<body>
+    {% include 'encabezado lider.html' %}
+    <div class="centro">
+        <div class="contenedor">
+            <h1>Reporte</h1>
+            <form method="post">
+                <div class="llenar">
+                    <p class="texto2"><b>Anfitrión</b></p>
+                    <input type="text" name="anfitrion" placeholder="Nombre del anfitrión" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Número de niños</b></p>
+                    <input type="number" name="ninos" placeholder="Número de niños" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Número de regulares</b></p>
+                    <input type="number" name="regulares" placeholder="Número de regulares" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Número de visitas</b></p>
+                    <input type="number" name="visitas" placeholder="Número de visitas" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Número de comprometidos</b></p>
+                    <input type="number" name="comprometidos" placeholder="Número de comprometidos" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Asistencia</b></p>
+                    <input type="number" name="asistencia" placeholder="Cuántos asistieron" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Reconciliaciones</b></p>
+                    <input type="number" name="reconciliaciones" placeholder="Cuántos se reconciliaron" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Confesiones de fe</b></p>
+                    <input type="number" name="confesiones" placeholder="Confesiones de fe" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Cesta de amor</b></p>
+                    <input type="text" name="cesta" placeholder="Cesta de amor" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Fecha</b></p>
+                    <input type="date" name="fecha" placeholder="dd-mm-aaaa" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Hora de inicio</b></p>
+                    <input type="time" name="horaini" placeholder="hh:mm" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Hora de finalización</b></p>
+                    <input type="time" name="horafin" placeholder="hh:mm" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Tema de la clase</b></p>
+                    <input type="text" name="tema" placeholder="Tema de la clase" required>
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Observaciones</b></p>
+                    <input type="text" name="observaciones" placeholder="Observaciones">
+                </div>
+                <div class="llenar">
+                    <p class="texto2"><b>Ofrendas</b></p>
+                    <input type="number" name="ofrendas" placeholder="xxx.xx Bs" required>
+                </div>
+                <div class="llenar" style="align-self: flex-end;">
+                    <button type="submit" style="margin: 10px;">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
