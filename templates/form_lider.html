@@ -1,0 +1,113 @@
+{% extends "admin_form_layout.html" %}
+
+{% block content %}
+<header class="form-header">
+  <h2 class="form-title">Gestión de {{ title|default('Líderes') }}</h2>
+  <p class="form-description">
+  Registra o actualiza los datos del equipo de liderazgo. Asigna su rol (Líder Principal o Sublíder) y vincúlalo a la Casa de Paz a la que pertenece.
+  </p>
+</header>
+
+<form action="" method="POST" class="crud-form">
+  <span
+    class="material-symbols-outlined form-watermark"
+    style="font-variation-settings: 'FILL' 1"
+    >supervisor_account</span
+  >
+
+  <h3 style="color: var(--primary); font-size: 0.85rem; font-weight: 800; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(137, 114, 111, 0.2); padding-bottom: 0.5rem;">Datos Personales</h3>
+  
+  <div class="form-grid">
+    <div class="form-group half-width">
+      <label for="nombre">Nombre</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">id_card</span>
+        <input
+          id="nombre"
+          name="nombre"
+          type="text"
+          value="{{ lider.nombre if lider else '' }}"
+          placeholder="Ej. Carlos"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="form-group half-width">
+      <label for="apellido">Apellido</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">id_card_2</span>
+        <input
+          id="apellido"
+          name="apellido"
+          type="text"
+          value="{{ lider.apellido if lider else '' }}"
+          placeholder="Ej. Méndez"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="form-group half-width">
+      <label for="telefono">Teléfono</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">call</span>
+        <input
+          id="telefono"
+          name="telefono"
+          type="tel"
+          value="{{ lider.telefono if lider else '' }}"
+          placeholder="Ej. +58 412-0000000"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="form-group half-width">
+      <label for="rol">Rol Asignado</label>
+      <div class="input-wrapper icon-right">
+        <select id="rol" name="rol" required>
+          <option value="" disabled {% if not lider %}selected{% endif %}>Selecciona el rol...</option>
+          <option value="Lider" {% if lider and lider.rol == 'Lider' %}selected{% endif %}>Líder Principal</option>
+          <option value="Sublider" {% if lider and lider.rol == 'Sublider' %}selected{% endif %}>Sublíder</option>
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--primary); font-size: 0.85rem; font-weight: 800; margin-top: 2.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(137, 114, 111, 0.2); padding-bottom: 0.5rem;">Asignación Ministerial</h3>
+  
+  <div class="form-grid">
+    <div class="form-group full-width">
+      <label for="cdp_id">Casa de Paz a la que pertenece</label>
+      <div class="input-wrapper icon-right">
+        <select id="cdp_id" name="cdp_id" required>
+          <option value="" disabled {% if not lider %}selected{% endif %}>Selecciona una Casa de Paz...</option>
+          {% for cdp in casas_de_paz %}
+          <option value="{{ cdp.id }}" {% if lider and lider.cdp_id == cdp.id %}selected{% endif %}>
+            {{ cdp.codigo }} - {{ cdp.direccion }}
+          </option>
+          {% endfor %}
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <div class="actions-left">
+      <button type="submit" class="btn-save">
+        <span class="material-symbols-outlined">save</span>
+        Guardar Líder
+      </button>
+      <button type="button" class="btn-cancel">Cancelar</button>
+    </div>
+    
+    <button type="button" class="btn-delete-text">
+      <span class="material-symbols-outlined">delete_outline</span>
+      Eliminar Líder
+    </button>
+  </div>
+</form>
+{% endblock %}

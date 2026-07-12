@@ -103,9 +103,13 @@ def admin_reportes():
 def editar_cdp():
     return render_template('form_cdp.html', title='Casas de Paz', breadcrumb= 'Casa de paz')
 
-@app.route('/admin/redes/editar')
+@app.route('/admin/red/editar')
 def editar_red():
     return render_template('form_redes.html', title='Redes', breadcrumb= 'Red')
+
+@app.route('/admin/lider/editar')
+def editar_lider():
+    return render_template('form_lider.html', title='Líderes', breadcrumb= 'Líder')
 
 @app.route('/iniciar_sesion',methods=['GET','POST'])
 def login():
