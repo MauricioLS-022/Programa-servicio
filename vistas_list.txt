@@ -1,3 +1,0 @@
-reportes
-dashboard
-estructura
