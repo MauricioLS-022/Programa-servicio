@@ -2,90 +2,113 @@
 
 {% block content %}
 <header class="form-header">
-  <h2 class="form-title">Gestión de {{ title }}</h2>
+  <h2 class="form-title">Gestión de {{ title|default('Casa de Paz') }}</h2>
   <p class="form-description">
-  Actualiza los detalles de ubicación, liderazgo y red ministerial para esta
-  Casa de Paz. Los cambios se reflejarán inmediatamente en los reportes de
-  asistencia.
+  Actualiza los detalles de ubicación, red ministerial y las credenciales de acceso para esta
+  Casa de Paz. Los cambios se reflejarán inmediatamente en el sistema.
   </p>
 </header>
 
-<form class="crud-form">
+<form action="" method="POST" class="crud-form">
   <span
     class="material-symbols-outlined form-watermark"
     style="font-variation-settings: 'FILL' 1"
     >nest_eco_leaf</span
   >
 
+  <h3 style="color: var(--primary); font-size: 0.85rem; font-weight: 800; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(137, 114, 111, 0.2); padding-bottom: 0.5rem;">Datos del Centro</h3>
+  
   <div class="form-grid">
-    <!-- Campo sin ícono (Opcionalmente puedes envolverlo en input-wrapper o dejarlo solo) -->
-    <div class="form-group full-width">
-      <label for="nombre_cdp">Nombre de la Casa</label>
-      <div class="input-wrapper">
+    <div class="form-group half-width">
+      <label for="codigo">Código de la Casa</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">tag</span>
         <input
-          id="nombre_cdp"
-          name="nombre_cdp"
+          id="codigo"
+          name="codigo"
           type="text"
-          value="Casa de Paz Belén"
-          placeholder="Ej. Casa de Paz Belén"
+          value="{{ cdp.codigo if cdp else '' }}"
+          placeholder="Ej. SUR-001"
+          required
         />
       </div>
     </div>
 
-    <!-- Campo con ícono a la izquierda -->
+    <div class="form-group half-width">
+      <label for="red_id">Red Ministerial</label>
+      <div class="input-wrapper icon-right">
+        <select id="red_id" name="red_id" required>
+          <option value="" disabled {% if not cdp %}selected{% endif %}>Selecciona una red...</option>
+          {% for red in redes %}
+          <option value="{{ red.id }}" {% if cdp and cdp.red_id == red.id %}selected{% endif %}>
+            {{ red.nombre }}
+          </option>
+          {% endfor %}
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+
     <div class="form-group full-width">
-      <label for="direccion_cdp">Dirección Completa</label>
+      <label for="direccion">Dirección Completa</label>
       <div class="input-wrapper icon-left">
         <span class="material-symbols-outlined input-icon">location_on</span>
         <input
-          id="direccion_cdp"
-          name="direccion_cdp"
+          id="direccion"
+          name="direccion"
           type="text"
-          value="Calle Principal #452, Col. San Juan"
+          value="{{ cdp.direccion if cdp else '' }}"
           placeholder="Dirección física"
+          required
+        />
+      </div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--primary); font-size: 0.85rem; font-weight: 800; margin-top: 2.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(137, 114, 111, 0.2); padding-bottom: 0.5rem;">Credenciales de Acceso</h3>
+  
+  <div class="form-grid">
+    <div class="form-group half-width">
+      <label for="username">Usuario de Acceso</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">account_circle</span>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          value="{{ cdp.usuario.username if cdp and cdp.usuario else '' }}"
+          placeholder="Ej. cdp_sur001"
+          required
         />
       </div>
     </div>
 
-    <!-- Selectores con ícono de flecha a la derecha -->
     <div class="form-group half-width">
-      <label for="red_cdp">Red Ministerial</label>
-      <div class="input-wrapper icon-right">
-        <select id="red_cdp" name="red_cdp">
-          <option value="jovenes">Red de Jóvenes</option>
-          <option value="matrimonios" selected>Red de Matrimonios</option>
-          <option value="mujeres">Red de Mujeres</option>
-          <option value="hombres">Red de Varones</option>
-        </select>
-        <span class="material-symbols-outlined input-icon">expand_more</span>
-      </div>
-    </div>
-
-    <div class="form-group half-width">
-      <label for="lider_cdp">Líder Asignado</label>
-      <div class="input-wrapper icon-right">
-        <select id="lider_cdp" name="lider_cdp">
-          <option value="1">Carlos & Martha Rodríguez</option>
-          <option value="2" selected>Juan Pérez & Elena Gómez</option>
-          <option value="3">Ricardo Luna</option>
-        </select>
-        <span class="material-symbols-outlined input-icon">expand_more</span>
+      <label for="password">Contraseña</label>
+      <div class="input-wrapper icon-left">
+        <span class="material-symbols-outlined input-icon">lock</span>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="••••••••"
+          {% if not cdp %}required{% endif %}
+        />
       </div>
     </div>
   </div>
 
   <div class="form-actions">
     <div class="actions-left">
-      <!-- Se removió la clase vieja "with-icon" porque ya está integrada en btn-save -->
       <button type="submit" class="btn-save">
         <span class="material-symbols-outlined">save</span>
-        Guardar Red
+        Guardar Casa
       </button>
       <button type="button" class="btn-cancel">Cancelar</button>
     </div>
     <button type="button" class="btn-delete-text">
       <span class="material-symbols-outlined">delete_outline</span>
-      Eliminar Red
+      Eliminar Casa
     </button>
   </div>
 </form>

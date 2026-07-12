@@ -21,7 +21,7 @@ def role_required(*roles):
     return decorator
 
 @app.route('/',methods=['GET','POST'])
-@role_required("lider")
+@role_required("cdp")
 def index():
     connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
     C=connect.cursor()
@@ -29,7 +29,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/generar_reporte',methods=['GET','POST'])
-@role_required("lider","admin","supervisor")
+@role_required("cdp","admin","supervisor")
 def generar():
     if request.method=='POST':
         anfitrion=request.form['anfitrion']
@@ -59,7 +59,7 @@ def generar():
 
 @app.route('/perfil',methods=['GET','POST']) # ruta para vista de perfil de lider
 @app.route('/admin/perfil',methods=['GET','POST']) # ruta para vista de perfil de admin
-@role_required("lider","admin","supervisor")
+@role_required("cdp","admin","supervisor")
 def perfil():
     connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
     C=connect.cursor()
@@ -118,7 +118,7 @@ def login():
         connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
         C=connect.cursor()
 
-        C.execute("SELECT usuario,rol FROM usuario WHERE usuario = %s and password_hash = %s",(usuario,contrasena))
+        C.execute("SELECT username,tipo_usuario FROM usuario WHERE username = %s and password = %s",(usuario,contrasena))
 
         r=C.fetchone()
 
