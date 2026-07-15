@@ -46,6 +46,48 @@
         </article>
     </section>
 
+    <!-- Status and Alerts Row -->
+    <section class="status-grid">
+        <article class="status-card fade-in-5" role="region" aria-labelledby="reportes-hoy-title">
+            <div class="status-card-header">
+                <h2 id="reportes-hoy-title" class="section-title">Reportes de Hoy (Miércoles)</h2>
+                <p class="section-subtitle">32 de 42 Casas de Paz han completado su reporte semanal.</p>
+            </div>
+            <div class="status-card-body">
+                <div class="progress-ring" role="img" aria-label="76 por ciento de reportes completados">
+                    <span class="progress-value">76%</span>
+                </div>
+                <div class="status-details">
+                    <p class="status-note">Crecimiento estable comparado con ayer.</p>
+                </div>
+            </div>
+        </article>
+
+        <aside class="warning-card fade-in-6" role="region" aria-labelledby="alertas-seguimiento-title">
+            <div class="status-card-header">
+                <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
+            </div>
+
+            <div class="alert-list">
+                <article class="alert-item">
+                    <div>
+                        <h4>Casa Bethel</h4>
+                        <p>2 días sin reporte</p>
+                    </div>
+                    <button class="btn-full-outline">Contactar</button>
+                </article>
+
+                <article class="alert-item">
+                    <div>
+                        <h4>Casa de Oración Sur</h4>
+                        <p>Revisión de asistencia pendiente</p>
+                    </div>
+                    <button class="btn-full-outline">Contactar</button>
+                </article>
+            </div>
+        </aside>
+    </section>
+
     <!-- Main Content Area -->
     <div class="dashboard-grid">
         
@@ -63,100 +105,63 @@
                 </div>
             </div>
 
-            <!-- Simulated Chart -->
+            <!-- Donut Chart -->
             <div class="chart-area">
-                <!-- Líneas de fondo -->
-                <div class="chart-grid-lines">
-                    <div></div><div></div><div></div><div></div><div></div>
-                </div>
-                
-                <!-- Barras (Las alturas están en línea simulando datos de DB) -->
-                <div class="chart-bars">
-                    <div class="bar-container" style="height: 45%;">
-                        <div class="bar bar-opacity-40"></div>
-                        <span class="bar-tooltip">Lun</span>
-                    </div>
-                    <div class="bar-container" style="height: 70%;">
-                        <div class="bar bar-opacity-60"></div>
-                        <span class="bar-tooltip">Mar</span>
-                    </div>
-                    <div class="bar-container" style="height: 60%;">
-                        <div class="bar bar-opacity-40"></div>
-                        <span class="bar-tooltip">Mié</span>
-                    </div>
-                    <div class="bar-container" style="height: 90%;">
-                        <div class="bar bar-opacity-90"></div>
-                        <span class="bar-tooltip">Jue</span>
-                    </div>
-                    <div class="bar-container" style="height: 65%;">
-                        <div class="bar bar-opacity-50"></div>
-                        <span class="bar-tooltip">Vie</span>
-                    </div>
-                    <div class="bar-container" style="height: 100%;">
-                        <div class="bar bar-solid"></div>
-                        <span class="bar-tooltip">Sáb</span>
-                    </div>
-                    <div class="bar-container" style="height: 80%;">
-                        <div class="bar bar-opacity-70"></div>
-                        <span class="bar-tooltip">Dom</span>
+                <ul class="chart-legend" aria-hidden="true">
+                    <li><span class="dot regular"></span> Regulares</li>
+                    <li><span class="dot ninos"></span> Niños</li>
+                    <li><span class="dot visitas"></span> Visitas</li>
+                    <li><span class="dot comprometidos"></span> Comprometidos</li>
+                </ul>
+                <div class="donut-wrapper" role="img" aria-label="Gráfico de reporte total de 1,248 reportes">
+                    <!-- data attributes: counts for each segment (can be filled by Jinja from backend) -->
+                    <div class="donut-ring" data-regular="724" data-ninos="300" data-visitas="124" data-comprometidos="100"></div>
+                    <div class="donut-center">
+                        <span class="donut-label">TOTAL</span>
+                        <span class="donut-number">1,248</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Recent Activity (Right) -->
-        <!-- <aside class="activity-card fade-in-6">
-            <h2 class="section-title mb-custom">Actividad Reciente</h2>
-            
-            <div class="activity-list">
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper">
-                        <span class="material-symbols-outlined">person_add</span>
+        <div class="side-cards fade-in-6">
+            <article class="participation-card">
+                <h2 class="section-title">Participación por Red</h2>
+                <div class="network-progress">
+                    <div class="network-row">
+                        <span>Red Norte</span>
+                        <span>65%</span>
                     </div>
-                    <div class="activity-info">
-                        <h4>Nuevo Líder Registrado</h4>
-                        <p>Marta Jimenez se unió a la red.</p>
-                        <span class="activity-time">Hace 12 mins</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill width-65"></div>
+                    </div>
+
+                    <div class="network-row">
+                        <span>Red Sur</span>
+                        <span>82%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill width-82"></div>
+                    </div>
+
+                    <div class="network-row">
+                        <span>Red Central</span>
+                        <span>88%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill width-88"></div>
                     </div>
                 </div>
+            </article>
 
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper">
-                        <span class="material-symbols-outlined">fact_check</span>
-                    </div>
-                    <div class="activity-info">
-                        <h4>Reporte Semanal Aprobado</h4>
-                        <p>Casa de Paz 'Bethel' envió su resumen.</p>
-                        <span class="activity-time">Hace 1 hora</span>
-                    </div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper">
-                        <span class="material-symbols-outlined">location_on</span>
-                    </div>
-                    <div class="activity-info">
-                        <h4>Nueva Casa de Paz</h4>
-                        <p>Inauguración en sector Norponiente.</p>
-                        <span class="activity-time">Hace 3 horas</span>
-                    </div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper">
-                        <span class="material-symbols-outlined">chat_bubble</span>
-                    </div>
-                    <div class="activity-info">
-                        <h4>Comentario de Administrador</h4>
-                        <p>Se requiere revisión de asistencia.</p>
-                        <span class="activity-time">Hace 5 horas</span>
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn-full-outline">Ver todo el historial</button>
-        </aside> -->
-
+            <article class="offer-card">
+                <h2 class="section-title">Ofrendas de la Semana</h2>
+                <div class="offer-value">$12,450.00</div>
+                <p class="section-subtitle">Crecimiento +12% vs semana anterior</p>
+            </article>
+        </div>
     </div>
 </main>
+<script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
+
 {% endblock %}
