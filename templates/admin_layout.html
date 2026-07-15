@@ -1,20 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vino Nuevo - Panel Administrativo {% block title %}{% endblock %}</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='./admin/admin.css') }}">
     {% block custom_styles %}{% endblock %}
     <link rel="icon" href="/static/logo 2.png" type="image/png">
+
+    <script type="module" src="{{ url_for('static', filename='scripts/menu.js')}}"></script>
 </head>
 <body>
-  {% include 'header_admin.html' %}
-  {% block content %}
-  {% endblock %}
+    
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-box">
+                <img src="{{ url_for('static', filename='logo 3.png') }}" alt="logo" class="logo">
+            </div>
+            <div class="brand-text">
+                <h2 class="brand-title">Vino Nuevo</h2>
+                <p class="brand-subtitle">Administración</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/estructura" class="nav-item {{ 'active' if request.path == '/admin/estructura' else '' }}">
+                <span class="material-symbols-outlined">account_tree</span>
+                <span>Estructura</span>
+            </a>
+            <a href="/admin/usuario" class="nav-item {{ 'active' if request.path == '/admin/usuario' else '' }}">
+                <span class="material-symbols-outlined">group</span>
+                <span>Usuarios</span>
+            </a>
+            <a href="/admin/reportes" class="nav-item {{ 'active' if request.path == '/admin/reportes' else '' }}">
+                <span class="material-symbols-outlined">analytics</span>
+                <span>Reportes</span>
+            </a>
+            <a href="/admin/perfil" class="nav-item {{ 'active' if request.path == '/admin/perfil' else '' }}">
+                <span class="material-symbols-outlined">person</span>
+                <span>Perfil</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/logout" class="nav-item">
+                <span class="material-symbols-outlined logout-icon">logout</span>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <header class="mobile-header">
+        <div class="mobile-header-left">
+            <button id="menu-toggle" class="btn-menu"><span class="material-symbols-outlined">menu</span></button>
+            <h2 class="mobile-brand">Vino Nuevo</h2>
+        </div>
+    </header>
+
+    {% include 'header_admin.html' %}
+
+    <div class="main-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <nav class="mobile-bottom-nav">
+        <a href="/admin/dashboard" class="mobile-nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Dash</span>
+        </a>
+        <a href="/admin/estructura" class="mobile-nav-item {{ 'active' if request.path == '/admin/estructura' else '' }}">
+            <span class="material-symbols-outlined">account_tree</span>
+            <span>Estructura</span>
+        </a>
+        <a href="/admin/usuario" class="mobile-nav-item {{ 'active' if request.path == '/admin/usuario' else '' }}">
+            <span class="material-symbols-outlined">group</span>
+            <span>Usuarios</span>
+        </a>
+        <a href="/admin/reportes" class="mobile-nav-item {{ 'active' if request.path == '/admin/reportes' else '' }}">
+            <span class="material-symbols-outlined">analytics</span>
+            <span>Reportes</span>
+        </a>
+        <a href="/admin/perfil" class="mobile-nav-item {{ 'active' if request.path == '/admin/perfil' else '' }}">
+            <span class="material-symbols-outlined">person</span>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
 </body>
 </html>

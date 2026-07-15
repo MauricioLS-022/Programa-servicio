@@ -12,20 +12,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/form.css')}}">
     {% block custom_styles %}{% endblock %}
 
-    <script type="module">
-        const menuBtn = document.getElementById('menu-toggle');
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-
-        function toggleMenu() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-
-        menuBtn.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
-
-    </script>
+    <script type="module" src="{{ url_for('static', filename='scripts/menu.js')}}"></script>
 </head>
 <body>
     
@@ -85,13 +72,13 @@
                 <a href="/admin/estructura">Estructura</a>
                 <span class="material-symbols-outlined">chevron_right</span>
 
-                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') %}
+                {% if request.path == '/admin/' + link %}
                 <span class="current">{{ breadcrumb }}</span>
                 {% else %}
-                <a href="/admin/{{ breadcrumb.lower().replace(' ', '_') }}" class="current">{{ breadcrumb }}</a>
+                <a href="/admin/{{ link }}" class="current">{{ breadcrumb }}</a>
                 {% endif %}
 
-                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') + '/editar' %}
+                {% if request.path == '/admin/' + link + '/editar' %}
                 <span class="material-symbols-outlined">chevron_right</span>
                 <span class="current">Editar</span>
                 {% endif %}
