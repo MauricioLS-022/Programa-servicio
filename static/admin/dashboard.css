@@ -526,23 +526,26 @@ body {
    Responsive
    ========================================================================== */
 @media (min-width: 1024px) {
-    .status-grid {
-        grid-template-columns: 1.5fr 1fr;
-    }
+    .status-grid,
     .dashboard-grid {
-        grid-template-columns: 1.7fr 1fr;
+        grid-template-columns: 1.6fr 1fr; /* Puedes ajustar a 1.5fr o 2fr, pero ambos DEBEN ser iguales */
     }
+    
     .chart-card {
         display: flex;
         flex-direction: column;
+        height: 100%; /* Asegura que la gráfica estire a la misma altura que los paneles laterales */
     }
+    
     .side-cards {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        height: 100%; /* Fuerza a las tarjetas laterales a ocupar el espacio completo */
     }
+    
     .participation-card {
-        flex: 1;
+        flex: 1; /* Hace que esta tarjeta crezca para rellenar el espacio vacío si es necesario */
     }
 }
 
