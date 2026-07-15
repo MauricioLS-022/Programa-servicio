@@ -1,0 +1,169 @@
+{% extends "admin_form_layout.html" %}
+
+{% block custom_styles %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/detalles_cdp.css') }}">
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+  <div class="detail-title-group">
+    <div class="detail-icon-badge">
+      <span class="material-symbols-outlined">home_work</span>
+    </div>
+    <div>
+      <p class="detail-eyebrow">Detalle de Casa de Paz</p>
+      <h2 class="detail-title">Casa de Paz “CA-5”</h2>
+      <p class="detail-subtitle">Red Hebrón · Sector 4 · Zona Norte</p>
+    </div>
+  </div>
+
+  <div class="detail-actions">
+    <a href="/admin/casa_de_paz/editar" class="btn-secondary">
+      <span class="material-symbols-outlined">edit</span>
+      Editar
+    </a>
+    <a href="/admin/lider/editar" class="btn-primary-detail">
+      <span class="material-symbols-outlined">person_add</span>
+      Añadir líder
+    </a>
+  </div>
+</header>
+
+<div class="detail-grid">
+  <section class="detail-card summary-card">
+    <div class="card-header">
+      <div>
+        <p class="card-kicker">Resumen general</p>
+        <h3>Casa de Paz Central</h3>
+      </div>
+      <span class="status-pill active">Activa</span>
+    </div>
+
+    <p class="summary-text">
+      Espacio de encuentro comunitario con seguimiento semanal, liderazgo activo y participación estable de la red.
+    </p>
+
+    <div class="summary-metrics">
+      <div class="metric-item">
+        <span class="material-symbols-outlined">groups</span>
+        <div>
+          <strong>18</strong>
+          <span>Asistentes</span>
+        </div>
+      </div>
+      <div class="metric-item">
+        <span class="material-symbols-outlined">calendar_month</span>
+        <div>
+          <strong>Martes</strong>
+          <span>7:30 PM</span>
+        </div>
+      </div>
+      <div class="metric-item">
+        <span class="material-symbols-outlined">volunteer_activism</span>
+        <div>
+          <strong>4</strong>
+          <span>Voluntarios</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail-card info-card">
+    <div class="card-header">
+      <div>
+        <p class="card-kicker">Datos principales</p>
+        <h3>Información del centro</h3>
+      </div>
+    </div>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-label">Dirección</span>
+        <span class="info-value">Calle 12 #18-45, sector El Carmen</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Anfitrión</span>
+        <span class="info-value">David Gómez y Elena Ríos</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Líder asignado</span>
+        <span class="info-value">Juan Carlos Pérez</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Teléfono</span>
+        <span class="info-value">+57 300 123 4567</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Última visita</span>
+        <span class="info-value">Hace 2 días · Reunión de seguimiento</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail-card timeline-card">
+    <div class="card-header">
+      <div>
+        <p class="card-kicker">Seguimiento</p>
+        <h3>Actividad reciente</h3>
+      </div>
+    </div>
+
+    <ul class="timeline-list">
+      <li>
+        <span class="timeline-dot"></span>
+        <div>
+          <strong>Registro de asistencia</strong>
+          <p>Se actualizaron 18 participantes en la última reunión.</p>
+        </div>
+      </li>
+      <li>
+        <span class="timeline-dot"></span>
+        <div>
+          <strong>Visita de acompañamiento</strong>
+          <p>El equipo de liderazgo visitó el centro el pasado viernes.</p>
+        </div>
+      </li>
+      <li>
+        <span class="timeline-dot"></span>
+        <div>
+          <strong>Material entregado</strong>
+          <p>Se repartieron recursos y orientación para la próxima semana.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="detail-card team-card">
+    <div class="card-header">
+      <div>
+        <p class="card-kicker">Equipo</p>
+        <h3>Responsables activos</h3>
+      </div>
+    </div>
+
+    <div class="team-list">
+      <div class="team-member">
+        <div class="avatar">JP</div>
+        <div>
+          <strong>Juan Carlos Pérez</strong>
+          <p>Líder principal</p>
+        </div>
+      </div>
+      <div class="team-member">
+        <div class="avatar">ER</div>
+        <div>
+          <strong>Elena Ríos</strong>
+          <p>Coordinadora</p>
+        </div>
+      </div>
+      <div class="team-member">
+        <div class="avatar">DM</div>
+        <div>
+          <strong>Daniel Morales</strong>
+          <p>Apoyo comunitario</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
