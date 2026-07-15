@@ -10,7 +10,7 @@
     
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/layout_form.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/form.css')}}">
-
+    {% block custom_styles %}{% endblock %}
 
     <script type="module">
         const menuBtn = document.getElementById('menu-toggle');
@@ -50,7 +50,7 @@
                 <span class="material-symbols-outlined">account_tree</span>
                 <span>Estructura</span>
             </a>
-            <a href="/admin/usuarios" class="nav-item {{ 'active' if request.path == '/admin/usuarios' else '' }}">
+            <a href="/admin/usuario" class="nav-item {{ 'active' if request.path == '/admin/usuarios' else '' }}">
                 <span class="material-symbols-outlined">group</span>
                 <span>Usuarios</span>
             </a>
@@ -88,12 +88,19 @@
     <main class="main-content">
         <div class="crud-container">
             <nav class="breadcrumb">
-                <a href="#">Estructura</a>
+                <a href="/admin/estructura">Estructura</a>
                 <span class="material-symbols-outlined">chevron_right</span>
-                
-                <a href="#">{{ breadcrumb }}</a>
+
+                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') %}
+                <span class="current">{{ breadcrumb }}</span>
+                {% else %}
+                <a href="/admin/{{ breadcrumb.lower().replace(' ', '_') }}" class="current">{{ breadcrumb }}</a>
+                {% endif %}
+
+                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') + '/editar' %}
                 <span class="material-symbols-outlined">chevron_right</span>
                 <span class="current">Editar</span>
+                {% endif %}
             </nav>
 
             {% block content %}
@@ -103,15 +110,15 @@
     </main>
 
     <nav class="mobile-bottom-nav">
-        <a href="#" class="mobile-nav-item">
+        <a href="/admin/dashboard" class="mobile-nav-item">
             <span class="material-symbols-outlined">dashboard</span>
             <span>Dash</span>
         </a>
-        <a href="#" class="mobile-nav-item active">
+        <a href="/admin/estructura" class="mobile-nav-item active">
             <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
             <span>Estructura</span>
         </a>
-        <a href="#" class="mobile-nav-item">
+        <a href="/admin/usuarios" class="mobile-nav-item">
             <span class="material-symbols-outlined">group</span>
             <span>Usuarios</span>
         </a>
@@ -119,7 +126,7 @@
             <span class="material-symbols-outlined">analytics</span>
             <span>Reportes</span>
         </a>
-        <a href="#" class="mobile-nav-item">
+        <a href="/admin/perfil" class="mobile-nav-item">
             <span class="material-symbols-outlined">person</span>
             <span>Mí</span>
         </a>

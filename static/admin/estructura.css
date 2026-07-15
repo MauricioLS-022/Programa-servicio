@@ -110,6 +110,7 @@ body {
     font-weight: 700; font-size: 0.85rem; padding: 0.6rem 1.25rem;
     border-radius: 0.5rem; cursor: pointer; border: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
 }
 .btn-outline { background-color: var(--surface-container-lowest); border: 1px solid rgba(221, 192, 189, 0.4); color: var(--primary); }
 .btn-outline:hover { background-color: var(--surface-container-high); transform: translateY(-2px); box-shadow: var(--shadow-editorial); }

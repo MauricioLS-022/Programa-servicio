@@ -79,11 +79,11 @@ def admin():
     rol=session["rol"]
     return render_template('admin_layout.html',usuario=usuario,rol=rol)
 
-@app.route('/admin/usuarios')
+@app.route('/admin/usuario')
 def admin_usuarios():
     return render_template('usuarios_admin.html')
 
-@app.route('/admin/usuarios/editar')
+@app.route('/admin/usuario/editar')
 def editar_usuario():
     return render_template('form_usuario.html', title='Usuarios', breadcrumb= 'Usuario')
 
@@ -103,9 +103,17 @@ def admin_reportes():
 def editar_cdp():
     return render_template('form_cdp.html', title='Casas de Paz', breadcrumb= 'Casa de paz')
 
+@app.route('/admin/casa_de_paz')
+def detalles_cdp():
+    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz')
+
 @app.route('/admin/red/editar')
 def editar_red():
     return render_template('form_redes.html', title='Redes', breadcrumb= 'Red')
+
+@app.route('/admin/lider')
+def admin_lider():
+    return render_template('lider_admin.html')
 
 @app.route('/admin/lider/editar')
 def editar_lider():
@@ -142,4 +150,5 @@ def logout():
     session.pop("usuario",None)
     return redirect(url_for("login"))
 
-app.run(host='0.0.0.0',port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
