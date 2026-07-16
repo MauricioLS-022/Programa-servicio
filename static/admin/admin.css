@@ -76,7 +76,7 @@ header {
 
 .link-container {
   display: flex;
-  gap: 30px;
+  gap: 20px;
 }
 .botones {
   display: flex;
@@ -477,7 +477,11 @@ header {
     }
 
     .link-container{
-    gap: 10px;
+    gap: 12px;
+  }
+
+  header{
+    gap: 12px
   }
 
   .botones{
