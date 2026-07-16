@@ -1,0 +1,177 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}- Directorio de Liderazgo{% endblock %}
+{% block custom_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin/lider.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="main-content leadership-page">
+    <header class="page-header">
+        <div class="header-text">
+            <p class="subtitle">Gestión de líderes</p>
+            <h1 class="title">Directorio de Liderazgo</h1>
+            <p class="description">Consulta rápida de información de contacto de líderes y sublíderes en la red de Casas de Paz.</p>
+        </div>
+        <div class="header-actions">
+            <a href="/admin/lider/editar" class="btn-primary">
+                <span class="material-symbols-outlined">person_add</span>
+                Nuevo líder
+            </a>
+        </div>
+    </header>
+
+    <section class="filter-section">
+        <div class="filter-group search-group">
+            <label>Buscar</label>
+            <div class="search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" placeholder="Buscar por nombre o teléfono...">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Rol</label>
+            <select>
+                <option>Todos los Roles</option>
+                <option>Líder Principal</option>
+                <option>Sublíder</option>
+                <option>Co-Anfitrión</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Red</label>
+            <select>
+                <option>Todos los Roles</option>
+                <option>Red Norte</option>
+                <option>Red Sur</option>
+                <option>Red Central</option>
+            </select>
+        </div>
+
+        <button class="btn-filter" type="button">
+            <span class="material-symbols-outlined">filter_alt</span>
+            Aplicar filtros
+        </button>
+    </section>
+
+    <section class="table-wrapper">
+        <div class="table-header">
+            <h2>Registro Activo</h2>
+            <div class="table-actions">
+                <span class="material-symbols-outlined">grid_view</span>
+                <span class="material-symbols-outlined">table_rows</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="leader-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Red</th>
+                        <th>Casa de Paz</th>
+                        <th>Teléfono</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-primary-light text-primary">MR</div>
+                                <span class="font-semibold">Mateo Rodriguez</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-role">Líder Principal</span></td>
+                        <td>Red Norte</td>
+                        <td class="text-variant">Bethel - Sector Sur</td>
+                        <td class="font-bold">+52 55 1234 5678</td>
+                        <td class="text-center"><span class="status-dot status-active"></span> Activo</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined">visibility</span></button>
+                            <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-secondary-light text-secondary">LM</div>
+                                <span class="font-semibold">Lucía Mendoza</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-role badge-cohost">Co-Anfitrión</span></td>
+                        <td>Red Sur</td>
+                        <td class="text-variant">Sion - Los Olivos</td>
+                        <td class="font-bold">+52 55 9876 5432</td>
+                        <td class="text-center"><span class="status-dot status-active"></span> Activo</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined">visibility</span></button>
+                            <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-primary-light text-primary">AS</div>
+                                <span class="font-semibold">Andrés Soler</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-role badge-subleader">Sublíder</span></td>
+                        <td>Red Central</td>
+                        <td class="text-variant">Manantial - Centro</td>
+                        <td class="font-bold">+52 55 4567 8901</td>
+                        <td class="text-center"><span class="status-dot status-inactive"></span> Inactivo</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined">visibility</span></button>
+                            <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="leader-cell">
+                                <div class="avatar bg-secondary-light text-secondary">EP</div>
+                                <span class="font-semibold">Elena Pérez</span>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-role">Líder Principal</span></td>
+                        <td>Red Sur</td>
+                        <td class="text-variant">Sion - Los Olivos</td>
+                        <td class="font-bold">+52 55 2345 6789</td>
+                        <td class="text-center"><span class="status-dot status-active"></span> Activo</td>
+                        <td class="text-center">
+                            <button class="btn-icon"><span class="material-symbols-outlined">visibility</span></button>
+                            <button class="btn-icon"><span class="material-symbols-outlined">edit</span></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <span class="pagination-info">Mostrando 4 de 124 líderes</span>
+            <div class="pagination-controls">
+                <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer-info">
+        <div class="footer-quote">
+            <p class="quote-text">"Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos."</p>
+            <p class="quote-author">Mateo 18:20</p>
+        </div>
+        <div class="footer-actions">
+            <button class="btn-outline"><span class="material-symbols-outlined">download</span> Exportar PDF</button>
+            <button class="btn-outline"><span class="material-symbols-outlined">table_chart</span> Excel</button>
+        </div>
+    </footer>
+</main>
+{% endblock %}

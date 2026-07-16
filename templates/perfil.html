@@ -11,7 +11,7 @@
     {% else %}
         <link rel="stylesheet" href="/static/supervisor.css">
     {% endif %}
-    <link rel="icon" href="/static/logo 2.png" type="image/png">
+    <link rel="icon" href="/static/logo 2.webp" type="image/webp">
 </head>
 <body>
     {% if rol == 'admin' %}
@@ -24,11 +24,11 @@
     <div class="centro">
         <div class="perfil">
             {% if rol == 'admin' %}
-                <img class="img_perfil" src="/static/iconos/administrador.png" alt="imagen">
+                <img class="img_perfil" src="/static/iconos/administrador.webp" alt="imagen">
             {% elif rol == 'supervisor' %}
-                <img class="img_perfil" src="/static/iconos/supervisor.png" alt="imagen">
+                <img class="img_perfil" src="/static/iconos/supervisor.webp" alt="imagen">
             {% else %}
-                <img class="img_perfil" src="/static/iconos/casa de paz.png" alt="imagen">
+                <img class="img_perfil" src="/static/iconos/casa de paz.webp" alt="imagen">
             {% endif %}
             <p class="texto2"><b>Usuario:</b> {{ usuario }}</p>
             <p class="texto2"><b>Rol:</b> {{ rol }}</p>

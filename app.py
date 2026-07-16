@@ -85,7 +85,7 @@ def admin_usuarios():
 
 @app.route('/admin/usuario/editar')
 def editar_usuario():
-    return render_template('form_usuario.html', title='Usuarios', breadcrumb= 'Usuario')
+    return render_template('form_usuario.html', title='Usuarios', breadcrumb= 'Usuario', link='usuario')
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -101,15 +101,15 @@ def admin_reportes():
 
 @app.route('/admin/casa_de_paz/editar')
 def editar_cdp():
-    return render_template('form_cdp.html', title='Casas de Paz', breadcrumb= 'Casa de paz')
+    return render_template('form_cdp.html', title='Casas de Paz', breadcrumb= 'Casa de paz', link='casa_de_paz')
 
 @app.route('/admin/casa_de_paz')
 def detalles_cdp():
-    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz')
+    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz')
 
 @app.route('/admin/red/editar')
 def editar_red():
-    return render_template('form_redes.html', title='Redes', breadcrumb= 'Red')
+    return render_template('form_redes.html', title='Redes', breadcrumb= 'Red', link='red')
 
 @app.route('/admin/lider')
 def admin_lider():
@@ -117,7 +117,7 @@ def admin_lider():
 
 @app.route('/admin/lider/editar')
 def editar_lider():
-    return render_template('form_lider.html', title='Líderes', breadcrumb= 'Líder')
+    return render_template('form_lider.html', title='Líderes', breadcrumb= 'Lider', link='lider')
 
 @app.route('/iniciar_sesion',methods=['GET','POST'])
 def login():

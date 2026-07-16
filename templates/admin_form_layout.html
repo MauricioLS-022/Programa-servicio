@@ -7,83 +7,15 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
+    <link rel="icon" href="/static/logo 2.webp" type="image/webp">
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/layout_form.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/form.css')}}">
     {% block custom_styles %}{% endblock %}
 
-    <script type="module">
-        const menuBtn = document.getElementById('menu-toggle');
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-
-        function toggleMenu() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-
-        menuBtn.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
-
-    </script>
 </head>
 <body>
     
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo-box">
-                <img src="{{ url_for('static', filename='logo 3.png') }}" alt="logo" class="logo">
-            </div>
-            <div class="brand-text">
-                <h2 class="brand-title">Vino Nuevo</h2>
-                <p class="brand-subtitle">Administración</p>
-            </div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="/admin/dashboard" class="nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span>Dashboard</span>
-            </a>
-            <a href="/admin/estructura" class="nav-item {{ 'active' if request.path == '/admin/estructura' else '' }}">
-                <span class="material-symbols-outlined">account_tree</span>
-                <span>Estructura</span>
-            </a>
-            <a href="/admin/usuario" class="nav-item {{ 'active' if request.path == '/admin/usuarios' else '' }}">
-                <span class="material-symbols-outlined">group</span>
-                <span>Usuarios</span>
-            </a>
-            <a href="/admin/reportes" class="nav-item {{ 'active' if request.path == '/admin/reportes' else '' }}">
-                <span class="material-symbols-outlined">analytics</span>
-                <span>Reportes</span>
-            </a>
-            <a href="/admin/perfil" class="nav-item {{ 'active' if request.path == '/admin/perfil' else '' }}">
-                <span class="material-symbols-outlined">person</span>
-                <span>Perfil</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="/logout" class="nav-item">
-                <span class="material-symbols-outlined logout-icon">logout</span>
-                <span>Cerrar Sesión</span>
-            </a>
-        </div>
-    </aside>
-
-    <header class="mobile-header">
-        <div class="mobile-header-left">
-            <button id="menu-toggle" class="btn-menu"><span class="material-symbols-outlined">menu</span></button>
-            <h2 class="mobile-brand">Vino Nuevo</h2>
-        </div>
-        <div class="mobile-user">
-            <span class="material-symbols-outlined">notifications</span>
-            <div class="avatar">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDMdSvc92PK6SOw-SN-JJdNrbeWHeWS_X3V4vsMS9yfvjbxHKjMAMHN9jhxRDk7ogyn_JtppeOyNQ6Lsc5k-yyiB-fE-zG6YV7JCsupPuraF68A-tUIKhTgk2YJ68eske4iEJh4uh46Dhi9NXAo5xIkzjpDQoaBHACGTOTqyaC1LvsdUJ5bf79f0unSm5xcB42gf1ZlBEbxkyEtmCaRW25wkjfQvT1UU5KHzaIIqZUhtdAupjmsz2CMOaWLUkZrSCwqAvu9FyXrvA" alt="Avatar"/>
-            </div>
-        </div>
-    </header>
+    {% include 'sidebar_mobile.html' %}
 
     <main class="main-content">
         <div class="crud-container">
@@ -91,13 +23,13 @@
                 <a href="/admin/estructura">Estructura</a>
                 <span class="material-symbols-outlined">chevron_right</span>
 
-                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') %}
+                {% if request.path == '/admin/' + link %}
                 <span class="current">{{ breadcrumb }}</span>
                 {% else %}
-                <a href="/admin/{{ breadcrumb.lower().replace(' ', '_') }}" class="current">{{ breadcrumb }}</a>
+                <a href="/admin/{{ link }}" class="current">{{ breadcrumb }}</a>
                 {% endif %}
 
-                {% if request.path == '/admin/' + breadcrumb.lower().replace(' ', '_') + '/editar' %}
+                {% if request.path == '/admin/' + link + '/editar' %}
                 <span class="material-symbols-outlined">chevron_right</span>
                 <span class="current">Editar</span>
                 {% endif %}
@@ -109,29 +41,7 @@
         </div>
     </main>
 
-    <nav class="mobile-bottom-nav">
-        <a href="/admin/dashboard" class="mobile-nav-item">
-            <span class="material-symbols-outlined">dashboard</span>
-            <span>Dash</span>
-        </a>
-        <a href="/admin/estructura" class="mobile-nav-item active">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
-            <span>Estructura</span>
-        </a>
-        <a href="/admin/usuarios" class="mobile-nav-item">
-            <span class="material-symbols-outlined">group</span>
-            <span>Usuarios</span>
-        </a>
-        <a href="/admin/reportes" class="mobile-nav-item {{ 'active' if request.path == '/admin/reportes' else '' }}">
-            <span class="material-symbols-outlined">analytics</span>
-            <span>Reportes</span>
-        </a>
-        <a href="/admin/perfil" class="mobile-nav-item">
-            <span class="material-symbols-outlined">person</span>
-            <span>Mí</span>
-        </a>
-    </nav>
-
+    {% include 'footbar_mobile.html' %}
 
 </body>
 </html>
