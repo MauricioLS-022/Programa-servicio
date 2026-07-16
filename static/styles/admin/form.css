@@ -1,0 +1,293 @@
+/* ===============================
+   CABECERA DEL FORMULARIO
+   =============================== */
+.form-header {
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    font-family: var(--font-serif);
+    font-size: 2.25rem;
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.form-description {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 800px;
+}
+
+/* ===============================
+   CONTENEDOR DEL FORMULARIO
+   =============================== */
+.crud-form {
+    background-color: #ffffff; /* Blanco puro para separarlo del fondo del layout */
+    border: 1px solid rgba(137, 114, 111, 0.25); /* Borde un poco más marcado */
+    /* Sombra de dos capas: una amplia para profundidad y una corta para definición */
+    box-shadow: 0 12px 32px -4px rgba(57, 0, 2, 0.08), 0 4px 12px -2px rgba(57, 0, 2, 0.04); 
+    padding: 2.5rem;
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+    max-width: 900px;
+}
+.form-watermark {
+    position: absolute;
+    bottom: -2rem;
+    left: -2rem;
+    font-size: 250px;
+    opacity: 0.03;
+    color: var(--primary);
+    transform: rotate(12deg);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Sistema de Grid Interno */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    position: relative;
+    z-index: 10;
+}
+
+@media (min-width: 768px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .full-width { grid-column: span 2; }
+    .half-width { grid-column: span 1; }
+}
+
+/* ===============================
+   CAMPOS, INPUTS Y TEXTAREAS (Sistema unificado)
+   =============================== */
+.form-group label {
+    display: block;
+    color: var(--primary-wine, #4a0d0d);
+    font-size: 0.75rem; 
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em; 
+    margin-bottom: 0.5rem;
+}
+
+/* Estilo general con contraste arreglado */
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    background-color: #fcfaf9; /* Fondo levísimamente gris/cálido para contrastar con la tarjeta blanca */
+    border: 1px solid rgba(137, 114, 111, 0.4); /* Borde más notorio para delimitar el campo */
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--text-main);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); /* Sombra interior para dar sensación de "hueco" */
+    transition: all 0.2s ease-in-out;
+    appearance: none; 
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Estados de Hover y Focus */
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+    border-color: rgba(127, 29, 29, 0.3);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.1);
+}
+
+/* ===============================
+   SISTEMA DE ÍCONOS REUTILIZABLE
+   =============================== */
+.input-wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none; /* Clic traspasa al input */
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ícono a la Izquierda */
+.icon-left .input-icon:first-child { left: 1rem; }
+.icon-left input,
+.icon-left select { padding-left: 2.75rem; }
+
+/* Ícono a la Derecha (Selects estándar) */
+.icon-right .input-icon:last-child { right: 1rem; }
+.icon-right input,
+.icon-right select { padding-right: 2.75rem; }
+
+/* Ambos Íconos (ej: password con candado y ojito) */
+.both-icons .input-icon:first-child { left: 1rem; }
+.both-icons .input-icon.clickable {
+    right: 1rem;
+    pointer-events: auto; /* El usuario puede hacer clic aquí */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.both-icons .input-icon.clickable:hover { color: var(--primary); }
+.both-icons input {
+    padding-left: 2.75rem;
+    padding-right: 2.75rem;
+}
+
+/* Texto de ayuda inferior */
+.input-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* ===============================
+   BOTONES DE ACCIÓN
+   =============================== */
+.form-actions {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.actions-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .form-actions { 
+        flex-direction: row; 
+        justify-content: space-between;
+        align-items: center; 
+    }
+    .actions-left { 
+        flex-direction: row; 
+        align-items: center; 
+        width: auto;
+    }
+}
+
+.btn-save {
+    background: linear-gradient(to right, var(--primary-container), var(--primary));
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 9999px;
+    border: none;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-save:hover { 
+    box-shadow: 0 4px 12px rgba(57, 0, 2, 0.25); 
+    opacity: 0.95;
+}
+.btn-save:active { transform: scale(0.98); }
+
+.btn-cancel {
+    background: transparent;
+    border: 1px solid rgba(137, 114, 111, 0.5); /* Borde más visible */
+    color: var(--text-main); /* Texto más oscuro por defecto */
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background-color: rgba(57, 0, 2, 0.03); 
+}
+
+.btn-delete-text {
+    background: transparent;
+    border: none;
+    color: var(--danger-color, #b32626); /* Conectado a la variable del layout */
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-delete-text:hover { background-color: rgba(179, 38, 38, 0.1); }
+
+/* =========================================
+   DISEÑO GESTIONAR USUARIO (BENTO GRID)
+   ========================================= */
+.form-header-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+    .form-header-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+}
+
+.user-bento-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+/* Preparado por si a futuro agregas tarjetas de información a un costado */
+@media (min-width: 992px) {
+    .user-bento-grid {
+        grid-template-columns: 1fr; 
+    }
+}

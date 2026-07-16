@@ -1,7 +1,7 @@
 {% extends "admin_layout.html" %} {% block title %}- Estructura{% endblock %}
 
 {% block custom_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin/estructura.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/estructura.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -39,8 +39,8 @@
                     <p class="red-leader">Líder: Juan Carlos Pérez</p>
                     <div class="red-stats">
                         <div class="avatars">
-                            <img src="{{ url_for('static', filename='img/avatar1.jpg') }}" alt="Avatar 1">
-                            <img src="{{ url_for('static', filename='img/avatar2.jpg') }}" alt="Avatar 2">
+                            <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
+                            <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
                             <div class="avatar-more">+12</div>
                         </div>
                         <span class="red-count">14 Casas Vinculadas</span>
@@ -169,7 +169,7 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>8 Asistentes promedio</span>
                         </div>
-                        <a href="/admin/casa_de_paz/detalles" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                        <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                     </div>
                 </article>
 
@@ -203,7 +203,7 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>15 Asistentes promedio</span>
                         </div>
-                        <a href="/admin/casa_de_paz/detalles" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                        <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                     </div>
                 </article>
                 <div class="casa-add-card">

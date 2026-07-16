@@ -5,30 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil</title>
     {% if rol == 'admin' %}
-        <link rel="stylesheet" href="/static/admin/admin.css">
-    {% elif rol == 'cdp' %}
-        <link rel="stylesheet" href="/static/style.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/admin.css') }}">
     {% else %}
-        <link rel="stylesheet" href="/static/supervisor.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
     {% endif %}
-    <link rel="icon" href="/static/logo 2.webp" type="image/webp">
+    <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
 </head>
 <body>
-    {% if rol == 'admin' %}
+    {% if rol == 'admin' or rol == 'supervisor' %}
         {% include 'header_admin.html' %}
-    {% elif rol == 'supervisor' %}
-        {% include 'header_supervisor.html' %}
     {% else %}
         {% include 'encabezado lider.html' %}
     {% endif %}
     <div class="centro">
         <div class="perfil">
             {% if rol == 'admin' %}
-                <img class="img_perfil" src="/static/iconos/administrador.webp" alt="imagen">
+                <img class="img_perfil" src="{{ url_for('static', filename='iconos/administrador.webp') }}" alt="imagen">
             {% elif rol == 'supervisor' %}
-                <img class="img_perfil" src="/static/iconos/supervisor.webp" alt="imagen">
+                <img class="img_perfil" src="{{ url_for('static', filename='iconos/supervisor.webp') }}" alt="imagen">
             {% else %}
-                <img class="img_perfil" src="/static/iconos/casa de paz.webp" alt="imagen">
+                <img class="img_perfil" src="{{ url_for('static', filename='iconos/casa_de_paz.webp') }}" alt="imagen">
             {% endif %}
             <p class="texto2"><b>Usuario:</b> {{ usuario }}</p>
             <p class="texto2"><b>Rol:</b> {{ rol }}</p>
