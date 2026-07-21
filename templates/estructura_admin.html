@@ -8,11 +8,19 @@
 <main class="estructura-main">
     <header class="page-header">
         <div class="header-text">
+            {% if is_supervisor %}
+            <h1 class="title">Estructura de mi Red</h1>
+            <p class="subtitle">
+                Supervisa el estado de tus <span class="highlight">Casas de Paz</span> y monitorea el crecimiento espiritual de cada grupo bajo tu responsabilidad.
+            </p>
+            {% else %}
             <h1 class="title">Estructura Organizacional</h1>
             <p class="subtitle">
                 Gestiona la arquitectura de tu comunidad a través de <span class="highlight">Redes</span> y <span class="highlight">Casas de Paz</span>. Define jerarquías y supervisa el crecimiento espiritual de cada grupo.
             </p>
+            {% endif %}
         </div>
+        {% if not is_supervisor %}
         <div class="header-actions">
             <a href="/admin/red/editar" class="btn btn-outline">
                 <span class="material-symbols-outlined icon">hub</span> Nueva Red
@@ -21,20 +29,23 @@
                 <span class="material-symbols-outlined icon filled">add_home</span> Nueva Casa de Paz
             </a>
         </div>
+        {% endif %}
     </header>
 
     <div class="estructura-grid">
         <aside class="redes-sidebar">
             <div class="sidebar-header">
-                <h2 class="sidebar-title">Redes Activas</h2>
-                <span class="badge badge-secondary">4 Redes</span>
+                <h2 class="sidebar-title">{% if is_supervisor %}Mi Red{% else %}Redes Activas{% endif %}</h2>
+                <span class="badge badge-secondary">{{ '1 Red' if is_supervisor else '4 Redes' }}</span>
             </div>
 
             <div class="redes-list">
                 <div class="red-card active">
                     <div class="red-header">
                         <span class="red-name">Red Hebrón</span>
+                        {% if not is_supervisor %}
                         <span class="material-symbols-outlined icon-more">more_vert</span>
+                        {% endif %}
                     </div>
                     <p class="red-leader">Líder: Juan Carlos Pérez</p>
                     <div class="red-stats">
@@ -47,6 +58,7 @@
                     </div>
                 </div>
 
+                {% if not is_supervisor %}
                 <div class="red-card">
                     <div class="red-header">
                         <span class="red-name">Red Cielos Abiertos</span>
@@ -79,16 +91,17 @@
                         <span class="red-count">5 Casas Vinculadas</span>
                     </div>
                 </div>
+                {% endif %}
                 </div>
 
             <div class="impact-card">
                 <div class="impact-content">
-                    <h3>Resumen de Impacto</h3>
-                    <p class="impact-subtitle">Total alcance de redes</p>
-                    <div class="impact-number">1,402</div>
-                    <p class="impact-note">Miembros activos este mes</p>
+                    <h3>{% if is_supervisor %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
+                    <p class="impact-subtitle">{% if is_supervisor %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
+                    <div class="impact-number">{% if is_supervisor %}14{% else %}1,402{% endif %}</div>
+                    <p class="impact-note">{% if is_supervisor %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
                 </div>
-                <span class="material-symbols-outlined watermark-icon">diversity_3</span>
+                <span class="material-symbols-outlined watermark-icon">{% if is_supervisor %}health_and_safety{% else %}diversity_3{% endif %}</span>
             </div>
         </aside>
 
@@ -96,7 +109,7 @@
             <div class="casas-header">
                 <div>
                     <h3 class="section-title">Casas de Paz</h3>
-                    <p class="section-subtitle">Mostrando todas las casas de la <strong>Red Familiar</strong></p>
+                    <p class="section-subtitle">Mostrando todas las casas de la <strong>Red Hebrón</strong></p>
                 </div>
                 <div class="search-bar">
                     <span class="material-symbols-outlined icon-search">search</span>
@@ -135,7 +148,9 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>12 Asistentes promedio</span>
                         </div>
+                        {% if not is_supervisor %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                        {% endif %}
                     </div>
                 </article>
 
@@ -169,7 +184,9 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>8 Asistentes promedio</span>
                         </div>
+                        {% if not is_supervisor %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                        {% endif %}
                     </div>
                 </article>
 
@@ -203,9 +220,12 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>15 Asistentes promedio</span>
                         </div>
+                        {% if not is_supervisor %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
+                        {% endif %}
                     </div>
                 </article>
+                {% if not is_supervisor %}
                 <div class="casa-add-card">
                     <div class="add-icon">
                         <span class="material-symbols-outlined">add</span>
@@ -213,6 +233,7 @@
                     <h4>Registrar Nueva Casa</h4>
                     <p>Asigna un nuevo anfitrión y vincula la ubicación a esta red.</p>
                 </div>
+                {% endif %}
             </div>
         </section>
     </div>

@@ -9,8 +9,13 @@
 
 <main class="container">
     <div class="hero">
+        {% if is_supervisor %}
+        <h1 class="hero-title">Reportes de mi Red</h1>
+        <p class="hero-subtitle">Auditoría y seguimiento de actividad ministerial</p>
+        {% else %}
         <h1 class="hero-title">Reportes de Administración</h1>
         <p class="hero-subtitle">Gestión y análisis de actividad ministerial</p>
+        {% endif %}
     </div>
 
     <section class="filter-section">
@@ -66,7 +71,9 @@
                         <td class="text-center">
                             <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
                             
+                            {% if not is_supervisor %}
                             <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            {% endif %}
                         </td>
                     </tr>
                     <tr>
@@ -83,7 +90,9 @@
                         <td class="text-center">
                             <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
                             
+                            {% if not is_supervisor %}
                             <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            {% endif %}
                         </td>
                     </tr>
                     <tr>
@@ -100,7 +109,9 @@
                         <td class="text-center">
                             <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
                             
+                            {% if not is_supervisor %}
                             <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            {% endif %}
                         </td>
                     </tr>
                     <tr>
@@ -117,7 +128,9 @@
                         <td class="text-center">
                             <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
 
+                            {% if not is_supervisor %}
                             <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            {% endif %}
                         </td>
                     </tr>
                 </tbody>

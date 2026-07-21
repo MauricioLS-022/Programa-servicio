@@ -9,11 +9,33 @@
             </div>
             <div class="brand-text">
                 <h2 class="brand-title">Vino Nuevo</h2>
+                {% if rol == 'supervisor' %}
+                <p class="brand-subtitle">Supervisión Regional</p>
+                {% else %}
                 <p class="brand-subtitle">Administración</p>
+                {% endif %}
             </div>
         </div>
 
         <nav class="sidebar-nav">
+            {% if rol == 'supervisor' %}
+            <a href="/supervisor" class="nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/supervisor/estructura" class="nav-item {{ 'active' if request.path == '/supervisor/estructura' else '' }}">
+                <span class="material-symbols-outlined">account_tree</span>
+                <span>Estructura</span>
+            </a>
+            <a href="/supervisor/reportes" class="nav-item {{ 'active' if request.path == '/supervisor/reportes' else '' }}">
+                <span class="material-symbols-outlined">analytics</span>
+                <span>Reportes</span>
+            </a>
+            <a href="/supervisor/perfil" class="nav-item {{ 'active' if request.path == '/supervisor/perfil' else '' }}">
+                <span class="material-symbols-outlined">person</span>
+                <span>Perfil</span>
+            </a>
+            {% else %}
             <a href="/admin/dashboard" class="nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
@@ -39,6 +61,7 @@
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
+            {% endif %}
         </nav>
 
         <div class="sidebar-footer">

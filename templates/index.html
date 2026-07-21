@@ -1,6 +1,80 @@
-{% extends 'layout.html' %}
-{% block title %}Inicio{% endblock %}
+{% extends 'admin_layout.html' %}
+{% block title %}- Inicio{% endblock %}
 
 {% block content %}
+<main class="dashboard-main">
+    <header class="page-header">
+        <div>
+            <h1 class="title">Panel de Casa de Paz</h1>
+            <p class="subtitle">Bienvenido, {{ usuario }}. Aquí puedes generar y ver tus reportes.</p>
+        </div>
+    </header>
 
+    <section class="summary-grid">
+        <a href="/generar_reporte" class="summary-card action-card">
+            <span class="material-symbols-outlined card-icon text-primary">add_circle</span>
+            <h3 class="card-title">Nuevo Reporte</h3>
+            <p class="card-subtitle">Registrar reunión de esta semana</p>
+        </a>
+
+        <article class="summary-card">
+            <span class="material-symbols-outlined card-icon text-secondary">history</span>
+            <h3 class="card-title">Mis Reportes</h3>
+            <div class="card-number">0</div>
+            <span class="material-symbols-outlined watermark-icon">description</span>
+        </article>
+
+        <article class="summary-card">
+            <span class="material-symbols-outlined card-icon text-primary-container">groups</span>
+            <h3 class="card-title">Asistencia Promedio</h3>
+            <div class="card-number">—</div>
+            <span class="material-symbols-outlined watermark-icon">people</span>
+        </article>
+
+        <article class="summary-card">
+            <span class="material-symbols-outlined card-icon text-secondary">attach_money</span>
+            <h3 class="card-title">Ofrendas Totales</h3>
+            <div class="card-number">$0.00</div>
+            <span class="material-symbols-outlined watermark-icon">savings</span>
+        </article>
+    </section>
+
+    <section class="bottom-dashboard-grid">
+        
+        <article class="status-card" role="region" aria-labelledby="mis-reportes-title">
+            <div class="status-card-header">
+                <div>
+                    <h2 id="mis-reportes-title" class="section-title">Últimos Reportes</h2>
+                    <p class="section-subtitle">No hay reportes registrados aún.</p>
+                </div>
+                <a href="/historial" class="link-olive">Ver Historial</a>
+            </div>
+            
+            <div class="empty-state">
+                <div class="empty-icon-wrapper">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                </div>
+                <p class="empty-text">Parece que aún no has comenzado. Tus reportes semanales aparecerán aquí una vez que los registres.</p>
+                
+                <a href="/generar_reporte" class="btn-maroon">
+                    <span class="material-symbols-outlined" style="font-size: 1.2rem;">add</span> 
+                    Crear mi primer reporte
+                </a>
+            </div>
+        </article>
+
+        <aside class="reminder-card">
+            <span class="material-symbols-outlined watermark-warning">error</span>
+            <h3 class="reminder-title">Recordatorio</h3>
+            <p class="reminder-text">Recuerda subir tus reportes antes del domingo a las 6:00 PM para la revisión semanal.</p>
+            
+            <div class="reminder-footer">
+                <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span>
+                Próximo cierre: 3 días
+            </div>
+        </aside>
+
+    </section>
+</main>
+<script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
 {% endblock %}

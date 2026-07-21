@@ -1,9 +1,42 @@
 <header>
   <div>
+    {% if is_supervisor == True %}
+    <a href="/supervisor/dashboard" class="logo"></a>
+    {% elif is_cdp == True %}
+    <a href="/" class="logo"></a>
+    {% else %}
     <a href="/admin/dashboard" class="logo"></a>
+    {% endif %}
   </div>
   
   <div class="link-container">
+    {% if is_supervisor == True %}
+    <a href="/supervisor/dashboard" class="botones">
+      <span class="texto">Dashboard</span>
+    </a>
+    <a href="/supervisor/estructura" class="botones">
+      <span class="texto">Estructura</span>
+    </a>
+    <a href="/supervisor/reportes" class="botones">
+      <span class="texto">Reportes</span>
+    </a>
+    <a href="/supervisor/lider" class="botones">
+      <span class="texto">Lideres</span>
+    </a>
+    <a href="/supervisor/perfil" class="botones">
+      <span class="texto">Perfil</span>
+    </a>
+    {% elif is_cdp == True %}
+    <a href="/" class="botones">
+      <span class="texto">Inicio</span>
+    </a>
+    <a href="/generar_reporte" class="botones">
+      <span class="texto">Generar Reporte</span>
+    </a>
+    <a href="/perfil" class="botones">
+      <span class="texto">Perfil</span>
+    </a>
+    {% else %}
     <a href="/admin/dashboard" class="botones">
       <span class="texto">Dashboard</span>
     </a>
@@ -22,10 +55,11 @@
     <a href="/admin/perfil" class="botones">
       <span class="texto">Perfil</span>
     </a>
+    {% endif %}
   </div>
 
   <div class="">
-    <a href="/logout" class="botones">
+<a href="/logout" class="botones">
       <img src="{{ url_for('static', filename='iconos/logout.webp') }}" alt="Cerrar Sesión" class="icono">
       <span class="texto">Cerrar Sesión</span>
     </a>

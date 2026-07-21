@@ -10,8 +10,13 @@
     <!-- Header Section -->
     <header class="page-header">
         <div>
+            {% if is_supervisor %}
+            <h1 class="title">Panel de Supervisión Regional</h1>
+            <p class="subtitle">Monitoreo de actividad de tu red. Bienvenido, {{ usuario }}.</p>
+            {% else %}
             <h1 class="title">Panel Administrativo</h1>
             <p class="subtitle">Bienvenido de vuelta. Aquí está el resumen de la actividad ministerial.</p>
+            {% endif %}
         </div>
     </header>
 
