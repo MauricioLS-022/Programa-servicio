@@ -70,7 +70,7 @@ def generar():
 
     usuario = session.get("usuario")
     rol = session.get("rol")
-    return render_template('generar reporte.html', usuario=usuario, rol=rol, is_cdp=True)
+    return render_template('generar_reporte.html', usuario=usuario, rol=rol, is_cdp=True)
 
 # @app.route('/perfil',methods=['GET','POST']) # ruta para vista de perfil de lider
 @app.route('/admin/perfil',methods=['GET','POST']) # ruta para vista de perfil de admin
