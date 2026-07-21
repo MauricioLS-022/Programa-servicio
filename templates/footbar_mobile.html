@@ -2,7 +2,7 @@
 
 <nav class="mobile-bottom-nav">
     {% if is_supervisor == True %}
-    <a href="/supervisor" class="mobile-nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
+    <a href="/supervisor/dashboard" class="mobile-nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dash</span>
     </a>
