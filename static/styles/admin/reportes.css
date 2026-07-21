@@ -32,7 +32,7 @@ body {
     background-color: var(--surface);
     color: var(--on-surface);
     height: 100vh; /* Altura total de la ventana */
-    overflow: hidden; /* Ocultar scroll */
+    overflow: auto; /* Ocultar scroll */
     display: flex;
     flex-direction: column;
 }

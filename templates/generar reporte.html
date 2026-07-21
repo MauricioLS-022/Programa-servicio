@@ -1,95 +1,164 @@
 {% extends 'admin_layout.html' %}
-{% block title %}Generar Reporte{% endblock %}
+{% block title %}- Generar Reporte{% endblock %}
 {% block custom_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/form.css') }}">
 {% endblock %}
 
 {% block content %}
+
+<style>
+    .main-content {
+        margin: 0 auto;
+        max-width: 900px;
+    }
+
+    @media (min-width: 768px) {
+    .form-header-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+}
+</style>
 <main class="crud-container">
-    <header class="form-header">
-        <h1>Generar Reporte</h1>
+    <header class="form-header-row">
+        <div>
+            <h1 class="form-title">Generar Reporte</h1>
+            <p class="form-description">Registra los datos y estadísticas de la reunión de tu Casa de Paz correspondiente a esta semana.</p>
+        </div>
     </header>
+
     <form class="crud-form" method="POST">
+        <span class="material-symbols-outlined form-watermark">edit_document</span>
+
         <div class="form-grid">
-            <div class="form-group icon-left full-width">
-                <label>Anfitrión</label>
-                <span class="input-icon material-symbols-outlined">person</span>
-                <input type="text" name="anfitrion" placeholder="Nombre del anfitrión" required>
+            
+            <div class="form-group full-width">
+                <label>Líder que reporta</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">badge</span>
+                    <select name="lider_id" required>
+                        <option value="" disabled selected>Selecciona el líder encargado...</option>
+                        {% for lider in lideres %}
+                            <option value="{{ lider.id }}">{{ lider.nombre }} {{ lider.apellido }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            <div class="form-group icon-left">
-                <label>Niños</label>
-                <span class="input-icon material-symbols-outlined">child_care</span>
-                <input type="number" name="ninos" placeholder="Número de niños" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Regulares</label>
-                <span class="input-icon material-symbols-outlined">group</span>
-                <input type="number" name="regulares" placeholder="Número de regulares" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Visitas</label>
-                <span class="input-icon material-symbols-outlined">person_add</span>
-                <input type="number" name="visitas" placeholder="Número de visitas" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Comprometidos</label>
-                <span class="input-icon material-symbols-outlined">thumb_up</span>
-                <input type="number" name="comprometidos" placeholder="Número de comprometidos" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Asistencia</label>
-                <span class="input-icon material-symbols-outlined">check_circle</span>
-                <input type="number" name="asistencia" placeholder="Cuántos asistieron" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Reconciliaciones</label>
-                <span class="input-icon material-symbols-outlined">favorite</span>
-                <input type="number" name="reconciliaciones" placeholder="Cuántos se reconciliaron" required>
-            </div>
-            <div class="form-group icon-left">
-                <label>Confesiones de fe</label>
-                <span class="input-icon material-symbols-outlined">book</span>
-                <input type="number" name="confesiones" placeholder="Confesiones de fe" required>
-            </div>
-            <div class="form-group icon-left full-width">
-                <label>Cesta de amor</label>
-                <span class="input-icon material-symbols-outlined">shopping_basket</span>
-                <input type="text" name="cesta" placeholder="Cesta de amor" required>
-            </div>
-            <div class="form-group icon-left">
+
+            <div class="form-group">
                 <label>Fecha</label>
-                <span class="input-icon material-symbols-outlined">calendar_today</span>
-                <input type="date" name="fecha" required>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">calendar_today</span>
+                    <input type="date" name="fecha" required>
+                </div>
             </div>
-            <div class="form-group icon-left">
+            <div class="form-group">
+                <label>Asistencia Total</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">check_circle</span>
+                    <input type="number" name="asistencia" placeholder="Cuántos asistieron" required>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label>Hora de inicio</label>
-                <span class="input-icon material-symbols-outlined">access_time</span>
-                <input type="time" name="horaini" required>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">access_time</span>
+                    <input type="time" name="horaini" required>
+                </div>
             </div>
-            <div class="form-group icon-left">
+            <div class="form-group">
                 <label>Hora de finalización</label>
-                <span class="input-icon material-symbols-outlined">access_time</span>
-                <input type="time" name="horafin" required>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">access_time</span>
+                    <input type="time" name="horafin" required>
+                </div>
             </div>
-            <div class="form-group icon-left full-width">
-                <label>Tema de la clase</label>
-                <span class="input-icon material-symbols-outlined">subject</span>
-                <input type="text" name="tema" placeholder="Tema de la clase" required>
+
+            <div class="form-group">
+                <label>Regulares</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">group</span>
+                    <input type="number" name="regulares" placeholder="Número de regulares" required>
+                </div>
             </div>
-            <div class="form-group icon-left full-width">
-                <label>Observaciones</label>
-                <span class="input-icon material-symbols-outlined">notes</span>
-                <input type="text" name="observaciones" placeholder="Observaciones">
+            <div class="form-group">
+                <label>Niños</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">child_care</span>
+                    <input type="number" name="ninos" placeholder="Número de niños" required>
+                </div>
             </div>
-            <div class="form-group icon-left full-width">
+
+            <div class="form-group">
+                <label>Visitas</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">person_add</span>
+                    <input type="number" name="visitas" placeholder="Número de visitas" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Comprometidos</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">thumb_up</span>
+                    <input type="number" name="comprometidos" placeholder="Número de comprometidos" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Reconciliaciones</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">favorite</span>
+                    <input type="number" name="reconciliaciones" placeholder="Cuántos se reconciliaron" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Confesiones de fe</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">book</span>
+                    <input type="number" name="confesiones" placeholder="Confesiones de fe" required>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label>Ofrendas</label>
-                <span class="input-icon material-symbols-outlined">attach_money</span>
-                <input type="number" step="0.01" name="ofrendas" placeholder="xxx.xx Bs" required>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">attach_money</span>
+                    <input type="number" step="0.01" name="ofrendas" placeholder="0.00 Bs" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Cesta de amor</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">shopping_basket</span>
+                    <input type="text" name="cesta" placeholder="Descripción de la cesta" required>
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label>Tema de la clase</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">subject</span>
+                    <input type="text" name="tema" placeholder="Ej. El poder del perdón" required>
+                </div>
+            </div>
+            <div class="form-group full-width">
+                <label>Observaciones</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">notes</span>
+                    <textarea name="observaciones" placeholder="Escribe aquí cualquier eventualidad o testimonio..."></textarea>
+                </div>
             </div>
         </div>
+
         <div class="form-actions">
-            <button type="submit" class="btn-new"><span class="material-symbols-outlined">send</span> Enviar</button>
+            <div class="actions-left">
+                <button type="submit" class="btn-save">
+                    <span class="material-symbols-outlined">send</span> Enviar Reporte
+                </button>
+                <a href="/dashboard" class="btn-cancel">Cancelar</a>
+            </div>
         </div>
     </form>
 </main>

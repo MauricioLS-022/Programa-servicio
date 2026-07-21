@@ -1,7 +1,7 @@
 
 
 <nav class="mobile-bottom-nav">
-    {% if rol == 'supervisor' %}
+    {% if is_supervisor == True %}
     <a href="/supervisor" class="mobile-nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dash</span>
@@ -18,9 +18,9 @@
         <span class="material-symbols-outlined">person</span>
         <span>Mí</span>
     </a>
-    {% elif rol == 'cdp' %}
+    {% elif is_cdp == True %}
     <a href="/" class="mobile-nav-item {{ 'active' if request.path == '/' else '' }}">
-        <span class="material-symbols-outlined">dashboard</span>
+        <span class="material-symbols-outlined">home</span>
         <span>Inicio</span>
     </a>
     <a href="/generar_reporte" class="mobile-nav-item {{ 'active' if request.path == '/generar_reporte' else '' }}">

@@ -3,11 +3,7 @@
 {% block title %}Perfil{% endblock %}
 
 {% block custom_styles %}
-{% if rol == 'admin' or rol == 'supervisor' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/admin.css') }}">
-{% else %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-{% endif %}
 {% endblock %}
 
 {% block content %}
