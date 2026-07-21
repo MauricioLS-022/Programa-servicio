@@ -408,3 +408,74 @@ body {
     color: var(--text-main, #2b1111); /* Mayor legibilidad en la descripción corta */
     padding: 0 1rem; 
 }
+@media (max-width: 1100px) {
+    .estructura-main {
+        height: auto;
+        min-height: calc(100vh - 70px);
+        padding: 1rem;
+    }
+
+    .estructura-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .redes-sidebar {
+        order: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        width: fit-content;
+    }
+
+    .casas-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .search-bar {
+        max-width: 100%;
+    }
+
+    .casas-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .estructura-main {
+        padding: 0.85rem;
+    }
+
+    .redes-sidebar,
+    .casas-section {
+        padding: 1rem;
+    }
+
+    .casa-card,
+    .casa-add-card {
+        padding: 1.15rem;
+    }
+
+    .casa-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .impact-card {
+        margin-top: 1rem;
+    }
+}
