@@ -65,7 +65,7 @@ body {
     background-color: var(--surface);
     color: var(--on-surface);
     height: 100vh;
-    overflow: hidden; 
+    overflow:auto; 
     display: flex;
     flex-direction: column;
 }
@@ -259,6 +259,7 @@ body {
     padding: 1.25rem 1.5rem 0.75rem 1.25rem; 
     border-bottom: 1px solid var(--outline-variant);
     margin-bottom: 1.5rem;
+    border-radius: 1rem;
 }
 .section-title { font-family: var(--font-headline); font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 .section-subtitle { 

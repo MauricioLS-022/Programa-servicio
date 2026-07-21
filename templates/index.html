@@ -63,18 +63,50 @@
             </div>
         </article>
 
-        <aside class="reminder-card">
-            <span class="material-symbols-outlined watermark-warning">error</span>
-            <h3 class="reminder-title">Recordatorio</h3>
-            <p class="reminder-text">Recuerda subir tus reportes antes del domingo a las 6:00 PM para la revisión semanal.</p>
+        <div class="right-sidebar-column">
             
-            <div class="reminder-footer">
-                <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span>
-                Próximo cierre: 3 días
-            </div>
-        </aside>
+            <aside class="reminder-card">
+                <span class="material-symbols-outlined watermark-warning">error</span>
+                <h3 class="reminder-title">Recordatorio</h3>
+                <p class="reminder-text">Recuerda subir tus reportes antes del domingo a las 6:00 PM para la revisión semanal.</p>
+                
+                <div class="reminder-footer">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span>
+                    Próximo cierre: 3 días
+                </div>
+            </aside>
 
+            <aside class="team-card">
+                <div class="team-header">
+                    <span class="material-symbols-outlined team-icon">badge</span>
+                    <h3 class="team-title">Mi Equipo</h3>
+                </div>
+                
+                <ul class="team-list">
+                    <li class="team-member">
+                        <div class="member-avatar principal">
+                            <span class="material-symbols-outlined">person</span>
+                        </div>
+                        <div class="member-info">
+                            <p class="member-name">Carlos Méndez</p>
+                            <p class="member-role">Líder Principal</p>
+                        </div>
+                    </li>
+                    <li class="team-member">
+                        <div class="member-avatar sublider">
+                            <span class="material-symbols-outlined">person</span>
+                        </div>
+                        <div class="member-info">
+                            <p class="member-name">Ana Gómez</p>
+                            <p class="member-role">Sublíder</p>
+                        </div>
+                    </li>
+                </ul>
+            </aside>
+
+        </div>
     </section>
 </main>
+
 <script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
 {% endblock %}

@@ -25,17 +25,17 @@ def role_required(*roles):
 # @role_required("cdp")
 def index():
     # Require login
-    if "usuario" not in session:
-        return redirect(url_for("login"))
+    # if "usuario" not in session:
+    #     return redirect(url_for("login"))
 
-    connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
-    C=connect.cursor()
-    try:
+    # connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
+    # C=connect.cursor()
+    # try:
         usuario = session.get("usuario")
         rol = session.get("rol")
         return render_template('index.html', usuario=usuario, rol=rol, is_cdp=True)
-    finally:
-        connect.close()
+    # finally:
+        # connect.close()
 
 @app.route('/generar_reporte',methods=['GET','POST'])
 # @role_required("cdp")
@@ -65,12 +65,12 @@ def generar():
         print(val)
 
     # Require login for report generation view
-    if "usuario" not in session:
-        return redirect(url_for("login"))
+    # if "usuario" not in session:
+    #     return redirect(url_for("login"))
 
     usuario = session.get("usuario")
     rol = session.get("rol")
-    return render_template('generar reporte.html', usuario=usuario, rol=rol, is_cdp=True)
+    return render_template('generar_reporte.html', usuario=usuario, rol=rol, is_cdp=True)
 
 # @app.route('/perfil',methods=['GET','POST']) # ruta para vista de perfil de lider
 @app.route('/admin/perfil',methods=['GET','POST']) # ruta para vista de perfil de admin

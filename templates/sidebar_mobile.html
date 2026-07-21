@@ -9,7 +9,7 @@
             </div>
             <div class="brand-text">
                 <h2 class="brand-title">Vino Nuevo</h2>
-                {% if rol == 'supervisor' %}
+                {% if is_supervisor == True %}
                 <p class="brand-subtitle">Supervisión Regional</p>
                 {% else %}
                 <p class="brand-subtitle">Administración</p>
@@ -18,7 +18,7 @@
         </div>
 
         <nav class="sidebar-nav">
-            {% if rol == 'supervisor' %}
+            {% if is_supervisor == True %}
             <a href="/supervisor" class="nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
@@ -31,11 +31,15 @@
                 <span class="material-symbols-outlined">analytics</span>
                 <span>Reportes</span>
             </a>
+            <a href="/supervisor/lider" class="nav-item {{ 'active' if request.path == '/supervisor/lider' else '' }}">
+                <span class="material-symbols-outlined">leaderboard</span>
+                <span>Líderes</span>
+            </a>
             <a href="/supervisor/perfil" class="nav-item {{ 'active' if request.path == '/supervisor/perfil' else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
-            {% else %}
+            {% elif is_admin == True %}
             <a href="/admin/dashboard" class="nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
@@ -58,6 +62,20 @@
                 <span>Reportes</span>
             </a>
             <a href="/admin/perfil" class="nav-item {{ 'active' if request.path == '/admin/perfil' else '' }}">
+                <span class="material-symbols-outlined">person</span>
+                <span>Perfil</span>
+            </a>
+
+            {% else %}
+            <a href="/" class="nav-item {{ 'active' if request.path == '/' else '' }}">
+                <span class="material-symbols-outlined">home</span>
+                <span>Inicio</span>
+            </a>
+            <a href="/generar_reporte" class="nav-item {{ 'active' if request.path == '/generar_reporte' else '' }}">
+                <span class="material-symbols-outlined">description</span>
+                <span>Generar Reporte</span>
+            </a>
+            <a href="/perfil" class="nav-item {{ 'active' if request.path == '/perfil' else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
