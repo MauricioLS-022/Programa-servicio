@@ -386,9 +386,40 @@ tbody tr:hover {
     .leader-table { min-width: 100%; }
 }
 
+@media (max-width: 1200px) {
+    .leadership-page { padding: 1.4rem; }
+}
+
+@media (max-width: 900px) {
+    .page-header {
+        gap: 1rem;
+    }
+
+    .table-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .leader-table {
+        min-width: 760px;
+    }
+
+    .footer-info {
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 640px) {
+    .leadership-page { padding: 1rem; }
     .page-header { gap: 1rem; }
     .filter-section { padding: 1rem; }
+    .table-header { padding: 1.1rem 1rem; }
     thead th, tbody td { padding: 1rem 0.9rem; }
     .pagination { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .footer-actions { width: 100%; }
+    .btn-outline { width: 100%; justify-content: center; }
 }

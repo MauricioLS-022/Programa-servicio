@@ -1,13 +1,37 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import pymysql
 import os
-#from dotenv import load_dotenv
-#import requests
-#from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
 
-app=Flask(__name__)
-# Use environment secret if provided, otherwise a default for local development
-app.secret_key=os.getenv("SECRET_KEY") or 'dev_secret'
+from config import config
+
+load_dotenv()
+
+env = os.getenv('FLASK_ENV', 'development')
+app = Flask(__name__)
+app.config.from_object(config[env])
+app.secret_key = app.config['SECRET_KEY']
+
+DB_AVAILABLE = False
+
+def get_db_connection():
+    """Intenta conectar a MySQL. Si falla, retorna None (modo demo sin BD)."""
+    global DB_AVAILABLE
+    try:
+        conn = pymysql.connect(
+            host=app.config['DB_HOST'],
+            port=app.config['DB_PORT'],
+            user=app.config['DB_USER'],
+            password=app.config['DB_PASSWORD'],
+            database=app.config['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        DB_AVAILABLE = True
+        return conn
+    except Exception as e:
+        print(f"[DB] No disponible (modo demo): {e}")
+        DB_AVAILABLE = False
+        return None
 
 def role_required(*roles):
     def decorator(f):
@@ -77,13 +101,17 @@ def generar():
 # @app.route('/supervisor/perfil',methods=['GET','POST']) # ruta para vista de perfil de supervisor
 @role_required("cdp","admin","supervisor")
 def perfil():
-    connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
-    C=connect.cursor()
-
-    usuario=session["usuario"]
-    rol=session["rol"]
-
-    return render_template('perfil.html',usuario=usuario,rol=rol, is_admin=True)
+    usuario = session["usuario"]
+    rol = session["rol"]
+    
+    if DB_AVAILABLE:
+        connect = get_db_connection()
+        if connect:
+            C = connect.cursor()
+            # Aquí podrías hacer consultas a la BD
+            connect.close()
+    
+    return render_template('perfil.html', usuario=usuario, rol=rol, is_admin=True)
 
 @app.route('/admin/usuario')
 def admin_usuarios():
@@ -133,23 +161,42 @@ def login():
         usuario=request.form['usuario']
         contrasena=request.form['contrasena']
 
-        connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
-        C=connect.cursor()
+        if DB_AVAILABLE:
+            connect = get_db_connection()
+            if connect:
+                C = connect.cursor()
+                C.execute("SELECT username,tipo_usuario FROM usuario WHERE username = %s and password = %s",(usuario,contrasena))
+                r = C.fetchone()
+                connect.close()
 
-        C.execute("SELECT username,tipo_usuario FROM usuario WHERE username = %s and password = %s",(usuario,contrasena))
-
-        r=C.fetchone()
-
-        if not r:
-            p="El usuario no se encuentra registrado"
+                if not r:
+                    p="El usuario no se encuentra registrado"
+                else:
+                    session["usuario"]=r['username']
+                    session["rol"]=r['tipo_usuario']
+                    if r['tipo_usuario']=="admin":
+                        return redirect(url_for("admin_dashboard"))
+                    elif r['tipo_usuario']=="supervisor":
+                        return redirect(url_for("supervisor_dashboard"))
+                    return redirect(url_for("index"))
+            else:
+                p="Error de conexión a la base de datos"
         else:
-            session["usuario"]=r[0]
-            session["rol"]=r[1]
-            if r[1]=="admin":
+            # Modo demo sin BD: login simulado
+            if usuario == "admin" and contrasena == "admin":
+                session["usuario"] = "admin"
+                session["rol"] = "admin"
                 return redirect(url_for("admin_dashboard"))
-            elif r[1]=="supervisor":
+            elif usuario == "supervisor" and contrasena == "supervisor":
+                session["usuario"] = "supervisor"
+                session["rol"] = "supervisor"
                 return redirect(url_for("supervisor_dashboard"))
-            return redirect(url_for("index"))
+            elif usuario and contrasena:
+                session["usuario"] = usuario
+                session["rol"] = "cdp"
+                return redirect(url_for("index"))
+            else:
+                p="Modo demo: usa admin/admin, supervisor/supervisor o cualquier usuario/contraseña"
 
     return render_template('login.html',p=p)
 
@@ -234,4 +281,8 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(
+        host=app.config.get('APP_HOST', app.config.get('HOST', '0.0.0.0')),
+        port=app.config.get('APP_PORT', app.config.get('PORT', 5000)),
+        debug=app.config.get('DEBUG', True)
+    )

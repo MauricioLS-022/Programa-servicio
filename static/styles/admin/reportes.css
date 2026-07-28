@@ -417,3 +417,75 @@ tbody tr:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(57, 0, 2, 0.08);
 }
+
+@media (max-width: 1024px) {
+    .container {
+        height: auto;
+        min-height: calc(100vh - 70px);
+        padding: 1rem 1.25rem;
+    }
+
+    .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-header,
+    .footer-info {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .date-inputs {
+        flex-wrap: wrap;
+    }
+
+    .btn-filter {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 760px;
+    }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 0.85rem;
+        gap: 1rem;
+    }
+
+    .hero-title {
+        font-size: 1.4rem;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-section {
+        padding: 1rem;
+    }
+
+    .footer-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .pagination {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}

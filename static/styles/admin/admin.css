@@ -242,6 +242,7 @@ header:not(.mobile-header) {
 
 .sidebar-footer {
     margin-top: auto;
+    margin-bottom: 10rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
