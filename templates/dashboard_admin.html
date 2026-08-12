@@ -20,78 +20,210 @@
         </div>
     </header>
 
-    <!-- Summary Cards -->
-    <section class="summary-grid">
-        <article class="summary-card fade-in-1">
-            <span class="material-symbols-outlined card-icon text-primary">description</span>
-            <h3 class="card-title">Total Reportes</h3>
-            <div class="card-number">1,248</div>
-            <span class="material-symbols-outlined watermark-icon">raven</span>
-        </article>
+    <div class="view-tabs">
+        <button class="view-tab active" data-view="general">General</button>
+        <button class="view-tab" data-view="red">Por Red</button>
+        <button class="view-tab" data-view="cdp">Por Casa de Paz</button>
+    </div>
 
-        <article class="summary-card fade-in-2">
-            <span class="material-symbols-outlined card-icon text-secondary">groups</span>
-            <h3 class="card-title">Usuarios Líderes</h3>
-            <div class="card-number">86</div>
-            <span class="material-symbols-outlined watermark-icon">raven</span>
-        </article>
-
-        <article class="summary-card fade-in-3">
-            <span class="material-symbols-outlined card-icon text-primary-container">home_work</span>
-            <h3 class="card-title">Casas de Paz</h3>
-            <div class="card-number">42</div>
-            <span class="material-symbols-outlined watermark-icon">raven</span>
-        </article>
-
-        <article class="summary-card fade-in-4">
-            <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
-            <h3 class="card-title">Nuevas Reconciliaciones</h3>
-            <div class="card-number">312</div>
-            <span class="material-symbols-outlined watermark-icon">raven</span>
-        </article>
-    </section>
-
-    <!-- Status and Alerts Row -->
-    <section class="status-grid">
-        <article class="status-card fade-in-5" role="region" aria-labelledby="reportes-hoy-title">
-            <div class="status-card-header">
-                <h2 id="reportes-hoy-title" class="section-title">Reportes de Hoy (Miércoles)</h2>
-                <p class="section-subtitle">32 de 42 Casas de Paz han completado su reporte semanal.</p>
-            </div>
-            <div class="status-card-body">
-                <div class="progress-ring" role="img" aria-label="76 por ciento de reportes completados">
-                    <span class="progress-value">76%</span>
-                </div>
-                <div class="status-details">
-                    <p class="status-note">Crecimiento estable comparado con ayer.</p>
-                </div>
-            </div>
-        </article>
-
-        <aside class="warning-card fade-in-6" role="region" aria-labelledby="alertas-seguimiento-title">
-            <div class="status-card-header">
-                <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
-            </div>
-
-            <div class="alert-list">
-                <article class="alert-item">
-                    <div>
-                        <h4>Casa Bethel</h4>
-                        <p>2 días sin reporte</p>
-                    </div>
-                    <button class="btn-full-outline">Contactar</button>
+    <div class="view-panels">
+        <section class="view-panel view-general active">
+            <!-- Summary Cards -->
+            <section class="summary-grid">
+                <article class="summary-card fade-in-1">
+                    <span class="material-symbols-outlined card-icon text-primary">description</span>
+                    <h3 class="card-title">Total Reportes</h3>
+                    <div class="card-number">1,248</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
                 </article>
 
-                <article class="alert-item">
-                    <div>
-                        <h4>Casa de Oración Sur</h4>
-                        <p>Revisión de asistencia pendiente</p>
-                    </div>
-                    <button class="btn-full-outline">Contactar</button>
+                <article class="summary-card fade-in-2">
+                    <span class="material-symbols-outlined card-icon text-secondary">groups</span>
+                    <h3 class="card-title">Usuarios Líderes</h3>
+                    <div class="card-number">86</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
                 </article>
+
+                <article class="summary-card fade-in-3">
+                    <span class="material-symbols-outlined card-icon text-primary-container">home_work</span>
+                    <h3 class="card-title">Casas de Paz</h3>
+                    <div class="card-number">42</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
+                </article>
+
+                <article class="summary-card fade-in-4">
+                    <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
+                    <h3 class="card-title">Nuevas Reconciliaciones</h3>
+                    <div class="card-number">312</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
+                </article>
+            </section>
+
+            <!-- Status and Alerts Row -->
+            <section class="status-grid">
+                <article class="status-card fade-in-5" role="region" aria-labelledby="reportes-hoy-title">
+                    <div class="status-card-header">
+                        <h2 id="reportes-hoy-title" class="section-title">Reportes de Hoy (Miércoles)</h2>
+                        <p class="section-subtitle">32 de 42 Casas de Paz han completado su reporte semanal.</p>
+                    </div>
+                    <div class="status-card-body">
+                        <div class="progress-ring" role="img" aria-label="76 por ciento de reportes completados">
+                            <span class="progress-value">76%</span>
+                        </div>
+                        <div class="status-details">
+                            <p class="status-note">Crecimiento estable comparado con ayer.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="warning-card fade-in-6" role="region" aria-labelledby="alertas-seguimiento-title">
+                    <div class="status-card-header">
+                        <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
+                    </div>
+
+                    <div class="alert-list">
+                        <article class="alert-item">
+                            <div>
+                                <h4>Casa Bethel</h4>
+                                <p>2 días sin reporte</p>
+                            </div>
+                            <button class="btn-full-outline">Contactar</button>
+                        </article>
+
+                        <article class="alert-item">
+                            <div>
+                                <h4>Casa de Oración Sur</h4>
+                                <p>Revisión de asistencia pendiente</p>
+                            </div>
+                            <button class="btn-full-outline">Contactar</button>
+                        </article>
+                    </div>
+                </aside>
+            </section>
+        </section>
+
+        <section class="view-panel view-red">
+            <div class="section-header-row">
+                <div>
+                    <h2 class="section-title">Resumen por Red</h2>
+                    <p class="section-subtitle">Comparación de actividad y reporte por red ministerial.</p>
+                </div>
             </div>
-        </aside>
-    </section>
+
+            <section class="summary-grid">
+                <article class="summary-card fade-in-1">
+                    <span class="material-symbols-outlined card-icon text-primary">public</span>
+                    <h3 class="card-title">Red Hebrón</h3>
+                    <div class="card-number">14 Casas</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
+                </article>
+
+                <article class="summary-card fade-in-2">
+                    <span class="material-symbols-outlined card-icon text-secondary">location_on</span>
+                    <h3 class="card-title">Red Sur</h3>
+                    <div class="card-number">8 Casas</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
+                </article>
+
+                <article class="summary-card fade-in-3">
+                    <span class="material-symbols-outlined card-icon text-primary-container">share_location</span>
+                    <h3 class="card-title">Red Central</h3>
+                    <div class="card-number">11 Casas</div>
+                    <span class="material-symbols-outlined watermark-icon">raven</span>
+                </article>
+            </section>
+
+            <section class="status-grid">
+                <article class="status-card fade-in-5" role="region" aria-labelledby="red-activity-title">
+                    <div class="status-card-header">
+                        <h2 id="red-activity-title" class="section-title">Actividad reciente por red</h2>
+                        <p class="section-subtitle">Tasa de reporte semanal y hitos clave para cada comunidad.</p>
+                    </div>
+                    <div class="status-card-body">
+                        <div class="progress-ring" role="img" aria-label="Promedio de reportes del 78 por ciento">
+                            <span class="progress-value">78%</span>
+                        </div>
+                        <div class="status-details">
+                            <p class="status-note">Red Hebrón lidera con 92% de reportes completos.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="warning-card fade-in-6" role="region" aria-labelledby="red-alertas-title">
+                    <div class="status-card-header">
+                        <h2 id="red-alertas-title" class="section-title">Mejores oportunidades</h2>
+                    </div>
+
+                    <div class="alert-list">
+                        <article class="alert-item">
+                            <div>
+                                <h4>Red Sur</h4>
+                                <p>1 red con apoyo pastoral pendiente</p>
+                            </div>
+                        </article>
+
+                        <article class="alert-item">
+                            <div>
+                                <h4>Red Central</h4>
+                                <p>3 Casas de Paz con reportes incompletos</p>
+                            </div>
+                        </article>
+                    </div>
+                </aside>
+            </section>
+        </section>
+
+        <section class="view-panel view-cdp">
+            <div class="section-header-row">
+                <div>
+                    <h2 class="section-title">Resumen por Casa de Paz</h2>
+                    <p class="section-subtitle">Monitorea el estado de cada Casa de Paz y su reporte semanal.</p>
+                </div>
+            </div>
+
+            <section class="status-grid custom-cdp-grid">
+                <article class="status-card fade-in-5 cdp-summary-card" role="region" aria-labelledby="cdp-overview-title">
+                    <div class="status-card-header">
+                        <h2 id="cdp-overview-title" class="section-title">Casas de Paz en seguimiento</h2>
+                        <p class="section-subtitle">42 Casas de Paz activas, 36 con reporte enviado.</p>
+                    </div>
+                    <div class="status-card-body">
+                        <div class="progress-ring" role="img" aria-label="85 por ciento de Casas de Paz con reporte completo">
+                            <span class="progress-value">85%</span>
+                        </div>
+                        <div class="status-details">
+                            <p class="status-note">Solo 6 casas requieren acompañamiento.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="warning-card fade-in-6 cdp-list-card" role="region" aria-labelledby="cdp-list-title">
+                    <div class="status-card-header">
+                        <h2 id="cdp-list-title" class="section-title">Últimas Casas de Paz</h2>
+                        <p class="section-subtitle">Estatus, asistencia y reportes recientes.</p>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="cdp-table">
+                            <thead>
+                                <tr>
+                                    <th>Casa de Paz</th>
+                                    <th>Red</th>
+                                    <th>Asistencia</th>
+                                    <th>Reporte</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Casa Bethel</td><td>Hebrón</td><td>47</td><td><span class="status-badge status-complete">Completo</span></td></tr>
+                                <tr><td>Casa de Oración Sur</td><td>Sur</td><td>29</td><td><span class="status-badge status-warning">Pendiente</span></td></tr>
+                                <tr><td>Casa Nueva Vida</td><td>Central</td><td>35</td><td><span class="status-badge status-complete">Completo</span></td></tr>
+                                <tr><td>Casa Luz</td><td>Hebrón</td><td>22</td><td><span class="status-badge status-alert">Sin reporte</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+        </section>
+    </div>
 
     <!-- Main Content Area -->
     <div class="dashboard-grid">

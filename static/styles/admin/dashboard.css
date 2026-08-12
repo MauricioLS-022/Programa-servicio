@@ -91,6 +91,113 @@ body {
     font-size: 0.8rem;
 }
 
+.view-tabs {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.view-tab {
+    border: 1px solid rgba(137, 114, 111, 0.2);
+    border-radius: 999px;
+    background: #f8f3f2;
+    color: var(--on-surface-variant);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-tab:hover {
+    color: var(--primary);
+    border-color: rgba(57, 0, 2, 0.25);
+}
+
+.view-tab.active {
+    background: linear-gradient(90deg, var(--primary-container), var(--primary));
+    color: white;
+    box-shadow: 0 8px 18px rgba(57, 0, 2, 0.15);
+}
+
+.view-panel {
+    display: none;
+}
+
+.view-panel.active {
+    display: block;
+}
+
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.custom-cdp-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1rem;
+}
+
+.cdp-summary-card,
+.cdp-list-card {
+    border-radius: 1rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.cdp-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cdp-table th,
+.cdp-table td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid rgba(221, 192, 189, 0.25);
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--on-surface-variant);
+}
+
+.cdp-table th {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.status-complete {
+    background: rgba(35, 25, 25, 0.08);
+    color: #2b0000;
+}
+
+.status-warning {
+    background: rgba(255, 197, 119, 0.2);
+    color: #7a4a00;
+}
+
+.status-alert {
+    background: rgba(178, 26, 26, 0.12);
+    color: #7f1d1d;
+}
+
 /* ==========================================================================
    Tarjetas de Resumen (Top - 4 columnas)
    ========================================================================== */
