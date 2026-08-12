@@ -52,6 +52,7 @@ body {
     margin: 15px auto; /* Centra el contenido */
     z-index: 10;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave para destacar el contenido */
+    border-radius: 1rem;
 }
 
 /* Header de la página (¡Sin fondo ni sombras!) */

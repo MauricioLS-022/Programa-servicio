@@ -50,7 +50,7 @@ def role_required(*roles):
 def index():
     # Require login
     # if "usuario" not in session:
-    #     return redirect(url_for("login"))
+        # return redirect(url_for("login"))
 
     # connect=pymysql.connect(host="localhost",user="root",passwd="",database="serv_comunitario")
     # C=connect.cursor()
@@ -123,7 +123,137 @@ def editar_usuario():
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
-    return render_template('dashboard_admin.html', is_admin=True)
+    # Obtener parámetros de filtro
+    nivel = request.args.get('nivel', 'general')
+    
+    # Manejar red_id y cdp_id correctamente
+    red_id_str = request.args.get('red_id', '')
+    cdp_id_str = request.args.get('cdp_id', '')
+    
+    try:
+        red_id = int(red_id_str) if red_id_str and red_id_str.isdigit() else None
+    except (ValueError, TypeError):
+        red_id = None
+    
+    try:
+        cdp_id = int(cdp_id_str) if cdp_id_str and cdp_id_str.isdigit() else None
+    except (ValueError, TypeError):
+        cdp_id = None
+    
+    usuario = session.get("usuario", "Administrador")
+    rol = session.get("rol", "admin")
+    is_supervisor = rol == "supervisor"
+    
+    # Datos para los selectores (en modo demo, datos simulados)
+    redes = []
+    casas = []
+    metricas = {}
+    
+    # Datos de demo siempre disponibles (sin importar DB_AVAILABLE)
+    redes_demo = [
+        {'id': 1, 'nombre': 'Red Hebrón', 'supervisor': 'Pedro González'},
+        {'id': 2, 'nombre': 'Red Sur', 'supervisor': 'María López'},
+        {'id': 3, 'nombre': 'Red Central', 'supervisor': 'Carlos Ramírez'}
+    ]
+    
+    # Lista de casas siempre disponible (para los selectores)
+    casas_demo = [
+        {'id': 1, 'nombre': 'Casa Bethel', 'codigo': 'HEB-001', 'red_id': 1},
+        {'id': 2, 'nombre': 'Casa de Oración Sur', 'codigo': 'SUR-001', 'red_id': 2},
+        {'id': 3, 'nombre': 'Casa Nueva Vida', 'codigo': 'CEN-001', 'red_id': 3},
+        {'id': 4, 'nombre': 'Casa Luz', 'codigo': 'HEB-002', 'red_id': 1}
+    ]
+    
+    # Usar datos de demo siempre
+    if nivel == 'general':
+        casas = casas_demo
+        metricas = {
+            'total_asistencia': 1248,
+            'cumplimiento': 76,
+            'ofrendas': 12450,
+            'conversiones': 312,
+            'total_casas': 42,
+            'reportes_enviados': 32,
+            'alertas': [
+                {'nombre': 'Casa Bethel', 'dias_sin_reporte': 2},
+                {'nombre': 'Casa de Oración Sur', 'dias_sin_reporte': 5}
+            ]
+        }
+    elif nivel == 'red':
+        # Siempre cargar las casas para el selector
+        casas = [
+            {'id': 1, 'nombre': 'Casa Bethel', 'codigo': 'HEB-001', 'red_id': 1},
+            {'id': 2, 'nombre': 'Casa Luz', 'codigo': 'HEB-002', 'red_id': 1},
+            {'id': 3, 'nombre': 'Casa Shalom', 'codigo': 'HEB-003', 'red_id': 1}
+        ]
+        
+        if red_id:
+            nombre_red = next((r['nombre'] for r in redes_demo if r['id'] == red_id), 'Red')
+            metricas = {
+                'nombre_red': nombre_red,
+                'red_id': red_id,
+                'casas_activas': 14,
+                'asistencia_total': 486,
+                'promedio_casa': 38,
+                'ninos': 142,
+                'ofrendas': 4850,
+                'casas': [
+                    {'nombre': 'Casa Bethel', 'asistencia': 47, 'estado': 'verde'},
+                    {'nombre': 'Casa Luz', 'asistencia': 22, 'estado': 'rojo'},
+                    {'nombre': 'Casa Shalom', 'asistencia': 35, 'estado': 'amarillo'}
+                ]
+            }
+        else:
+            metricas = {'nombre_red': 'Selecciona una red', 'red_id': None}
+    elif nivel == 'cdp':
+        # Siempre cargar las casas para el selector (importante: NO poner en blanco)
+        casas = casas_demo
+        
+        if cdp_id:
+            # Obtener nombre de la casa seleccionada
+            cdp_seleccionada = next((c for c in casas_demo if c['id'] == cdp_id), None)
+            nombre_cdp = cdp_seleccionada['nombre'] if cdp_seleccionada else 'Casa de Paz'
+            codigo_cdp = cdp_seleccionada['codigo'] if cdp_seleccionada else ''
+            
+            metricas = {
+                'nombre_cdp': nombre_cdp,
+                'codigo': codigo_cdp,
+                'lider': 'Juan Pérez',
+                'sublider': 'Ana García',
+                'direccion': 'Calle Principal #123',
+                'asistencia_ultimo': 47,
+                'promedio_historico': 42,
+                'visitas': 28,
+                'estado_reporte': 'enviado',
+                'potencial_multiplicacion': True,
+                'historial': [
+                    {'fecha': '2026-08-10', 'asistencia': 47, 'ninos': 12, 'visitas': 5, 'ofrenda': 450, 'observaciones': 'Buen ambiente'},
+                    {'fecha': '2026-08-03', 'asistencia': 44, 'ninos': 10, 'visitas': 3, 'ofrenda': 380, 'observaciones': 'Tema nuevo'},
+                    {'fecha': '2026-07-27', 'asistencia': 41, 'ninos': 9, 'visitas': 4, 'ofrenda': 420, 'observaciones': ''},
+                    {'fecha': '2026-07-20', 'asistencia': 45, 'ninos': 11, 'visitas': 6, 'ofrenda': 510, 'observaciones': 'Celebración'}
+                ]
+            }
+        else:
+            metricas = {'nombre_cdp': 'Selecciona una Casa de Paz', 'cdp_id': None}
+    
+    # Si es supervisor, filtrar solo su red
+    if is_supervisor and nivel == 'red':
+        redes = redes_demo[:1]  # Solo mostrar la red del supervisor
+    else:
+        redes = redes_demo
+    
+    return render_template(
+        'dashboard_admin.html', 
+        is_admin=True,
+        is_supervisor=is_supervisor,
+        usuario=usuario,
+        nivel=nivel,
+        red_id=red_id,
+        cdp_id=cdp_id,
+        redes=redes,
+        casas=casas,
+        metricas=metricas
+    )
 
 @app.route('/admin/estructura')
 def admin_estructura():

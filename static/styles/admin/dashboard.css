@@ -21,10 +21,423 @@
     --on-surface: #231919;
     --on-surface-variant: #564240;
     --outline-variant: #ddc0bd;
+    --danger-color: #b32626;
     --font-headline: 'Noto Serif', serif;
     --font-body: 'Manrope', sans-serif;
     --shadow-card: 0 4px 20px rgba(35, 25, 25, 0.04);
     --shadow-hover: 0 10px 25px rgba(57, 0, 2, 0.08);
+}
+
+/* ==========================================================================
+   Filter Bar (Jerárquica)
+   ========================================================================== */
+.filter-bar-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(137, 114, 111, 0.2);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.05);
+}
+
+.filter-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 180px;
+    max-width: 240px;
+}
+
+.filter-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.filter-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(137, 114, 111, 0.25);
+    background: var(--surface-container-low);
+    color: var(--primary);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+    border-color: var(--primary);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(57, 0, 2, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 0.25rem;
+}
+
+.search-group {
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.filter-search {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(137, 114, 111, 0.25);
+    background: var(--surface-container-low);
+    color: var(--primary);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: text;
+    transition: all 0.2s ease;
+}
+
+.filter-search:hover {
+    border-color: var(--primary);
+}
+
+.filter-search:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(57, 0, 2, 0.1);
+}
+
+.filter-search::placeholder {
+    color: var(--on-surface-variant);
+    opacity: 0.7;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 0.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--on-surface-variant);
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+    background: var(--surface-container);
+    color: var(--primary);
+}
+
+.clear-search-btn .material-symbols-outlined {
+    font-size: 1.1rem;
+}
+
+.btn-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(137, 114, 111, 0.25);
+    background: transparent;
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reset:hover {
+    background: var(--surface-container-low);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================================
+   Badges de Estado
+   ========================================================================== */
+.badge-status {
+    padding: 0.25rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.badge-danger {
+    background-color: #fde8e8;
+    color: #b32626;
+}
+
+.badge-success {
+    background-color: #e6f4ea;
+    color: #137333;
+}
+
+.badge-warning {
+    background-color: #fef7e0;
+    color: #b06000;
+}
+
+.badge-info {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+}
+
+/* Alertas positivas */
+.alert-item.positive {
+    background-color: #e6f4ea;
+    border-color: rgba(19, 115, 51, 0.2);
+}
+
+.alert-item.positive h4 {
+    color: #137333;
+}
+
+.check-positive {
+    color: #137333;
+    font-size: 1.5rem;
+}
+
+/* ==========================================================================
+   Semáforo de Cumplimiento
+   ========================================================================== */
+.semaforo-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.semaforo-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--surface-container-low);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+.semaforo-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.semaforo-dot.verde {
+    background: #137333;
+}
+
+.semaforo-dot.amarillo {
+    background: #b06000;
+}
+
+.semaforo-dot.rojo {
+    background: #b32626;
+}
+
+.semaforo-info {
+    flex: 1;
+}
+
+.semaforo-info h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.asistencia-num {
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+}
+
+/* ==========================================================================
+   Casa de Paz Header Card
+   ========================================================================== */
+.cdp-header-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.05);
+    flex-wrap: wrap;
+}
+
+.lider-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.lider-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--surface-container-low);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+}
+
+.lider-details h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.lider-details p {
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+
+.lider-actions {
+    margin-left: auto;
+}
+
+.lider-actions .btn-full-outline {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cdp-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Empty States
+   ========================================================================== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    width: 100%;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    color: var(--outline-variant);
+    margin-bottom: 0.75rem;
+}
+
+.empty-message {
+    color: var(--on-surface-variant);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* ==========================================================================
+   Observaciones
+   ========================================================================== */
+.observaciones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.observacion-item {
+    background: var(--surface-container-low);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+.observacion-fecha {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 0.35rem;
+}
+
+.observacion-item p {
+    font-size: 0.8rem;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+
+/* ==========================================================================
+   Responsive Filter Bar
+   ========================================================================== */
+@media (max-width: 768px) {
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        max-width: 100%;
+        min-width: 100%;
+    }
+    
+    .filter-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .cdp-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .lider-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .lider-actions .btn-full-outline {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 body {
@@ -688,4 +1101,231 @@ body {
     .chart-legend li {
         font-size: 0.75rem;
     }
+}
+/* ==========================================================================
+   Top Casas - Crecimiento (Nivel Red)
+   ========================================================================== */
+.top-opportunities {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.top-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--surface-container-low);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+.top-rank {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-container);
+    border-radius: 50%;
+}
+
+.top-info {
+    flex: 1;
+}
+
+.top-info h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.top-info p {
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+
+/* ==========================================================================
+   Casas en Riesgo (Nivel Red)
+   ========================================================================== */
+.risk-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.risk-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    background: #fde8e8;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(178, 26, 26, 0.15);
+}
+
+.risk-item .semaforo-dot {
+    flex-shrink: 0;
+}
+
+.risk-info {
+    flex: 1;
+}
+
+.risk-info h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.15rem 0;
+}
+
+.risk-info p {
+    font-size: 0.7rem;
+    color: var(--danger-color);
+    margin: 0;
+}
+
+.btn-small {
+    padding: 0.4rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* ==========================================================================
+   Tendencias CDP (Nivel CDP)
+   ========================================================================== */
+.cdp-trend {
+    margin-top: 1.5rem;
+    padding: 1rem 0;
+}
+
+.trend-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 180px;
+    gap: 0.5rem;
+}
+
+.trend-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+}
+
+.trend-bar {
+    width: 100%;
+    max-width: 32px;
+    background: linear-gradient(to top, var(--primary-container), var(--primary));
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s ease;
+    margin-top: auto;
+}
+
+.trend-label {
+    font-size: 0.65rem;
+    color: var(--on-surface-variant);
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Resumen CDP Quick Stats (Nivel CDP)
+   ========================================================================== */
+.cdp-quick-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.quick-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    background: var(--surface-container-low);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+.quick-stat .material-symbols-outlined {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.quick-stat h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.quick-stat p {
+    font-size: 0.7rem;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+/* ==========================================================================
+   Top List Compact (Nivel Red)
+   ========================================================================== */
+.top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.top-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    background: var(--surface-container-low);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+.top-item-compact .top-info {
+    flex: 1;
+}
+
+.top-item-compact .top-info h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.15rem 0;
+}
+
+.top-item-compact .top-info p {
+    font-size: 0.7rem;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+
+.text-success {
+    color: #137333 !important;
+}
+
+.text-danger {
+    color: #b32626 !important;
 }
