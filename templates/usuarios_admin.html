@@ -15,7 +15,7 @@
             <p class="description">Administra los accesos y roles de la comunidad Vino Nuevo desde un panel centralizado y seguro.</p>
         </div>
         <div class="header-actions">
-            <a href="/admin/usuario/editar" class="btn-primary shadow-xl" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem;">
+            <a href="/admin/usuario/editar" class="btn-primary">
                 <span class="material-symbols-outlined">person_add</span>
                 Agregar Usuario
             </a>
@@ -64,7 +64,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>
+                            <td data-label="Usuario">
                                 <div class="user-info">
                                     <div class="user-details">
                                         <strong>Mateo Rodriguez</strong>
@@ -72,24 +72,24 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-muted">@mrodriguez</td>
-                            <td><span class="badge badge-admin">Admin</span></td>
-                            <td>
+                            <td data-label="Username" class="text-muted">@mrodriguez</td>
+                            <td data-label="Rol"><span class="badge badge-admin">Admin</span></td>
+                            <td data-label="Status">
                                 <div class="status">
                                     <span class="dot dot-active"></span>
                                     <span class="text-active">Activo</span>
                                 </div>
                             </td>
-                            <td class="text-right">
+                            <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;"><span class="material-symbols-outlined">edit</span></a>
+                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
                                     <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
                                 </div>
                             </td>
                         </tr>
                         
                         <tr>
-                            <td>
+                            <td data-label="Usuario">
                                 <div class="user-info">
                                     <div class="user-details">
                                         <strong>Lucía Mendoza</strong>
@@ -97,24 +97,24 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-muted">@lumendoza</td>
-                            <td><span class="badge badge-supervisor">Supervisor</span></td>
-                            <td>
+                            <td data-label="Username" class="text-muted">@lumendoza</td>
+                            <td data-label="Rol"><span class="badge badge-supervisor">Supervisor</span></td>
+                            <td data-label="Status">
                                 <div class="status">
                                     <span class="dot dot-active"></span>
                                     <span class="text-active">Activo</span>
                                 </div>
                             </td>
-                            <td class="text-right">
+                            <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;"><span class="material-symbols-outlined">edit</span></a>
+                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
                                     <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
                                 </div>
                             </td>
                         </tr>
 
                         <tr>
-                            <td>
+                            <td data-label="Usuario">
                                 <div class="user-info">
                                     <div class="user-details">
                                         <strong>Andrés Soler</strong>
@@ -122,17 +122,17 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-muted">@asoler</td>
-                            <td><span class="badge badge-lider">Lider</span></td>
-                            <td>
+                            <td data-label="Username" class="text-muted">@asoler</td>
+                            <td data-label="Rol"><span class="badge badge-lider">Lider</span></td>
+                            <td data-label="Status">
                                 <div class="status">
                                     <span class="dot dot-inactive"></span>
                                     <span class="text-inactive">Inactivo</span>
                                 </div>
                             </td>
-                            <td class="text-right">
+                            <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;"><span class="material-symbols-outlined">edit</span></a>
+                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
                                     <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
                                 </div>
                             </td>
