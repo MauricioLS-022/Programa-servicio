@@ -62,60 +62,199 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 Basado en los formularios, se necesitan estas tablas en `serv_comunitario`:
 
 ```sql
-CREATE TABLE usuario (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    tipo_usuario ENUM('admin', 'supervisor', 'cdp') NOT NULL
-);
+CREATE TABLE `cdp` (
+  `id` int(11) NOT NULL,
+  `codigo` varchar(30) NOT NULL,
+  `anfitrion` varchar(30) NOT NULL,
+  `telefono` varchar(15) DEFAULT NULL,
+  `direccion` varchar(100) NOT NULL,
+  `red_id` int(11) NOT NULL,
+  `usuario_id` char(36) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE red (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
-    supervisor_id INT,
-    FOREIGN KEY (supervisor_id) REFERENCES usuario(id)
-);
+-- --------------------------------------------------------
 
-CREATE TABLE casa_de_paz (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    codigo VARCHAR(20) UNIQUE NOT NULL,
-    direccion VARCHAR(255) NOT NULL,
-    red_id INT NOT NULL,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    FOREIGN KEY (red_id) REFERENCES red(id)
-);
+--
+-- Estructura de tabla para la tabla `lider`
+--
 
-CREATE TABLE lider (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    telefono VARCHAR(20),
-    rol ENUM('Lider', 'Sublider') NOT NULL,
-    cdp_id INT NOT NULL,
-    FOREIGN KEY (cdp_id) REFERENCES casa_de_paz(id)
-);
+CREATE TABLE `lider` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(30) NOT NULL,
+  `apellido` varchar(30) NOT NULL,
+  `rol` enum('Lider','Sublider') NOT NULL,
+  `telefono` varchar(15) DEFAULT NULL,
+  `cdp_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE reporte (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    cdp_id INT NOT NULL,
-    anfitrion VARCHAR(150) NOT NULL,
-    ninos INT DEFAULT 0,
-    regulares INT DEFAULT 0,
-    visitas INT DEFAULT 0,
-    comprometidos INT DEFAULT 0,
-    asistencia INT DEFAULT 0,
-    reconciliaciones INT DEFAULT 0,
-    confesiones INT DEFAULT 0,
-    cesta VARCHAR(255),
-    fecha DATE NOT NULL,
-    horaini TIME NOT NULL,
-    horafin TIME NOT NULL,
-    tema VARCHAR(255),
-    observaciones TEXT,
-    ofrendas DECIMAL(10,2) DEFAULT 0,
-    FOREIGN KEY (cdp_id) REFERENCES casa_de_paz(id)
-);
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `red`
+--
+
+CREATE TABLE `red` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `supervisor_id` char(36) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `red`
+--
+
+INSERT INTO `red` (`id`, `nombre`, `supervisor_id`) VALUES
+(1, 'Cielos Abiertos', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `reporte`
+--
+
+CREATE TABLE `reporte` (
+  `id` char(36) NOT NULL DEFAULT uuid(),
+  `nro_niños` int(11) NOT NULL DEFAULT 0,
+  `nro_regulares` int(11) NOT NULL DEFAULT 0,
+  `nro_visitas` int(11) NOT NULL DEFAULT 0,
+  `nro_comprometidos` int(11) NOT NULL DEFAULT 0,
+  `reconciliaciones` int(11) NOT NULL DEFAULT 0,
+  `confesiones` int(11) NOT NULL DEFAULT 0,
+  `cesta_amor` tinyint(1) DEFAULT 0,
+  `fecha` date DEFAULT curdate(),
+  `hr_inicio` time NOT NULL,
+  `hr_fin` time NOT NULL,
+  `tema` varchar(100) NOT NULL,
+  `observaciones` text DEFAULT NULL,
+  `ofrendas` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `cdp_id` int(11) NOT NULL,
+  `enviado_por_lider_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuario`
+--
+
+CREATE TABLE `usuario` (
+  `id` char(36) NOT NULL DEFAULT uuid(),
+  `username` varchar(150) NOT NULL,
+  `password` varchar(128) NOT NULL,
+  `tipo_usuario` enum('admin','supervisor','cdp') NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `nombre` varchar(30) DEFAULT NULL,
+  `apellido` varchar(30) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuario`
+--
+
+INSERT INTO `usuario` (`id`, `username`, `password`, `tipo_usuario`, `is_active`, `nombre`, `apellido`) VALUES
+('1d4f7c99-7d51-11f1-bf9e-2016d8516279', 'lider', '02082002', 'cdp', 1, 'Mauricio', 'Leal'),
+('702f2129-7d4e-11f1-bf9e-2016d8516279', 'admin', '02082002', 'admin', 1, 'Mauricio', 'Leal'),
+('ca58cfc6-8337-11f1-8217-2016d8516279', 'super', '02082002', 'supervisor', 1, 'Mauricio', 'Leal');
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `cdp`
+--
+ALTER TABLE `cdp`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`),
+  ADD UNIQUE KEY `usuario_id` (`usuario_id`),
+  ADD KEY `fk_cdp_red` (`red_id`);
+
+--
+-- Indices de la tabla `lider`
+--
+ALTER TABLE `lider`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_lider_cdp` (`cdp_id`);
+
+--
+-- Indices de la tabla `red`
+--
+ALTER TABLE `red`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_red_supervisor` (`supervisor_id`);
+
+--
+-- Indices de la tabla `reporte`
+--
+ALTER TABLE `reporte`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_reporte_cdp` (`cdp_id`),
+  ADD KEY `fk_reporte_lider` (`enviado_por_lider_id`);
+
+--
+-- Indices de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `cdp`
+--
+ALTER TABLE `cdp`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `lider`
+--
+ALTER TABLE `lider`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `red`
+--
+ALTER TABLE `red`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `cdp`
+--
+ALTER TABLE `cdp`
+  ADD CONSTRAINT `fk_cdp_red` FOREIGN KEY (`red_id`) REFERENCES `red` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_cdp_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `lider`
+--
+ALTER TABLE `lider`
+  ADD CONSTRAINT `fk_lider_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `red`
+--
+ALTER TABLE `red`
+  ADD CONSTRAINT `fk_red_supervisor` FOREIGN KEY (`supervisor_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `reporte`
+--
+ALTER TABLE `reporte`
+  ADD CONSTRAINT `fk_reporte_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_reporte_lider` FOREIGN KEY (`enviado_por_lider_id`) REFERENCES `lider` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
 ```
 
 ---
