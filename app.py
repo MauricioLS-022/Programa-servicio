@@ -1,9 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import pymysql
 import os
+import time
+import threading
 from dotenv import load_dotenv
 
 from config import config
+from mock_data import (
+    get_redes_demo, get_casas_demo,
+    get_mock_generales, get_mock_red, get_mock_cdp,
+    get_empty_generales, get_empty_red, get_empty_cdp,
+)
+from db_queries import get_metricas_generales, get_metricas_red, get_metricas_cdp
 
 load_dotenv()
 
@@ -12,26 +20,110 @@ app = Flask(__name__)
 app.config.from_object(config[env])
 app.secret_key = app.config['SECRET_KEY']
 
+# ---------------------------------------------------------------------------
+# Fase 1: Circuit Breaker para conexiones a BD
+# ---------------------------------------------------------------------------
 DB_AVAILABLE = False
+_last_db_attempt = 0.0
+_db_fail_count = 0
+_DB_RETRY_INTERVAL = 15   # segundos entre reintentos si la BD falla
+_DB_TIMEOUT = 0.5         # timeout de conexión en segundos (falla instantánea)
+_db_lock = threading.Lock()
+
 
 def get_db_connection():
-    """Intenta conectar a MySQL. Si falla, retorna None (modo demo sin BD)."""
-    global DB_AVAILABLE
-    try:
-        conn = pymysql.connect(
-            host=app.config['DB_HOST'],
-            port=app.config['DB_PORT'],
-            user=app.config['DB_USER'],
-            password=app.config['DB_PASSWORD'],
-            database=app.config['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        DB_AVAILABLE = True
-        return conn
-    except Exception as e:
-        print(f"[DB] No disponible (modo demo): {e}")
-        DB_AVAILABLE = False
-        return None
+    """Conexión a MySQL con circuit breaker. Si falla, reintenta cada 30s."""
+    global DB_AVAILABLE, _last_db_attempt, _db_fail_count
+
+    with _db_lock:
+        ahora = time.time()
+
+        # Si falló recientemente, NO intentar conectar (evita lag de 2-15s)
+        if _db_fail_count > 0 and (ahora - _last_db_attempt) < _DB_RETRY_INTERVAL:
+            DB_AVAILABLE = False
+            return None
+
+        try:
+            conn = pymysql.connect(
+                host=app.config['DB_HOST'],
+                port=app.config['DB_PORT'],
+                user=app.config['DB_USER'],
+                password=app.config['DB_PASSWORD'],
+                database=app.config['DB_NAME'],
+                cursorclass=pymysql.cursors.DictCursor,
+                connect_timeout=_DB_TIMEOUT,
+                read_timeout=_DB_TIMEOUT,
+            )
+            DB_AVAILABLE = True
+            _db_fail_count = 0
+            _last_db_attempt = ahora
+            return conn
+        except Exception as e:
+            _db_fail_count += 1
+            _last_db_attempt = ahora
+            DB_AVAILABLE = False
+            print(f"[DB] No disponible (reintentando en {_DB_RETRY_INTERVAL}s): {e}")
+            return None
+
+
+# ---------------------------------------------------------------------------
+# Fase 2: Caché en memoria con TTL para métricas del dashboard
+# ---------------------------------------------------------------------------
+_dashboard_cache = {}
+_cache_lock = threading.Lock()
+_CACHE_TTL = 300  # 5 minutos
+
+
+def _get_cache(key):
+    """Retorna valor缓 si existe y no expiró, o None."""
+    with _cache_lock:
+        entry = _dashboard_cache.get(key)
+        if entry and (time.time() - entry['ts']) < _CACHE_TTL:
+            return entry['data']
+    return None
+
+
+def _set_cache(key, data):
+    """Almacena valor en caché con timestamp."""
+    with _cache_lock:
+        _dashboard_cache[key] = {'data': data, 'ts': time.time()}
+
+
+def invalidate_dashboard_cache():
+    """Vacía toda la caché del dashboard (llamar al enviar un reporte)."""
+    with _cache_lock:
+        _dashboard_cache.clear()
+    print("[CACHE] Dashboard cache invalidado")
+
+
+# ---------------------------------------------------------------------------
+# Fase 3: Caché de activos estáticos CSS/JS en el navegador
+# ---------------------------------------------------------------------------
+@app.after_request
+def add_static_cache_headers(response):
+    """Inyecta cabeceras Cache-Control para archivos estáticos."""
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=2592000'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+@app.context_processor
+def override_url_for():
+    return dict(url_for=dated_url_for)
+
+
+def dated_url_for(endpoint, **values):
+    if endpoint == 'static':
+        filename = values.get('filename', None)
+        if filename:
+            file_path = os.path.join(app.root_path, endpoint, filename)
+            try:
+                values['v'] = int(os.stat(file_path).st_mtime)
+            except OSError:
+                pass
+    return url_for(endpoint, **values)
+
 
 def role_required(*roles):
     def decorator(f):
@@ -88,6 +180,9 @@ def generar():
 
         print(val)
 
+        # Invalidar caché del dashboard cuando se envía un reporte
+        invalidate_dashboard_cache()
+
     # Require login for report generation view
     # if "usuario" not in session:
     #     return redirect(url_for("login"))
@@ -104,11 +199,14 @@ def perfil():
     usuario = session["usuario"]
     rol = session["rol"]
     
-    if DB_AVAILABLE:
-        connect = get_db_connection()
-        if connect:
+    connect = get_db_connection()
+    if connect:
+        try:
             C = connect.cursor()
             # Aquí podrías hacer consultas a la BD
+        except Exception as e:
+            print(f"[DB] Error perfil: {e}")
+        finally:
             connect.close()
     
     return render_template('perfil.html', usuario=usuario, rol=rol, is_admin=True)
@@ -123,127 +221,128 @@ def editar_usuario():
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
-    # Obtener parámetros de filtro
     nivel = request.args.get('nivel', 'general')
-    
-    # Manejar red_id y cdp_id correctamente
+
     red_id_str = request.args.get('red_id', '')
     cdp_id_str = request.args.get('cdp_id', '')
-    
+
     try:
         red_id = int(red_id_str) if red_id_str and red_id_str.isdigit() else None
     except (ValueError, TypeError):
         red_id = None
-    
+
     try:
         cdp_id = int(cdp_id_str) if cdp_id_str and cdp_id_str.isdigit() else None
     except (ValueError, TypeError):
         cdp_id = None
-    
+
     usuario = session.get("usuario", "Administrador")
     rol = session.get("rol", "admin")
     is_supervisor = rol == "supervisor"
-    
-    # Datos para los selectores (en modo demo, datos simulados)
-    redes = []
-    casas = []
-    metricas = {}
-    
-    # Datos de demo siempre disponibles (sin importar DB_AVAILABLE)
-    redes_demo = [
-        {'id': 1, 'nombre': 'Red Hebrón', 'supervisor': 'Pedro González'},
-        {'id': 2, 'nombre': 'Red Sur', 'supervisor': 'María López'},
-        {'id': 3, 'nombre': 'Red Central', 'supervisor': 'Carlos Ramírez'}
-    ]
-    
-    # Lista de casas siempre disponible (para los selectores)
-    casas_demo = [
-        {'id': 1, 'nombre': 'Casa Bethel', 'codigo': 'HEB-001', 'red_id': 1},
-        {'id': 2, 'nombre': 'Casa de Oración Sur', 'codigo': 'SUR-001', 'red_id': 2},
-        {'id': 3, 'nombre': 'Casa Nueva Vida', 'codigo': 'CEN-001', 'red_id': 3},
-        {'id': 4, 'nombre': 'Casa Luz', 'codigo': 'HEB-002', 'red_id': 1}
-    ]
-    
-    # Usar datos de demo siempre
-    if nivel == 'general':
-        casas = casas_demo
-        metricas = {
-            'total_asistencia': 1248,
-            'cumplimiento': 76,
-            'ofrendas': 12450,
-            'conversiones': 312,
-            'total_casas': 42,
-            'reportes_enviados': 32,
-            'alertas': [
-                {'nombre': 'Casa Bethel', 'dias_sin_reporte': 2},
-                {'nombre': 'Casa de Oración Sur', 'dias_sin_reporte': 5}
-            ]
-        }
-    elif nivel == 'red':
-        # Siempre cargar las casas para el selector
-        casas = [
-            {'id': 1, 'nombre': 'Casa Bethel', 'codigo': 'HEB-001', 'red_id': 1},
-            {'id': 2, 'nombre': 'Casa Luz', 'codigo': 'HEB-002', 'red_id': 1},
-            {'id': 3, 'nombre': 'Casa Shalom', 'codigo': 'HEB-003', 'red_id': 1}
-        ]
-        
-        if red_id:
-            nombre_red = next((r['nombre'] for r in redes_demo if r['id'] == red_id), 'Red')
-            metricas = {
-                'nombre_red': nombre_red,
-                'red_id': red_id,
-                'casas_activas': 14,
-                'asistencia_total': 486,
-                'promedio_casa': 38,
-                'ninos': 142,
-                'ofrendas': 4850,
-                'casas': [
-                    {'nombre': 'Casa Bethel', 'asistencia': 47, 'estado': 'verde'},
-                    {'nombre': 'Casa Luz', 'asistencia': 22, 'estado': 'rojo'},
-                    {'nombre': 'Casa Shalom', 'asistencia': 35, 'estado': 'amarillo'}
-                ]
-            }
-        else:
-            metricas = {'nombre_red': 'Selecciona una red', 'red_id': None}
-    elif nivel == 'cdp':
-        # Siempre cargar las casas para el selector (importante: NO poner en blanco)
-        casas = casas_demo
-        
-        if cdp_id:
-            # Obtener nombre de la casa seleccionada
-            cdp_seleccionada = next((c for c in casas_demo if c['id'] == cdp_id), None)
-            nombre_cdp = cdp_seleccionada['nombre'] if cdp_seleccionada else 'Casa de Paz'
-            codigo_cdp = cdp_seleccionada['codigo'] if cdp_seleccionada else ''
-            
-            metricas = {
-                'nombre_cdp': nombre_cdp,
-                'codigo': codigo_cdp,
-                'lider': 'Juan Pérez',
-                'sublider': 'Ana García',
-                'direccion': 'Calle Principal #123',
-                'asistencia_ultimo': 47,
-                'promedio_historico': 42,
-                'visitas': 28,
-                'estado_reporte': 'enviado',
-                'potencial_multiplicacion': True,
-                'historial': [
-                    {'fecha': '2026-08-10', 'asistencia': 47, 'ninos': 12, 'visitas': 5, 'ofrenda': 450, 'observaciones': 'Buen ambiente'},
-                    {'fecha': '2026-08-03', 'asistencia': 44, 'ninos': 10, 'visitas': 3, 'ofrenda': 380, 'observaciones': 'Tema nuevo'},
-                    {'fecha': '2026-07-27', 'asistencia': 41, 'ninos': 9, 'visitas': 4, 'ofrenda': 420, 'observaciones': ''},
-                    {'fecha': '2026-07-20', 'asistencia': 45, 'ninos': 11, 'visitas': 6, 'ofrenda': 510, 'observaciones': 'Celebración'}
-                ]
-            }
-        else:
-            metricas = {'nombre_cdp': 'Selecciona una Casa de Paz', 'cdp_id': None}
-    
-    # Si es supervisor, filtrar solo su red
-    if is_supervisor and nivel == 'red':
-        redes = redes_demo[:1]  # Solo mostrar la red del supervisor
+
+    conn = get_db_connection()
+    db_connected = conn is not None
+
+    # --- Selectores (redes y casas) - también caché ---
+    cache_key_selectores = 'selectores'
+    cached_selectores = _get_cache(cache_key_selectores)
+
+    if cached_selectores:
+        redes, casas = cached_selectores
+    elif db_connected:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT r.id, r.nombre,
+                       CONCAT(u.nombre, ' ', u.apellido) AS supervisor
+                FROM red r
+                LEFT JOIN usuario u ON r.supervisor_id = u.id
+                ORDER BY r.nombre
+            """)
+            redes = cur.fetchall()
+            cur.execute("""
+                SELECT c.id, c.codigo, c.codigo AS nombre, c.red_id,
+                       CONCAT(l.nombre, ' ', l.apellido) AS lider
+                FROM cdp c
+                LEFT JOIN lider l ON l.cdp_id = c.id AND l.rol = 'Lider'
+                ORDER BY c.codigo
+            """)
+            casas = cur.fetchall()
+            cur.close()
+            _set_cache(cache_key_selectores, (redes, casas))
+        except Exception:
+            redes = get_redes_demo()
+            casas = get_casas_demo()
     else:
-        redes = redes_demo
-    
+        redes = get_redes_demo()
+        casas = get_casas_demo()
+
+    # --- Métricas del dashboard (con caché) ---
+    metricas = {}
+    mock_used = False
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}'
+
+    cached_metricas = _get_cache(cache_key)
+
+    if cached_metricas:
+        metricas = cached_metricas
+        # Si no tenemos conexión, mock_used lo determinamos por si hay DB
+        mock_used = not db_connected
+    else:
+        if nivel == 'general':
+            if db_connected:
+                try:
+                    metricas = get_metricas_generales(conn)
+                    _set_cache(cache_key, metricas)
+                except Exception as e:
+                    print(f"[DB] Error query general: {e}")
+                    metricas = get_empty_generales()
+                finally:
+                    conn.close()
+            else:
+                metricas = get_mock_generales()
+                mock_used = True
+
+        elif nivel == 'red':
+            if not red_id:
+                red_id = 1
+            if db_connected:
+                try:
+                    result = get_metricas_red(conn, red_id)
+                    metricas = result if result else get_empty_red(red_id)
+                    _set_cache(cache_key, metricas)
+                except Exception as e:
+                    print(f"[DB] Error query red: {e}")
+                    metricas = get_empty_red(red_id)
+                finally:
+                    conn.close()
+            else:
+                metricas = get_mock_red(red_id)
+                mock_used = True
+
+        elif nivel == 'cdp':
+            if not cdp_id:
+                cdp_id = 1
+            if db_connected:
+                try:
+                    result = get_metricas_cdp(conn, cdp_id)
+                    metricas = result if result else get_empty_cdp(cdp_id)
+                    _set_cache(cache_key, metricas)
+                except Exception as e:
+                    print(f"[DB] Error query cdp: {e}")
+                    metricas = get_empty_cdp(cdp_id)
+                finally:
+                    conn.close()
+            else:
+                metricas = get_mock_cdp(cdp_id)
+                mock_used = True
+
+    # Si es supervisor, filtrar solo su red
+    if is_supervisor and not mock_used:
+        redes = redes[:1]
+
     return render_template(
-        'dashboard_admin.html', 
+        'dashboard_admin.html',
         is_admin=True,
         is_supervisor=is_supervisor,
         usuario=usuario,
@@ -252,8 +351,72 @@ def admin_dashboard():
         cdp_id=cdp_id,
         redes=redes,
         casas=casas,
-        metricas=metricas
+        metricas=metricas,
+        db_connected=db_connected,
+        mock_used=mock_used,
     )
+
+
+# ---------------------------------------------------------------------------
+# Fase 4: API AJAX para filtros del dashboard (sin recarga completa)
+# ---------------------------------------------------------------------------
+@app.route('/api/dashboard/datos')
+def api_dashboard_datos():
+    """Endpoint AJAX que retorna métricas en JSON para filtros dinámicos."""
+    nivel = request.args.get('nivel', 'general')
+    red_id_str = request.args.get('red_id', '')
+    cdp_id_str = request.args.get('cdp_id', '')
+
+    try:
+        red_id = int(red_id_str) if red_id_str and red_id_str.isdigit() else None
+    except (ValueError, TypeError):
+        red_id = None
+
+    try:
+        cdp_id = int(cdp_id_str) if cdp_id_str and cdp_id_str.isdigit() else None
+    except (ValueError, TypeError):
+        cdp_id = None
+
+    conn = get_db_connection()
+    db_connected = conn is not None
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}'
+
+    cached = _get_cache(cache_key)
+    if cached:
+        return jsonify(cached)
+
+    metricas = {}
+    try:
+        if nivel == 'general':
+            if db_connected:
+                metricas = get_metricas_generales(conn)
+            else:
+                metricas = get_mock_generales()
+        elif nivel == 'red':
+            rid = red_id or 1
+            if db_connected:
+                result = get_metricas_red(conn, rid)
+                metricas = result if result else get_empty_red(rid)
+            else:
+                metricas = get_mock_red(rid)
+        elif nivel == 'cdp':
+            cid = cdp_id or 1
+            if db_connected:
+                result = get_metricas_cdp(conn, cid)
+                metricas = result if result else get_empty_cdp(cid)
+            else:
+                metricas = get_mock_cdp(cid)
+    except Exception as e:
+        print(f"[API] Error: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+    if metricas:
+        _set_cache(cache_key, metricas)
+
+    return jsonify(metricas)
+
 
 @app.route('/admin/estructura')
 def admin_estructura():
@@ -291,13 +454,12 @@ def login():
         usuario=request.form['usuario']
         contrasena=request.form['contrasena']
 
-        if DB_AVAILABLE:
-            connect = get_db_connection()
-            if connect:
+        connect = get_db_connection()
+        if connect:
+            try:
                 C = connect.cursor()
                 C.execute("SELECT username,tipo_usuario FROM usuario WHERE username = %s and password = %s",(usuario,contrasena))
                 r = C.fetchone()
-                connect.close()
 
                 if not r:
                     p="El usuario no se encuentra registrado"
@@ -309,8 +471,11 @@ def login():
                     elif r['tipo_usuario']=="supervisor":
                         return redirect(url_for("supervisor_dashboard"))
                     return redirect(url_for("index"))
-            else:
-                p="Error de conexión a la base de datos"
+            except Exception as e:
+                print(f"[DB] Error login: {e}")
+                p="Error al verificar credenciales"
+            finally:
+                connect.close()
         else:
             # Modo demo sin BD: login simulado
             if usuario == "admin" and contrasena == "admin":
