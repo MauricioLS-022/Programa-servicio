@@ -64,8 +64,9 @@ body {
     font-family: var(--font-body);
     background-color: var(--surface);
     color: var(--on-surface);
-    height: 100vh;
-    overflow:auto; 
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
@@ -143,8 +144,8 @@ body {
     animation: fadeInUp 0.6s ease-out;
 }
 
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-.sidebar-title { font-family: var(--font-headline); font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+.redes-sidebar .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.redes-sidebar .sidebar-title { font-family: var(--font-headline); font-size: 1.25rem; font-weight: 700; color: var(--primary); }
 .badge { font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 99px; }
 .badge-secondary { background-color: var(--secondary-container); color: var(--on-secondary-container); }
 
@@ -408,74 +409,330 @@ body {
     color: var(--text-main, #2b1111); /* Mayor legibilidad en la descripción corta */
     padding: 0 1rem; 
 }
+/* ===== TABLET (<=1100px): Sidebar becomes compact chip bar ===== */
 @media (max-width: 1100px) {
     .estructura-main {
         height: auto;
-        min-height: calc(100vh - 70px);
         padding: 1rem;
     }
 
     .estructura-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .redes-sidebar {
-        order: 2;
-    }
-}
-
-@media (max-width: 768px) {
-    .page-header {
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
         gap: 1rem;
     }
 
-    .header-actions {
-        flex-wrap: wrap;
+    /* Chip bar container */
+    .redes-sidebar {
+        order: 0;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.6rem 0.75rem;
+        gap: 0.5rem;
+        align-items: center;
+        background: #fff;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(137, 114, 111, 0.15);
+        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.03);
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 20;
     }
 
-    .btn {
-        width: fit-content;
+    .redes-sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .redes-sidebar .sidebar-header {
+        display: none;
+    }
+
+    .impact-card {
+        display: none;
+    }
+
+    /* Horizontal chip list */
+    .redes-list {
+        display: flex;
+        flex-direction: row;
+        gap: 0.4rem;
+        overflow: visible;
+        flex: 1;
+        padding: 0;
+    }
+
+    /* Chip pill shape */
+    .red-card {
+        min-width: auto;
+        flex-shrink: 0;
+        padding: 0.45rem 0.85rem;
+        border-radius: 99px;
+        border: 1.5px solid rgba(137, 114, 111, 0.2);
+        background: var(--surface-container-lowest, #fff);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .red-card:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: rgba(137, 114, 111, 0.4);
+    }
+
+    .red-card.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.15);
+    }
+
+    .red-card.active .red-name {
+        color: #fff;
+    }
+
+    .red-card.active .red-count {
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .red-header {
+        margin-bottom: 0;
+        gap: 0;
+    }
+
+    .icon-more {
+        display: none;
+    }
+
+    .red-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .red-leader {
+        display: none;
+    }
+
+    .avatars {
+        display: none;
+    }
+
+    .red-count {
+        font-size: 0.65rem;
+        white-space: nowrap;
+        margin-left: 0.15rem;
+    }
+
+    .red-stats {
+        display: flex;
+        gap: 0;
+    }
+
+    .casas-section {
+        overflow-y: visible;
+        padding-right: 0;
+        flex: 1;
+    }
+}
+
+/* ===== MOBILE (<=768px) ===== */
+@media (max-width: 768px) {
+    .estructura-main {
+        padding: 0.75rem;
+        padding-top: 60px;
+        padding-bottom: 85px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        padding: 0.6rem 0.65rem;
+        font-size: 0.78rem;
     }
 
     .casas-header {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.75rem;
+        gap: 0.6rem;
+        padding: 0.85rem;
+        position: sticky;
+        top: 54px;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        border-radius: 0;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .section-title {
+        font-size: 1.15rem;
+    }
+
+    .section-subtitle {
+        font-size: 0.75rem;
     }
 
     .search-bar {
         max-width: 100%;
     }
 
-    .casas-grid {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    .search-bar input {
+        padding: 0.55rem 1rem 0.55rem 2.25rem;
+        font-size: 0.8rem;
     }
-}
 
-@media (max-width: 640px) {
-    .estructura-main {
+    .casas-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
         padding: 0.85rem;
     }
 
-    .redes-sidebar,
-    .casas-section {
-        padding: 1rem;
+    .casa-card {
+        padding: 1.15rem;
     }
 
-    .casa-card,
-    .casa-add-card {
-        padding: 1.15rem;
+    .casa-header {
+        gap: 0.5rem;
+    }
+
+    .casa-icon {
+        width: 2.2rem;
+        height: 2.2rem;
+    }
+
+    .casa-name {
+        font-size: 0.9rem;
+    }
+
+    .casa-zone {
+        font-size: 0.6rem;
+    }
+
+    .casa-details {
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-row {
+        font-size: 0.78rem;
+    }
+
+    .casa-footer {
+        padding-top: 0.7rem;
+    }
+
+    .attendance {
+        font-size: 0.72rem;
+    }
+
+    .btn-manage {
+        font-size: 0.72rem;
+    }
+}
+
+/* ===== SMALL MOBILE (<=640px) ===== */
+@media (max-width: 640px) {
+    .estructura-main {
+        padding: 0.65rem;
+        padding-top: 60px;
+        padding-bottom: 85px;
+        gap: 0;
+    }
+
+    .estructura-grid {
+        gap: 0;
+    }
+
+    .page-header {
+        padding: 0;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .title {
+        font-size: 1.3rem;
+    }
+
+    .subtitle {
+        font-size: 0.72rem;
+    }
+
+    .header-actions {
+        gap: 0.4rem;
+    }
+
+    .header-actions .btn {
+        padding: 0.55rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .redes-sidebar {
+        padding: 0.45rem 0.6rem;
+        gap: 0.3rem;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
+
+    .red-card {
+        padding: 0.35rem 0.65rem;
+    }
+
+    .red-name {
+        font-size: 0.68rem;
+    }
+
+    .red-count {
+        font-size: 0.58rem;
+    }
+
+    .casas-grid {
+        padding: 0.6rem;
+        gap: 0.65rem;
+    }
+
+    .casa-card {
+        padding: 0.9rem;
+        border-radius: 0.85rem;
     }
 
     .casa-footer {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.75rem;
+        gap: 0.4rem;
     }
 
-    .impact-card {
-        margin-top: 1rem;
+    .casa-add-card {
+        padding: 1rem;
+    }
+
+    .casa-add-card h4 {
+        font-size: 0.82rem;
+    }
+
+    .casa-add-card p {
+        font-size: 0.65rem;
     }
 }

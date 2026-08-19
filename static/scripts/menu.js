@@ -26,4 +26,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay) {
         overlay.addEventListener('click', toggleMenu);
     }
+
+    // 4. Bottom nav: ocultar al scrollear hacia abajo, mostrar al subir
+    const bottomNav = document.querySelector('.mobile-bottom-nav');
+    if (bottomNav) {
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+        let hidden = false;
+        const THRESHOLD = 50;
+
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+
+                    if (currentScrollY <= 15) {
+                        bottomNav.classList.remove('hidden-nav');
+                        hidden = false;
+                    } else if (!hidden && currentScrollY > lastScrollY && currentScrollY > THRESHOLD) {
+                        const downDelta = currentScrollY - lastScrollY;
+                        if (downDelta > 5) {
+                            bottomNav.classList.add('hidden-nav');
+                            hidden = true;
+                        }
+                    } else if (hidden && currentScrollY < lastScrollY) {
+                        const upDelta = lastScrollY - currentScrollY;
+                        if (upDelta > THRESHOLD) {
+                            bottomNav.classList.remove('hidden-nav');
+                            hidden = false;
+                        }
+                    }
+
+                    lastScrollY = currentScrollY;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+    }
 });
