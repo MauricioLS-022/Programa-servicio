@@ -12,10 +12,10 @@
         <div>
             {% if is_supervisor %}
             <h1 class="title">Panel de Supervisión Regional</h1>
-            <p class="subtitle">Monitoreo de actividad de tu red. Bienvenido, {{ usuario }}.</p>
+            <p class="subtitle">Monitoreo de actividad de tu red ministerial. Bienvenido, {{ usuario }}.</p>
             {% else %}
             <h1 class="title">Panel Administrativo</h1>
-            <p class="subtitle">Bienvenido de vuelta. Aquí está el resumen de la actividad ministerial.</p>
+            <p class="subtitle">Bienvenido de vuelta. Resumen ejecutivo de la actividad ministerial y consolidación.</p>
             {% endif %}
         </div>
     </header>
@@ -35,7 +35,6 @@
             <div id="groupRed" class="filter-group {% if nivel == 'general' %}hidden{% endif %}">
                 <label for="selectRed" class="filter-label">Seleccionar Red</label>
                 <select id="selectRed" name="red_id" class="filter-select" data-search-placeholder="Buscar red...">
-                    <option value="">-- Selecciona una Red --</option>
                     {% for red in redes %}
                     <option value="{{ red.id }}" {% if red_id == red.id %}selected{% endif %} data-search="{{ red.nombre|lower }} {{ red.supervisor|lower }}">{{ red.nombre }}</option>
                     {% endfor %}
@@ -45,7 +44,6 @@
             <div id="groupCdp" class="filter-group {% if nivel != 'cdp' %}hidden{% endif %}">
                 <label for="selectCdp" class="filter-label">Casa de Paz</label>
                 <select id="selectCdp" name="cdp_id" class="filter-select" data-search-placeholder="Buscar por código, nombre o líder...">
-                    <option value="">-- Selecciona Casa de Paz --</option>
                     {% for cdp in casas %}
                     <option value="{{ cdp.id }}" {% if cdp_id == cdp.id %}selected{% endif %} data-search="{{ cdp.nombre|lower }} {{ cdp.codigo|lower }} {{ cdp.lider|default('')|lower }}">{{ cdp.nombre }} ({{ cdp.codigo }})</option>
                     {% endfor %}
@@ -55,10 +53,10 @@
             <div class="filter-group search-group">
                 <label for="searchInput" class="filter-label">
                     <span class="material-symbols-outlined" style="font-size: 0.9rem;">search</span>
-                    Buscar
+                    Buscar rápido
                 </label>
                 <div class="search-input-wrapper">
-                    <input type="text" id="searchInput" name="q" class="filter-search" placeholder="Red, código CDP o líder..." value="{{ request.args.get('q', '') }}">
+                    <input type="text" id="searchInput" name="q" class="filter-search" placeholder="Buscar por Red, código CDP o líder..." value="{{ request.args.get('q', '') }}">
                     <button type="button" id="clearSearch" class="clear-search-btn" title="Limpiar búsqueda">
                         <span class="material-symbols-outlined">close</span>
                     </button>
@@ -66,7 +64,7 @@
             </div>
             
             <div class="filter-actions">
-                <a href="{{ url_for('admin_dashboard') }}" class="btn-reset" title="Limpiar filtros">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-reset" title="Restablecer filtros">
                     <span class="material-symbols-outlined">restart_alt</span>
                 </a>
             </div>
@@ -75,10 +73,12 @@
 
     <!-- Contenido basado en nivel -->
     <div class="view-panels">
-        <!-- VISTA GENERAL -->
+        <!-- ===================================================================
+             VISTA 1: GENERAL (IGLESIA GLOBAL)
+             =================================================================== -->
         {% if nivel == 'general' %}
         <section class="view-panel view-general active">
-            <!-- Summary Cards -->
+            <!-- Summary Cards (KPIs Top) -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
@@ -97,7 +97,7 @@
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
-                    <div class="card-number">${{ metricas.ofrendas|default(0) }}</div>
+                    <div class="card-number">${{ '{:,}'.format(metricas.ofrendas|default(0)) }}</div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
 
@@ -109,201 +109,347 @@
                 </article>
             </section>
 
-            <!-- Status and Alerts Row -->
-            <section class="status-grid">
-                <article class="status-card fade-in-5" role="region" aria-labelledby="reportes-hoy-title">
-                    <div class="status-card-header">
-                        <h2 id="reportes-hoy-title" class="section-title">Reportes de Hoy</h2>
-                        <p class="section-subtitle">{{ metricas.reportes_enviados|default(0) }} de {{ metricas.total_casas|default(0) }} Casas de Paz han completado su reporte semanal.</p>
-                    </div>
-                    <div class="status-card-body">
-                        <div class="progress-ring" role="img" aria-label="{{ metricas.cumplimiento|default(0) }} por ciento de reportes completados">
-                            <span class="progress-value">{{ metricas.cumplimiento|default(0) }}%</span>
-                        </div>
-                        <div class="status-details">
-                            <p class="status-note">Crecimiento estable comparado con ayer.</p>
-                        </div>
-                    </div>
-                </article>
-
-                <aside class="warning-card fade-in-6" role="region" aria-labelledby="alertas-seguimiento-title">
-                    <div class="status-card-header">
-                        <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
-                    </div>
-
-                    <div class="alert-list">
-                        {% if metricas.alertas %}
-                            {% for alerta in metricas.alertas %}
-                            <article class="alert-item">
-                                <div>
-                                    <h4>{{ alerta.nombre }}</h4>
-                                    <p>{{ alerta.dias_sin_reporte }} días sin reporte</p>
-                                </div>
-                                <button class="btn-full-outline">Contactar</button>
-                            </article>
-                            {% endfor %}
-                        {% else %}
-                        <article class="alert-item positive">
+            <!-- Main Dashboard Grid (2 Columnas) -->
+            <div class="dashboard-grid">
+                <!-- Columna Izquierda: Tendencia y Distribución -->
+                <div class="main-column">
+                    <!-- Tarjeta: Gráfica de Tendencia de Asistencia (Últimas 8 semanas) -->
+                    <section class="chart-card fade-in-5">
+                        <div class="chart-header">
                             <div>
-                                <h4>¡Excelente!</h4>
-                                <p>Todas las Casas de Paz han enviado su reporte.</p>
+                                <h2 class="section-title">Tendencia de Asistencia Semanal</h2>
+                                <p class="section-subtitle">Histórico de las últimas 8 semanas · Crecimiento constante (+15.5%)</p>
                             </div>
-                            <span class="material-symbols-outlined check-positive">check_circle</span>
-                        </article>
-                        {% endif %}
-                    </div>
+                            <div class="trend-badge-pill">
+                                <span class="material-symbols-outlined">trending_up</span>
+                                <span>+15.5% vs Sem 1</span>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de barras de tendencia -->
+                        <div class="trend-chart-area">
+                            <div class="trend-bars-container">
+                                {% for item in metricas.tendencia_semanas %}
+                                <div class="trend-bar-col">
+                                    <div class="trend-bar-track">
+                                        <div class="trend-bar-fill" style="height: {{ item.porcentaje }}%;" title="{{ item.semana }}: {{ item.asistencia }} asistentes">
+                                            <span class="trend-bar-val">{{ item.asistencia }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="trend-bar-lbl">{{ item.semana }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tarjeta: Distribución por Categoría (Donut) -->
+                    <section class="chart-card fade-in-6" style="margin-top: 1rem;">
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="section-title">Distribución por Categoría</h2>
+                                <p class="section-subtitle">Composición de membresía y consolidación general</p>
+                            </div>
+                        </div>
+
+                        <div class="chart-area">
+                            <ul class="chart-legend" aria-hidden="true">
+                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
+                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
+                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
+                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos }})</li>
+                            </ul>
+                            <div class="donut-wrapper" role="img" aria-label="Gráfico de distribución total de asistencia">
+                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
+                                <div class="donut-center">
+                                    <span class="donut-label">TOTAL</span>
+                                    <span class="donut-number">{{ metricas.total_asistencia }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Columna Derecha (Sidebar General) -->
+                <aside class="sidebar-column fade-in-6">
+                    <!-- Bloque 1: Alertas de Seguimiento -->
+                    <article class="warning-card" role="region" aria-labelledby="alertas-seguimiento-title">
+                        <div class="status-card-header">
+                            <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
+                            <p class="section-subtitle">Casas con &gt;2 semanas sin reporte</p>
+                        </div>
+
+                        <div class="alert-list">
+                            {% if metricas.alertas %}
+                                {% for alerta in metricas.alertas %}
+                                <article class="alert-item">
+                                    <div class="alert-info-text">
+                                        <h4>{{ alerta.nombre }} <span class="badge-code">{{ alerta.codigo }}</span></h4>
+                                        <p class="alert-meta">{{ alerta.red }} · Líder: {{ alerta.lider }}</p>
+                                        <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">schedule</span> {{ alerta.dias_sin_reporte }} días sin reporte</p>
+                                    </div>
+                                    <a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Contactar por WhatsApp">
+                                        <span class="material-symbols-outlined">chat</span>
+                                        Contactar
+                                    </a>
+                                </article>
+                                {% endfor %}
+                            {% else %}
+                            <article class="alert-item positive">
+                                <div>
+                                    <h4>¡Excelente!</h4>
+                                    <p>Todas las Casas de Paz han enviado su reporte a tiempo.</p>
+                                </div>
+                                <span class="material-symbols-outlined check-positive">check_circle</span>
+                            </article>
+                            {% endif %}
+                        </div>
+                    </article>
+
+                    <!-- Bloque 2: Ranking de Redes (Barras de Cumplimiento) -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Ranking de Redes</h2>
+                            <p class="section-subtitle">Cumplimiento y asistencia por zona</p>
+                        </div>
+                        
+                        <div class="network-ranking-list">
+                            {% for red_item in metricas.ranking_redes %}
+                            <div class="ranking-item">
+                                <div class="ranking-row">
+                                    <div class="ranking-name-box">
+                                        <span class="ranking-pos">#{{ loop.index }}</span>
+                                        <strong>{{ red_item.nombre }}</strong>
+                                        <span class="ranking-sup">({{ red_item.supervisor }})</span>
+                                    </div>
+                                    <div class="ranking-stats">
+                                        <span class="ranking-asist">{{ red_item.asistencia }} asists.</span>
+                                        <span class="ranking-percent">{{ red_item.cumplimiento }}%</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill fill-{{ red_item.color_class }}" style="width: {{ red_item.cumplimiento }}%;"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </article>
                 </aside>
-            </section>
+            </div>
         </section>
 
-        <!-- VISTA POR RED -->
+        <!-- ===================================================================
+             VISTA 2 & 3: VISTA POR RED (RED SELECCIONADA)
+             =================================================================== -->
         {% elif nivel == 'red' %}
         <section class="view-panel view-red active">
             <div class="section-header-row">
                 <div>
-                    <h2 class="section-title">{{ metricas.nombre_red|default('Resumen por Red') }}</h2>
+                    <h2 class="section-title">{{ metricas.nombre_red }}</h2>
                     <p class="section-subtitle">
-                        {% if metricas.supervisor %}
-                        Supervisor: {{ metricas.supervisor }} · 
-                        {% endif %}
-                        Perfil de la red y métricas filtradas.
+                        Supervisor: <strong>{{ metricas.supervisor }}</strong> · Monitoreo y métricas zonales
                     </p>
                 </div>
-                {% if metricas.red_id %}
-                <div class="cdp-badges">
-                    <span class="badge-status badge-info">{{ metricas.casas_activas|default(0) }} Casas Activas</span>
+                <div class="header-action-group">
+                    <span class="badge-status badge-info">{{ metricas.casas_activas }} Casas Activas</span>
+                    <button class="btn-full-outline btn-export-header" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
+                        <span class="material-symbols-outlined">download</span>
+                        Exportar Resumen
+                    </button>
                 </div>
-                {% endif %}
             </div>
 
-            {% if metricas.red_id %}
+            <!-- KPIs Top de Red -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Asistencia Total</h3>
-                    <div class="card-number">{{ metricas.asistencia_total|default(0) }}</div>
+                    <div class="card-number">{{ metricas.asistencia_total }}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">home_work</span>
                     <h3 class="card-title">Promedio por Casa</h3>
-                    <div class="card-number">{{ metricas.promedio_casa|default(0) }}</div>
+                    <div class="card-number">{{ metricas.promedio_casa }}</div>
                     <span class="material-symbols-outlined watermark-icon">home_work</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">child_care</span>
                     <h3 class="card-title">Total Niños</h3>
-                    <div class="card-number">{{ metricas.ninos|default(0) }}</div>
+                    <div class="card-number">{{ metricas.ninos }}</div>
                     <span class="material-symbols-outlined watermark-icon">child_care</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas de Red</h3>
-                    <div class="card-number">${{ metricas.ofrendas|default(0) }}</div>
+                    <div class="card-number">${{ '{:,}'.format(metricas.ofrendas) }}</div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
             </section>
 
-            <section class="status-grid">
-                <article class="status-card fade-in-5" role="region" aria-labelledby="semaforo-title">
-                    <div class="status-card-header">
-                        <h2 id="semaforo-title" class="section-title">Semáforo de Cumplimiento</h2>
-                        <p class="section-subtitle">Estado de reporte de cada Casa de Paz</p>
-                    </div>
-                    <div class="semaforo-grid">
-                        {% if metricas.casas %}
+            <!-- Main Dashboard Grid de Red -->
+            <div class="dashboard-grid">
+                <!-- Columna Izquierda: Semáforo y Distribución -->
+                <div class="main-column">
+                    <!-- Semáforo de Cumplimiento -->
+                    <article class="status-card fade-in-5" role="region" aria-labelledby="semaforo-title">
+                        <div class="status-card-header">
+                            <h2 id="semaforo-title" class="section-title">Semáforo de Cumplimiento Zonal</h2>
+                            <p class="section-subtitle">Estado de reporte semanal de cada Casa de Paz en {{ metricas.nombre_red }}</p>
+                        </div>
+                        <div class="semaforo-grid">
                             {% for casa in metricas.casas %}
                             <article class="semaforo-item">
-                                <span class="semaforo-dot {% if casa.estado == 'verde' %}verde{% elif casa.estado == 'amarillo' %}amarillo{% else %}rojo{% endif %}"></span>
+                                <span class="semaforo-dot {{ casa.estado }}"></span>
                                 <div class="semaforo-info">
-                                    <h4>{{ casa.nombre }}</h4>
-                                    <span class="asistencia-num">{{ casa.asistencia }} asists.</span>
+                                    <div class="semaforo-name-row">
+                                        <h4>{{ casa.nombre }}</h4>
+                                        <span class="badge-code">{{ casa.codigo }}</span>
+                                    </div>
+                                    <span class="asistencia-num">Líder: {{ casa.lider }} · {{ casa.asistencia }} asistentes ({{ casa.visitas }} visitas)</span>
                                 </div>
                                 <span class="badge-status {% if casa.estado == 'verde' %}badge-success{% elif casa.estado == 'amarillo' %}badge-warning{% else %}badge-danger{% endif %}">
-                                    {% if casa.estado == 'verde' %}Enviado{% elif casa.estado == 'amarillo' %}Caída ≥30%{% else %}Pendiente{% endif %}
+                                    {% if casa.estado == 'verde' %}Enviado / OK{% elif casa.estado == 'amarillo' %}Caída ≥30%{% else %}Pendiente{% endif %}
                                 </span>
                             </article>
                             {% endfor %}
-                        {% else %}
-                        <p class="empty-message">Selecciona una red para ver el semáforo.</p>
-                        {% endif %}
-                    </div>
-                </article>
-
-                <aside class="warning-card fade-in-6" role="region" aria-labelledby="oportunidades-title">
-                    <div class="status-card-header">
-                        <h2 id="oportunidades-title" class="section-title">Top y Oportunidades</h2>
-                    </div>
-                    <div class="alert-list">
-                        <article class="alert-item positive">
-                            <div>
-                                <h4>🏆 Top Crecimiento</h4>
-                                <p>Casa Bethel (+12%)</p>
-                            </div>
-                        </article>
-                        <article class="alert-item">
-                            <div>
-                                <h4>⚠️ En Riesgo</h4>
-                                <p>Casa Luz requiere apoyo</p>
-                            </div>
-                            <button class="btn-full-outline">Ver</button>
-                        </article>
-                    </div>
-                </aside>
-            </section>
-            {% else %}
-            <section class="status-grid">
-                <article class="status-card">
-                    <div class="status-card-header">
-                        <h2 class="section-title">Selecciona una Red</h2>
-                        <p class="section-subtitle">Utiliza el filtro above para seleccionar una red ministerial.</p>
-                    </div>
-                    <div class="status-card-body">
-                        <div class="empty-state">
-                            <span class="material-symbols-outlined empty-icon">domain</span>
-                            <p>Selecciona una red del filtro para ver sus métricas</p>
                         </div>
-                    </div>
-                </article>
-            </section>
-            {% endif %}
+                    </article>
+
+                    <!-- Distribución de Asistencia en la Red (Donut) -->
+                    <section class="chart-card fade-in-6" style="margin-top: 1rem;">
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="section-title">Distribución de Asistencia</h2>
+                                <p class="section-subtitle">Composición de asistentes en {{ metricas.nombre_red }}</p>
+                            </div>
+                        </div>
+
+                        <div class="chart-area">
+                            <ul class="chart-legend" aria-hidden="true">
+                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
+                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
+                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
+                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos }})</li>
+                            </ul>
+                            <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia de la red">
+                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
+                                <div class="donut-center">
+                                    <span class="donut-label">TOTAL</span>
+                                    <span class="donut-number">{{ metricas.asistencia_total }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Columna Derecha (Sidebar Red) -->
+                <aside class="sidebar-column fade-in-6">
+                    <!-- Bloque 1: Alertas Zonal -->
+                    <article class="warning-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Alertas Zonal</h2>
+                            <p class="section-subtitle">Casas con riesgo o reportes pendientes</p>
+                        </div>
+                        <div class="alert-list">
+                            {% for alerta in metricas.alertas_zonal %}
+                            <article class="alert-item">
+                                <div class="alert-info-text">
+                                    <h4>{{ alerta.nombre }} <span class="badge-code">{{ alerta.codigo }}</span></h4>
+                                    <p class="alert-meta">Líder: {{ alerta.lider }}</p>
+                                    <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
+                                </div>
+                                <a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Atender por WhatsApp">
+                                    <span class="material-symbols-outlined">support_agent</span>
+                                    Atender
+                                </a>
+                            </article>
+                            {% endfor %}
+                        </div>
+                    </article>
+
+                    <!-- Bloque 2: Top Crecimiento -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Top Crecimiento</h2>
+                            <p class="section-subtitle">Mayor retención de visitas y consolidación</p>
+                        </div>
+                        <div class="top-growth-box">
+                            <div class="growth-badge-icon">
+                                <span class="material-symbols-outlined">workspace_premium</span>
+                            </div>
+                            <div class="growth-details">
+                                <h3>{{ metricas.top_crecimiento.nombre }} <span class="badge-code">{{ metricas.top_crecimiento.codigo }}</span></h3>
+                                <p class="growth-rate"><strong class="text-success">{{ metricas.top_crecimiento.tasa }}</strong> crecimiento mensual</p>
+                                <p class="growth-sub">{{ metricas.top_crecimiento.visitas }} visitas retenidas · Líder: {{ metricas.top_crecimiento.lider }}</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Bloque 3: Equipo de Supervisores a Cargo -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Supervisores a Cargo</h2>
+                            <p class="section-subtitle">Liderazgo y supervisión de red</p>
+                        </div>
+                        <div class="supervisores-list">
+                            {% for sup in metricas.supervisores %}
+                            <div class="supervisor-card-item">
+                                <div class="supervisor-avatar">
+                                    <span class="material-symbols-outlined">badge</span>
+                                </div>
+                                <div class="supervisor-info">
+                                    <h4>{{ sup.nombre }}</h4>
+                                    <p>{{ sup.rol }}</p>
+                                </div>
+                                <a href="tel:{{ sup.telefono }}" class="btn-icon-call" title="Llamar {{ sup.nombre }}">
+                                    <span class="material-symbols-outlined">call</span>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </aside>
+            </div>
         </section>
 
-        <!-- VISTA POR CASA DE PAZ -->
+        <!-- ===================================================================
+             VISTA 4: VISTA CASA DE PAZ
+             =================================================================== -->
         {% elif nivel == 'cdp' %}
         <section class="view-panel view-cdp active">
-            {% if cdp_id and metricas.nombre_cdp %}
+            <!-- Header de Casa de Paz -->
             <div class="section-header-row">
                 <div>
                     <h2 class="section-title">{{ metricas.nombre_cdp }}</h2>
-                    <p class="section-subtitle">{{ metricas.direccion|default('Dirección no registrada') }}</p>
+                    <p class="section-subtitle"><span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle;">location_on</span> {{ metricas.direccion }}</p>
                 </div>
                 <div class="cdp-badges">
-                    <span class="badge-status badge-info">{{ metricas.codigo|default('') }}</span>
+                    <span class="badge-status badge-info">{{ metricas.codigo }}</span>
                     {% if metricas.potencial_multiplicacion %}
                     <span class="badge-status badge-warning">🚀 Potencial de Multiplicación</span>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Ficha del líder -->
+            <!-- Ficha del Líder & Trazabilidad -->
             <section class="cdp-header-card">
                 <div class="lider-info">
                     <div class="lider-avatar">
                         <span class="material-symbols-outlined">person</span>
                     </div>
                     <div class="lider-details">
-                        <h3>{{ metricas.lider|default('Líder no asignado') }}</h3>
+                        <h3>{{ metricas.lider }}</h3>
                         <p>Líder principal</p>
                     </div>
                 </div>
                 {% if metricas.sublider %}
                 <div class="lider-info">
                     <div class="lider-avatar">
-                        <span class="material-symbols-outlined">person</span>
+                        <span class="material-symbols-outlined">supervisor_account</span>
                     </div>
                     <div class="lider-details">
                         <h3>{{ metricas.sublider }}</h3>
@@ -311,327 +457,195 @@
                     </div>
                 </div>
                 {% endif %}
+
+                <!-- Trazabilidad de Último Reporte -->
+                <div class="trazabilidad-box">
+                    <span class="material-symbols-outlined text-primary">verified</span>
+                    <div class="trazabilidad-text">
+                        <span class="trazabilidad-label">Último Reporte Enviado</span>
+                        <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por }}</strong> · {{ metricas.ultimo_reporte_fecha }}</span>
+                    </div>
+                </div>
+
                 <div class="lider-actions">
-                    <button class="btn-full-outline">
+                    <a href="https://wa.me/{{ metricas.telefono_contacto|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline">
                         <span class="material-symbols-outlined">chat</span>
                         WhatsApp
-                    </button>
+                    </a>
                 </div>
             </section>
 
+            <!-- Summary Cards (KPIs Top) -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">event_available</span>
                     <h3 class="card-title">Asistencia Último Servicio</h3>
-                    <div class="card-number">{{ metricas.asistencia_ultimo|default(0) }}</div>
+                    <div class="card-number">{{ metricas.asistencia_ultimo }}</div>
                     <span class="material-symbols-outlined watermark-icon">event_available</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">insights</span>
                     <h3 class="card-title">Promedio Histórico</h3>
-                    <div class="card-number">{{ metricas.promedio_historico|default(0) }}</div>
+                    <div class="card-number">{{ metricas.promedio_historico }}</div>
                     <span class="material-symbols-outlined watermark-icon">insights</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
-                    <span class="material-symbols-outlined card-icon text-primary-container">person_search</span>
-                    <h3 class="card-title">Total Visitas</h3>
-                    <div class="card-number">{{ metricas.visitas|default(0) }}</div>
-                    <span class="material-symbols-outlined watermark-icon">person_search</span>
+                    <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
+                    <h3 class="card-title">Nuevas Decisiones</h3>
+                    <div class="card-number">{{ metricas.conversiones }}</div>
+                    <span class="material-symbols-outlined watermark-icon">person_add</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">send</span>
-                    <h3 class="card-title">Estado Reporte</h3>
+                    <h3 class="card-title">Estado del Reporte</h3>
                     <div class="card-number">
-                        <span class="badge-status {% if metricas.estado_reporte == 'enviado' %}badge-success{% else %}badge-danger{% endif %}">
-                            {% if metricas.estado_reporte == 'enviado' %}Enviado{% else %}Pendiente{% endif %}
+                        <span class="badge-status badge-success">
+                            <span class="material-symbols-outlined" style="font-size: 0.85rem;">check</span> Enviado
                         </span>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">send</span>
                 </article>
             </section>
 
-            <section class="status-grid">
-                <article class="status-card fade-in-5" role="region" aria-labelledby="historial-title">
-                    <div class="status-card-header">
-                        <h2 id="historial-title" class="section-title">Historial de Reportes</h2>
-                        <p class="section-subtitle">Últimos 8 reportes enviados</p>
-                    </div>
-                    <div class="table-scroll">
-                        <table class="cdp-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Asistencia</th>
-                                    <th>Niños</th>
-                                    <th>Visitas</th>
-                                    <th>Ofrenda</th>
-                                    <th>Observaciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if metricas.historial %}
+            <!-- Main Dashboard Grid de Casa de Paz -->
+            <div class="dashboard-grid">
+                <!-- Columna Izquierda: Historial y Donut -->
+                <div class="main-column">
+                    <!-- Historial de Reportes -->
+                    <article class="status-card fade-in-5" role="region" aria-labelledby="historial-title">
+                        <div class="status-card-header">
+                            <h2 id="historial-title" class="section-title">Historial de Reportes</h2>
+                            <p class="section-subtitle">Últimos reportes registrados de la Casa de Paz</p>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="cdp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Asistencia</th>
+                                        <th>Niños</th>
+                                        <th>Visitas</th>
+                                        <th>Ofrenda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {% for reporte in metricas.historial %}
                                     <tr>
-                                        <td>{{ reporte.fecha }}</td>
-                                        <td>{{ reporte.asistencia }}</td>
-                                        <td>{{ reporte.ninos }}</td>
-                                        <td>{{ reporte.visitas }}</td>
-                                        <td>${{ reporte.ofrenda }}</td>
-                                        <td>{{ reporte.observaciones|default('-') }}</td>
+                                        <td data-label="Fecha"><strong>{{ reporte.fecha }}</strong></td>
+                                        <td data-label="Asistencia"><span class="asist-pill">{{ reporte.asistencia }}</span></td>
+                                        <td data-label="Niños">{{ reporte.ninos }}</td>
+                                        <td data-label="Visitas">{{ reporte.visitas }}</td>
+                                        <td data-label="Ofrenda">${{ reporte.ofrenda }}</td>
                                     </tr>
                                     {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="6" class="empty-message">No hay reportes disponibles</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-
-                <aside class="warning-card fade-in-6" role="region" aria-labelledby="observaciones-title">
-                    <div class="status-card-header">
-                        <h2 id="observaciones-title" class="section-title">Notas Recientes</h2>
-                    </div>
-                    <div class="observaciones-list">
-                        {% if metricas.historial and metricas.historial[0].observaciones %}
-                        <article class="observacion-item">
-                            <span class="observacion-fecha">{{ metricas.historial[0].fecha }}</span>
-                            <p>{{ metricas.historial[0].observaciones }}</p>
-                        </article>
-                        {% else %}
-                        <p class="empty-message">Sin observaciones recientes</p>
-                        {% endif %}
-                    </div>
-                </aside>
-            </section>
-            {% else %}
-            <section class="status-grid">
-                <article class="status-card">
-                    <div class="status-card-header">
-                        <h2 class="section-title">Selecciona una Casa de Paz</h2>
-                        <p class="section-subtitle">Utiliza los filtros above para seleccionar una Casa de Paz.</p>
-                    </div>
-                    <div class="status-card-body">
-                        <div class="empty-state">
-                            <span class="material-symbols-outlined empty-icon">home_work</span>
-                            <p>Selecciona una casa de paz del filtro para ver sus métricas</p>
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                </article>
-            </section>
-            {% endif %}
-        </section>
-        {% endif %}
+                    </article>
 
-    <!-- Main Content Area - Dinámico según nivel -->
-    <div class="dashboard-grid">
-        
-        <!-- Chart Area (Left) - Solo visible en nivel general -->
-        {% if nivel == 'general' %}
-        <section class="chart-card fade-in-5">
-            <div class="chart-header">
-                <div>
-                    <h2 class="section-title">Estadísticas de Reportes</h2>
-                    <p class="section-subtitle">Seguimiento de crecimiento ministerial por periodo</p>
-                </div>
-                <div class="toggle-group">
-                    <button class="toggle-btn active">Semanal</button>
-                    <button class="toggle-btn">Mensual</button>
-                    <button class="toggle-btn">Anual</button>
-                </div>
-            </div>
+                    <!-- Distribución de Asistencia del Último Reporte (Donut) -->
+                    <section class="chart-card fade-in-6" style="margin-top: 1rem;">
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="section-title">Distribución del Último Reporte</h2>
+                                <p class="section-subtitle">Asistencia registrada el {{ metricas.historial[0].fecha }} en {{ metricas.nombre_cdp }}</p>
+                            </div>
+                        </div>
 
-            <!-- Donut Chart -->
-            <div class="chart-area">
-                <ul class="chart-legend" aria-hidden="true">
-                    <li><span class="dot regular"></span> Regulares</li>
-                    <li><span class="dot ninos"></span> Niños</li>
-                    <li><span class="dot visitas"></span> Visitas</li>
-                    <li><span class="dot comprometidos"></span> Comprometidos</li>
-                </ul>
-                <div class="donut-wrapper" role="img" aria-label="Gráfico de reporte total de 1,248 reportes">
-                    <!-- data attributes: counts for each segment (can be filled by Jinja from backend) -->
-                    <div class="donut-ring" data-regular="724" data-ninos="300" data-visitas="124" data-comprometidos="100"></div>
-                    <div class="donut-center">
-                        <span class="donut-label">TOTAL</span>
-                        <span class="donut-number">1,248</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="side-cards fade-in-6">
-            <article class="participation-card">
-                <h2 class="section-title">Participación por Red</h2>
-                <div class="network-progress">
-                    <div class="network-row">
-                        <span>Red Norte</span>
-                        <span>65%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill width-65"></div>
-                    </div>
-
-                    <div class="network-row">
-                        <span>Red Sur</span>
-                        <span>82%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill width-82"></div>
-                    </div>
-
-                    <div class="network-row">
-                        <span>Red Central</span>
-                        <span>88%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill width-88"></div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="offer-card">
-                <h2 class="section-title">Ofrendas de la Semana</h2>
-                <div class="offer-value">$12,450.00</div>
-                <p class="section-subtitle">Crecimiento +12% vs semana anterior</p>
-            </article>
-        </div>
-        {% endif %}
-
-        <!-- Contenido para Nivel RED -->
-        {% if nivel == 'red' and metricas.red_id %}
-        <section class="chart-card fade-in-5">
-            <div class="chart-header">
-                <div>
-                    <h2 class="section-title">Métricas de Reportes</h2>
-                    <p class="section-subtitle">Distribución de asistencia en la red</p>
-                </div>
-            </div>
-
-            <!-- Donut Chart para Red -->
-            <div class="chart-area">
-                <ul class="chart-legend" aria-hidden="true">
-                    <li><span class="dot regular"></span> Adultos</li>
-                    <li><span class="dot ninos"></span> Niños</li>
-                    <li><span class="dot visitas"></span> Visitas</li>
-                    <li><span class="dot comprometidos"></span> Nuevos</li>
-                </ul>
-                <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia de la red">
-                    <div class="donut-ring" data-regular="300" data-ninos="142" data-visitas="44" data-comprometidos="20"></div>
-                    <div class="donut-center">
-                        <span class="donut-label">TOTAL</span>
-                        <span class="donut-number">{{ metricas.asistencia_total }}</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="side-cards fade-in-6">
-            <article class="participation-card">
-                <h2 class="section-title">Top Casas</h2>
-                <div class="top-list">
-                    {% if metricas.casas %}
-                        {% for casa in metricas.casas %}
-                            {% if loop.index <= 3 %}
-                            <article class="top-item-compact">
-                                <span class="semaforo-dot {% if casa.estado == 'verde' %}verde{% elif casa.estado == 'amarillo' %}amarillo{% else %}rojo{% endif %}"></span>
-                                <div class="top-info">
-                                    <h4>{{ casa.nombre }}</h4>
-                                    <p>{{ casa.asistencia }} asistentes</p>
+                        <div class="chart-area">
+                            <ul class="chart-legend" aria-hidden="true">
+                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
+                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
+                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
+                            </ul>
+                            <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia del último reporte">
+                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="0"></div>
+                                <div class="donut-center">
+                                    <span class="donut-label">TOTAL</span>
+                                    <span class="donut-number">{{ metricas.asistencia_ultimo }}</span>
                                 </div>
-                                <span class="badge-status {% if casa.estado == 'verde' %}badge-success{% elif casa.estado == 'amarillo' %}badge-warning{% else %}badge-danger{% endif %}">
-                                    {% if casa.estado == 'verde' %}OK{% elif casa.estado == 'amarillo' %}Caída{% else %}Pendiente{% endif %}
-                                </span>
-                            </article>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                    <p class="empty-message">Sin datos disponibles</p>
-                    {% endif %}
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </article>
 
-            <article class="offer-card">
-                <h2 class="section-title">Rendimiento de Red</h2>
-                <div class="offer-value">{{ metricas.cumplimiento|default(0) }}%</div>
-                <p class="section-subtitle">{{ metricas.casas_activas|default(0) }} casas activas</p>
-            </article>
-        </div>
-        {% endif %}
+                <!-- Columna Derecha (Sidebar Casa de Paz - Equilibrado) -->
+                <aside class="sidebar-column fade-in-6">
+                    <!-- Bloque 1: Observaciones / Notas del Último Reporte -->
+                    <article class="warning-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Notas del Último Reporte</h2>
+                            <p class="section-subtitle">Registrado por {{ metricas.lider }} el {{ metricas.historial[0].fecha }}</p>
+                        </div>
+                        <div class="observacion-box">
+                            <div class="observacion-quote">
+                                <span class="material-symbols-outlined quote-icon">format_quote</span>
+                                <p>{{ metricas.historial[0].observaciones }}</p>
+                            </div>
+                        </div>
+                    </article>
 
-        <!-- Contenido para Nivel CDP -->
-        {% if nivel == 'cdp' and cdp_id and metricas.nombre_cdp %}
-        <section class="chart-card fade-in-5">
-            <div class="chart-header">
-                <div>
-                    <h2 class="section-title">Métricas del Último Reporte</h2>
-                    <p class="section-subtitle">Distribución de asistencia en {{ metricas.nombre_cdp }}</p>
-                </div>
-            </div>
+                    <!-- Bloque 2: Mini Histórico de Asistencia (Últimas 4 reuniones) -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Mini Histórico de Asistencia</h2>
+                            <p class="section-subtitle">Últimas 4 reuniones en gráfico de barras</p>
+                        </div>
+                        <div class="mini-chart-container">
+                            <div class="mini-bars-row">
+                                {% for bar in metricas.mini_historico %}
+                                <div class="mini-bar-col">
+                                    <div class="mini-bar-track">
+                                        <div class="mini-bar-fill" style="height: {{ bar.altura }}%;">
+                                            <span class="mini-bar-value">{{ bar.asistencia }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="mini-bar-lbl">{{ bar.fecha }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </article>
 
-            <!-- Donut Chart para CDP -->
-            <div class="chart-area">
-                <ul class="chart-legend" aria-hidden="true">
-                    <li><span class="dot regular"></span> Adultos ({{ metricas.asistencia_ultimo - metricas.historial[0].ninos if metricas.historial else 0 }})</li>
-                    <li><span class="dot ninos"></span> Niños ({{ metricas.historial[0].ninos if metricas.historial else 0 }})</li>
-                    <li><span class="dot visitas"></span> Visitas ({{ metricas.historial[0].visitas if metricas.historial else 0 }})</li>
-                </ul>
-                <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia del último reporte">
-                    <div class="donut-ring" data-regular="{{ (metricas.asistencia_ultimo - metricas.historial[0].ninos) if metricas.historial else 30 }}" data-ninos="{{ metricas.historial[0].ninos if metricas.historial else 10 }}" data-visitas="{{ metricas.historial[0].visitas if metricas.historial else 5 }}" data-comprometidos="0"></div>
-                    <div class="donut-center">
-                        <span class="donut-label">TOTAL</span>
-                        <span class="donut-number">{{ metricas.asistencia_ultimo }}</span>
-                    </div>
-                </div>
+                    <!-- Bloque 3: Datos de Contacto y Anfitrión -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Datos del Anfitrión</h2>
+                            <p class="section-subtitle">Ubicación y contacto geográfico</p>
+                        </div>
+                        <div class="anfitrion-details-list">
+                            <div class="anfitrion-detail-item">
+                                <span class="material-symbols-outlined">family_restroom</span>
+                                <div>
+                                    <h4>Anfitrión</h4>
+                                    <p>{{ metricas.anfitrion }}</p>
+                                </div>
+                            </div>
+                            <div class="anfitrion-detail-item">
+                                <span class="material-symbols-outlined">pin_drop</span>
+                                <div>
+                                    <h4>Dirección</h4>
+                                    <p>{{ metricas.direccion }}</p>
+                                </div>
+                            </div>
+                            <div class="anfitrion-detail-item">
+                                <span class="material-symbols-outlined">call</span>
+                                <div>
+                                    <h4>Contacto</h4>
+                                    <p>{{ metricas.telefono_contacto }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </aside>
             </div>
         </section>
-
-        <div class="side-cards fade-in-6">
-            <article class="participation-card">
-                <h2 class="section-title">Resumen del CDP</h2>
-                <div class="cdp-quick-stats">
-                    <div class="quick-stat">
-                        <span class="material-symbols-outlined">calendar_today</span>
-                        <div>
-                            <h4>{{ metricas.historial|length }}</h4>
-                            <p>Reportes enviados</p>
-                        </div>
-                    </div>
-                    <div class="quick-stat">
-                        <span class="material-symbols-outlined">trending_up</span>
-                        <div>
-                            {% set diff = ((metricas.asistencia_ultimo - metricas.promedio_historico) / metricas.promedio_historico * 100)|round if metricas.promedio_historico else 0 %}
-                            <h4 {% if diff > 0 %}class="text-success"{% elif diff < 0 %}class="text-danger"{% endif %}>
-                                {% if diff > 0 %}+{% endif %}{{ diff }}%
-                            </h4>
-                            <p>Vs promedio histórico</p>
-                        </div>
-                    </div>
-                    <div class="quick-stat">
-                        <span class="material-symbols-outlined">group_add</span>
-                        <div>
-                            <h4>{{ metricas.visitas|default(0) }}</h4>
-                            <p>Visitas acumuladas</p>
-                        </div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="offer-card">
-                <h2 class="section-title">Última Ofrenda</h2>
-                <div class="offer-value">${{ metricas.historial[0].ofrenda|default(0) if metricas.historial else 0 }}</div>
-                <p class="section-subtitle">{{ metricas.historial[0].fecha|default('Sin datos') }}</p>
-            </article>
-        </div>
         {% endif %}
-
     </div>
 </main>
-<script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
 
+<script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
 {% endblock %}
