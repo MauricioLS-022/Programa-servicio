@@ -104,6 +104,95 @@ body {
     margin-top: 0.5rem;
 }
 
+/* ===============================
+   FILTROS
+    =============================== */
+.filter-section {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(137, 114, 111, 0.2);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.05);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 900px) {
+    .filter-section {
+        grid-template-columns: minmax(260px, 1.5fr) minmax(180px, 1fr) auto;
+    }
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(137, 114, 111, 0.35);
+    background-color: var(--surface-container-lowest);
+}
+
+.search-box input {
+    border: 0;
+    outline: none;
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--on-surface);
+    background: transparent;
+}
+
+.filter-group select {
+    width: 100%;
+    border: 1px solid rgba(137, 114, 111, 0.35);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: white;
+    font-size: 0.95rem;
+    color: var(--on-surface);
+    outline: none;
+    font-family: var(--font-body);
+}
+
+.btn-filter {
+    background: linear-gradient(to right, var(--primary-container), var(--primary));
+    color: white;
+    padding: 0.9rem 1.4rem;
+    border-radius: 999px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 6px 18px rgba(57, 0, 2, 0.18);
+    transition: transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-filter:hover {
+    transform: translateY(-2px);
+}
+
 /* Botón Principal */
 .btn-primary {
     background: linear-gradient(to right, var(--primary-container), var(--primary));
@@ -176,6 +265,10 @@ body {
     gap: 1rem;
 }
 
+.stats-sidebar > * {
+    min-width: 0;
+}
+
 .stat-card {
     padding: 1rem 1.25rem;
     border-radius: 0.75rem;
@@ -183,6 +276,7 @@ body {
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(57, 0, 2, 0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-width: 0;
 }
 
 .stat-card:hover {
@@ -251,6 +345,8 @@ body {
     margin-bottom: 0.4rem;
     position: relative;
     z-index: 1;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .info-desc {
@@ -259,6 +355,9 @@ body {
     line-height: 1.5;
     position: relative;
     z-index: 1;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-wrap: pretty;
 }
 
 /* ===============================
@@ -309,7 +408,7 @@ body {
 .user-table th {
     background-color: #fcfaf9; /* Tono cálido pero muy leve para separar del header */
     color: var(--text-main, #2b1111); /* Texto más oscuro */
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     text-transform: uppercase;
     font-size: 0.65rem;
     font-weight: 800;
@@ -318,9 +417,16 @@ body {
 }
 
 .user-table td {
-    padding: 1.25rem 2rem;
-    border-bottom: 1px solid rgba(137, 114, 111, 0.15); /* Bordes de filas más definidos */
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(137, 114, 111, 0.15);
     vertical-align: middle;
+}
+
+.user-table th:last-child,
+.user-table td:last-child {
+    width: 132px;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .user-table tr:hover {
@@ -403,14 +509,15 @@ body {
 .action-buttons {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.25rem;
 }
-
 
 .btn-icon {
     background: none;
     border: none;
-    padding: 0.5rem;
+    width: 36px;
+    height: 36px;
     border-radius: 0.5rem;
     color: var(--on-surface-variant);
     cursor: pointer;
@@ -419,8 +526,14 @@ body {
     align-items: center;
     justify-content: center;
     text-decoration: none;
+    flex: 0 0 36px;
+    padding: 0;
 }
-.btn-icon span { font-size: 1.25rem; }
+.btn-icon .material-symbols-outlined {
+    display: block;
+    font-size: 1.25rem;
+    line-height: 1;
+}
 .btn-icon:hover { background-color: var(--surface-container-high); color: var(--primary); }
 .btn-delete:hover { background-color: rgba(255, 218, 214, 0.4); color: var(--error); }
 
@@ -478,75 +591,46 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    .page-header {
-        margin-bottom: 1.5rem;
+@media (max-width: 900px) {
+    .main-content {
+        padding-top: 4.5rem !important;
     }
 
-    .title {
-        font-size: clamp(1.75rem, 4vw, 2.5rem);
+    .filter-section {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .filter-group label {
+        font-size: 0.65rem;
+    }
+
+    .search-box {
+        padding: 0.7rem 0.85rem;
+    }
+
+    .search-box input {
+        font-size: 0.85rem;
+    }
+
+    .filter-group select {
+        padding: 0.7rem 0.85rem;
+        font-size: 0.85rem;
+    }
+
+    .btn-filter {
+        padding: 0.7rem 1.1rem;
+        font-size: 0.85rem;
+    }
+
+    .table-actions {
+        display: none;
     }
 
     .table-header {
-        padding: 1.25rem 1rem;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .user-table {
-        min-width: 720px;
-    }
-
-    .pagination-footer {
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding: 1rem;
-    }
-
-    .pagination-controls {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 640px) {
-    .main-content {
-        padding: 4.5rem 0.85rem 80px 0.85rem;
-        margin: 8px auto;
-    }
-
-    .btn-primary {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .stats-sidebar {
-        flex-direction: column;
-    }
-
-    .stats-sidebar > * {
-        flex: 1 1 100%;
-    }
-
-    .stat-primary h3 {
-        font-size: clamp(1.5rem, 4vw, 1.75rem);
-    }
-
-    .user-table th,
-    .user-table td {
-        padding: 0.9rem 1rem;
-    }
-
-    .user-info {
-        gap: 0.75rem;
-    }
-
-    .action-buttons {
-        opacity: 1;
+        position: static !important;
+        top: auto !important;
     }
 
     .table-responsive {
@@ -568,6 +652,7 @@ body {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        padding: 0.75rem;
     }
 
     .user-table tbody tr {
@@ -584,18 +669,18 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.55rem 0;
+        padding: 0.6rem 0;
         border-bottom: 1px solid rgba(137, 114, 111, 0.08);
         text-align: left;
         font-size: 0.85rem;
         color: var(--on-surface);
-        min-height: 1.8rem;
-        gap: 0.5rem;
+        min-height: 2rem;
+        gap: 1rem;
+        min-width: 0;
     }
 
     .user-table tbody td:last-child {
         border-bottom: none;
-        padding-top: 0.75rem;
     }
 
     .user-table tbody td::before {
@@ -606,8 +691,8 @@ body {
         letter-spacing: 0.05em;
         color: var(--on-surface-variant);
         min-width: 80px;
+        max-width: 80px;
         flex-shrink: 0;
-        opacity: 0.6;
     }
 
     .user-table tbody td[data-label="Usuario"] {
@@ -617,27 +702,126 @@ body {
 
     .user-table tbody td[data-label="Usuario"] .user-info {
         justify-content: flex-end;
+        min-width: 0;
+    }
+
+    .user-table tbody td[data-label="Usuario"] .user-details {
+        min-width: 0;
+        text-align: right;
     }
 
     .user-table tbody td[data-label="Usuario"] .user-details strong {
         text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .user-table tbody td[data-label="Usuario"] .user-details span {
         text-align: right;
         display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-table tbody td[data-label="Acciones"] {
+        width: auto;
+        justify-content: space-between;
+        padding-top: 0.5rem;
+        border-bottom: none;
+    }
+
+    .user-table tbody td[data-label="Acciones"]::before {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--on-surface-variant);
+        opacity: 0.7;
+    }
+
+    .user-table tbody td[data-label="Acciones"] .action-buttons {
+        opacity: 1;
+        margin-left: auto;
     }
 
     .user-table tbody td.text-right {
         text-align: left;
     }
 
-    .user-table tbody td .action-buttons {
-        opacity: 1;
-        justify-content: flex-end;
-    }
-
     .user-table tr:hover {
         background-color: transparent;
+    }
+
+    .pagination-footer {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .pagination-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .main-content {
+        padding: 4.5rem 0.85rem 80px 0.85rem !important;
+        margin: 8px auto;
+    }
+
+    .filter-section {
+        padding: 0.85rem;
+        gap: 0.6rem;
+    }
+
+    .filter-group label {
+        font-size: 0.6rem;
+    }
+
+    .search-box {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .search-box input {
+        font-size: 0.8rem;
+    }
+
+    .filter-group select {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-filter {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .stats-sidebar > * {
+        flex: 1 1 100%;
+    }
+
+    .stat-primary h3 {
+        font-size: clamp(1.5rem, 4vw, 1.75rem);
+    }
+
+    .user-table tbody {
+        padding: 0.5rem;
+    }
+
+    .user-table tbody td {
+        padding: 0.5rem 0;
+    }
+
+    .user-table tbody td::before {
+        min-width: 80px;
+        font-size: 0.6rem;
     }
 }
