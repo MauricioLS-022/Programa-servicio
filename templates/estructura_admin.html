@@ -33,77 +33,86 @@
     </header>
 
     <div class="estructura-grid">
-        <aside class="redes-sidebar">
-            <div class="sidebar-header">
-                <h2 class="sidebar-title">{% if is_supervisor %}Mi Red{% else %}Redes Activas{% endif %}</h2>
-                <span class="badge badge-secondary">{{ '1 Red' if is_supervisor else '4 Redes' }}</span>
-            </div>
+        <div class="redes-sidebar-wrapper">
+            <button class="scroll-arrow scroll-arrow-left" aria-label="Desplazar a la izquierda">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <button class="scroll-arrow scroll-arrow-right" aria-label="Desplazar a la derecha">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
 
-            <div class="redes-list">
-                <div class="red-card active">
-                    <div class="red-header">
-                        <span class="red-name">Red Hebrón</span>
-                        {% if not is_supervisor %}
-                        <span class="material-symbols-outlined icon-more">more_vert</span>
-                        {% endif %}
-                    </div>
-                    <p class="red-leader">Líder: Juan Carlos Pérez</p>
-                    <div class="red-stats">
-                        <div class="avatars">
-                            <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
-                            <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
-                            <div class="avatar-more">+12</div>
+            <aside class="redes-sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">{% if is_supervisor %}Mi Red{% else %}Redes Activas{% endif %}</h2>
+                    <span class="badge badge-secondary">{{ '1 Red' if is_supervisor else '4 Redes' }}</span>
+                </div>
+
+                <div class="redes-list">
+                    <div class="red-card active">
+                        <div class="red-header">
+                            <span class="red-name">Red Hebrón</span>
+                            {% if not is_supervisor %}
+                            <span class="material-symbols-outlined icon-more">more_vert</span>
+                            {% endif %}
                         </div>
-                        <span class="red-count">14 Casas Vinculadas</span>
+                        <p class="red-leader">Líder: Juan Carlos Pérez</p>
+                        <div class="red-stats">
+                            <div class="avatars">
+                                <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
+                                <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
+                                <div class="avatar-more">+12</div>
+                            </div>
+                            <span class="red-count">14 Casas Vinculadas</span>
+                        </div>
                     </div>
+
+                    {% if not is_supervisor %}
+                    <div class="red-card">
+                        <div class="red-header">
+                            <span class="red-name">Red Cielos Abiertos</span>
+                            <span class="material-symbols-outlined icon-more">more_vert</span>
+                        </div>
+                        <p class="red-leader">Líder: Maria Fernanda S.</p>
+                        <div class="red-stats">
+                            <span class="red-count">8 Casas Vinculadas</span>
+                        </div>
+                    </div>
+
+                    <div class="red-card">
+                        <div class="red-header">
+                            <span class="red-name">Red Enmanuel</span>
+                            <span class="material-symbols-outlined icon-more">more_vert</span>
+                        </div>
+                        <p class="red-leader">Líder: Fam. Rodriguez</p>
+                        <div class="red-stats">
+                            <span class="red-count">11 Casas Vinculadas</span>
+                        </div>
+                    </div>
+
+                    <div class="red-card">
+                        <div class="red-header">
+                            <span class="red-name">Red Yahweh</span>
+                            <span class="material-symbols-outlined icon-more">more_vert</span>
+                        </div>
+                        <p class="red-leader">Líder: Ing. Roberto Gil</p>
+                        <div class="red-stats">
+                            <span class="red-count">5 Casas Vinculadas</span>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
-                {% if not is_supervisor %}
-                <div class="red-card">
-                    <div class="red-header">
-                        <span class="red-name">Red Cielos Abiertos</span>
-                        <span class="material-symbols-outlined icon-more">more_vert</span>
+                <div class="impact-card">
+                    <div class="impact-content">
+                        <h3>{% if is_supervisor %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
+                        <p class="impact-subtitle">{% if is_supervisor %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
+                        <div class="impact-number">{% if is_supervisor %}14{% else %}1,402{% endif %}</div>
+                        <p class="impact-note">{% if is_supervisor %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
                     </div>
-                    <p class="red-leader">Líder: Maria Fernanda S.</p>
-                    <div class="red-stats">
-                        <span class="red-count">8 Casas Vinculadas</span>
-                    </div>
+                    <span class="material-symbols-outlined watermark-icon">{% if is_supervisor %}health_and_safety{% else %}diversity_3{% endif %}</span>
                 </div>
-
-                <div class="red-card">
-                    <div class="red-header">
-                        <span class="red-name">Red Enmanuel</span>
-                        <span class="material-symbols-outlined icon-more">more_vert</span>
-                    </div>
-                    <p class="red-leader">Líder: Fam. Rodriguez</p>
-                    <div class="red-stats">
-                        <span class="red-count">11 Casas Vinculadas</span>
-                    </div>
-                </div>
-
-                <div class="red-card">
-                    <div class="red-header">
-                        <span class="red-name">Red Yahweh</span>
-                        <span class="material-symbols-outlined icon-more">more_vert</span>
-                    </div>
-                    <p class="red-leader">Líder: Ing. Roberto Gil</p>
-                    <div class="red-stats">
-                        <span class="red-count">5 Casas Vinculadas</span>
-                    </div>
-                </div>
-                {% endif %}
-                </div>
-
-            <div class="impact-card">
-                <div class="impact-content">
-                    <h3>{% if is_supervisor %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
-                    <p class="impact-subtitle">{% if is_supervisor %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
-                    <div class="impact-number">{% if is_supervisor %}14{% else %}1,402{% endif %}</div>
-                    <p class="impact-note">{% if is_supervisor %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
-                </div>
-                <span class="material-symbols-outlined watermark-icon">{% if is_supervisor %}health_and_safety{% else %}diversity_3{% endif %}</span>
-            </div>
-        </aside>
+            </aside>
+        </div>
 
         <section class="casas-section">
             <div class="casas-header">
@@ -238,4 +247,52 @@
         </section>
     </div>
 </main>
+
+<script>
+(function() {
+    const sidebar = document.querySelector('.redes-sidebar');
+    const arrowLeft = document.querySelector('.scroll-arrow-left');
+    const arrowRight = document.querySelector('.scroll-arrow-right');
+
+    if (!sidebar || !arrowLeft || !arrowRight) return;
+
+    const SCROLL_AMOUNT = 150;
+
+    function updateArrows() {
+        const scrollLeft = sidebar.scrollLeft;
+        const maxScroll = sidebar.scrollWidth - sidebar.clientWidth;
+
+        if (maxScroll <= 10) {
+            arrowLeft.classList.remove('visible');
+            arrowRight.classList.remove('visible');
+            return;
+        }
+
+        if (scrollLeft <= 5) {
+            arrowLeft.classList.remove('visible');
+        } else {
+            arrowLeft.classList.add('visible');
+        }
+
+        if (scrollLeft >= maxScroll - 5) {
+            arrowRight.classList.remove('visible');
+        } else {
+            arrowRight.classList.add('visible');
+        }
+    }
+
+    arrowLeft.addEventListener('click', function() {
+        sidebar.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+    });
+
+    arrowRight.addEventListener('click', function() {
+        sidebar.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+    });
+
+    sidebar.addEventListener('scroll', updateArrows);
+    window.addEventListener('resize', updateArrows);
+
+    updateArrows();
+})();
+</script>
 {% endblock %}

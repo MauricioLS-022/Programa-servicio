@@ -58,6 +58,13 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ==========================================================================
+   Scroll Arrows (ocultas por defecto, solo visibles en tablet <=1100px)
+   ========================================================================== */
+.scroll-arrow {
+    display: none !important;
+}
+
+/* ==========================================================================
    Layout Principal (100vh sin scroll global)
    ========================================================================== */
 body {
@@ -422,9 +429,16 @@ body {
         gap: 1rem;
     }
 
+    /* Wrapper for fixed scroll arrows */
+    .redes-sidebar-wrapper {
+        position: relative;
+        order: 0;
+        flex-shrink: 0;
+        z-index: 20;
+    }
+
     /* Chip bar container */
     .redes-sidebar {
-        order: 0;
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
@@ -540,6 +554,48 @@ body {
         padding-right: 0;
         flex: 1;
     }
+
+    /* Scroll arrows for horizontal navigation */
+    .scroll-arrow {
+        display: flex !important;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 36px;
+        border: none;
+        cursor: pointer;
+        z-index: 30;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s ease;
+        font-size: 1.2rem;
+        color: var(--primary);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .scroll-arrow-left {
+        left: 0;
+        background: linear-gradient(to right, rgba(255,255,255,0.95) 60%, transparent);
+        border-radius: 0.75rem 0 0 0.75rem;
+        padding-left: 2px;
+    }
+
+    .scroll-arrow-right {
+        right: 0;
+        background: linear-gradient(to left, rgba(255,255,255,0.95) 60%, transparent);
+        border-radius: 0 0.75rem 0.75rem 0;
+        padding-right: 2px;
+    }
+
+    .scroll-arrow.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .scroll-arrow:hover {
+        color: var(--primary-container);
+    }
 }
 
 /* ===== MOBILE (<=768px) ===== */
@@ -550,10 +606,15 @@ body {
         padding-bottom: 85px;
     }
 
-    .page-header {
+    .estructura-main > .page-header {
+        display: flex !important;
         flex-direction: column;
         align-items: flex-start;
         gap: 0.6rem;
+    }
+
+    .estructura-main > .page-header .header-text {
+        max-width: 100%;
     }
 
     .header-actions {
@@ -664,7 +725,8 @@ body {
         gap: 0;
     }
 
-    .page-header {
+    .estructura-main > .page-header {
+        display: flex !important;
         padding: 0;
         margin-bottom: 0.5rem;
         gap: 0.5rem;
