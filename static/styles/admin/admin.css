@@ -27,7 +27,7 @@
 }
 
 body{
-  height: 100vh;
+  min-height: 100vh;
   background-color: white;
   background-image: linear-gradient(rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.87)),  url("../../fondo.webp");
   background-repeat: repeat;
