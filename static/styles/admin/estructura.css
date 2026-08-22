@@ -28,6 +28,242 @@
 }
 
 /* ==========================================================================
+   Modo Supervisor: Ajustes para una sola red
+   ========================================================================== */
+.supervisor-mode .redes-sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.supervisor-mode .impact-card {
+    margin-top: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* ===== TABLET (<=1100px): Supervisor con una sola red ===== */
+@media (max-width: 1100px) {
+    .supervisor-mode .estructura-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .supervisor-mode .redes-sidebar-wrapper {
+        position: relative;
+        order: 0;
+        flex-shrink: 0;
+    }
+
+    .supervisor-mode .redes-sidebar {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        background: #fff;
+        border: 1px solid rgba(137, 114, 111, 0.15);
+        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.03);
+        overflow: visible;
+    }
+
+    .supervisor-mode .redes-sidebar .sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .supervisor-mode .redes-sidebar .sidebar-title {
+        font-size: 1rem;
+    }
+
+    .supervisor-mode .redes-list {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .supervisor-mode .red-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 99px;
+        border: 1.5px solid rgba(137, 114, 111, 0.2);
+        background: var(--surface-container-lowest, #fff);
+        flex-shrink: 0;
+    }
+
+    .supervisor-mode .red-card.active {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .supervisor-mode .red-card.active .red-name {
+        color: #fff;
+    }
+
+    .supervisor-mode .red-card.active .red-count {
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .supervisor-mode .red-header {
+        margin-bottom: 0;
+    }
+
+    .supervisor-mode .icon-more {
+        display: none;
+    }
+
+    .supervisor-mode .red-name {
+        font-size: 0.8rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .supervisor-mode .red-leader {
+        display: none;
+    }
+
+    .supervisor-mode .avatars {
+        display: none;
+    }
+
+    .supervisor-mode .red-count {
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+
+    .supervisor-mode .red-stats {
+        display: flex;
+        gap: 0;
+    }
+
+    .supervisor-mode .impact-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 0.5rem;
+        background: var(--primary-container);
+        flex-shrink: 0;
+        margin-top: 0;
+    }
+
+    .supervisor-mode .impact-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .supervisor-mode .impact-content h3 {
+        font-size: 0.7rem;
+        display: none;
+    }
+
+    .supervisor-mode .impact-subtitle {
+        display: none;
+    }
+
+    .supervisor-mode .impact-number {
+        font-size: 1.1rem;
+        color: white;
+        font-weight: 700;
+    }
+
+    .supervisor-mode .impact-note {
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.75);
+        margin-top: 0;
+        font-style: normal;
+    }
+
+    .supervisor-mode .watermark-icon {
+        font-size: 1.5rem;
+        position: static;
+        transform: none;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .supervisor-mode .scroll-arrow {
+        display: none !important;
+    }
+
+    .supervisor-mode .casas-section {
+        overflow-y: visible;
+        padding-right: 0;
+        flex: 1;
+    }
+}
+
+/* ===== MOBILE (<=768px): Supervisor ===== */
+@media (max-width: 768px) {
+    .supervisor-mode .redes-sidebar {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.6rem;
+    }
+
+    .supervisor-mode .redes-sidebar .sidebar-header {
+        width: 100%;
+        justify-content: space-between;
+        margin-bottom: 0;
+    }
+
+    .supervisor-mode .redes-list {
+        width: 100%;
+    }
+
+    .supervisor-mode .red-card {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .supervisor-mode .impact-card {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .supervisor-mode .impact-content {
+        justify-content: center;
+    }
+}
+
+/* ===== SMALL MOBILE (<=640px): Supervisor ===== */
+@media (max-width: 640px) {
+    .supervisor-mode .redes-sidebar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .supervisor-mode .redes-sidebar .sidebar-header {
+        justify-content: center;
+    }
+
+    .supervisor-mode .redes-list {
+        flex-direction: column;
+    }
+
+    .supervisor-mode .red-card {
+        justify-content: space-between;
+    }
+
+    .supervisor-mode .impact-card {
+        justify-content: center;
+    }
+
+    .supervisor-mode .impact-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.25rem;
+    }
+}
+
+/* ==========================================================================
    Animaciones Globales
    ========================================================================== */
 @keyframes fadeInUp {
@@ -204,14 +440,14 @@ body {
 .red-count { font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; }
 
 .impact-card {
-    margin-top: auto; 
-    flex-shrink: 0; /* ✨ ESTO EVITA QUE SE APLASTE ✨ */
+    flex-shrink: 0;
     padding: 1rem;
     background-color: var(--primary-container);
     border-radius: .85rem;
     position: relative;
     overflow: hidden;
     transition: transform 0.3s ease;
+    margin-top: 1.5rem;
 }
 
 .impact-card:hover { 

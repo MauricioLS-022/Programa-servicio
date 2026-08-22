@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="estructura-main">
+<main class="estructura-main {% if is_supervisor %}supervisor-mode{% endif %}">
     <header class="page-header">
         <div class="header-text">
             {% if is_supervisor %}
