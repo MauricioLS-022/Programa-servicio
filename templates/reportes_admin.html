@@ -20,21 +20,42 @@
 
     <section class="filter-section">
         <div class="filter-group">
+            <label>Buscar</label>
+            <div class="search-input">
+                <span class="material-symbols-outlined icon-small">search</span>
+                <input type="text" placeholder="Buscar por líder, casa de paz..."/>
+            </div>
+        </div>
+
+        {% if not is_supervisor %}
+        <div class="filter-group">
+            <label>Filtrar por Red</label>
+            <select>
+                <option>Todas las redes</option>
+                <option>Red Norte</option>
+                <option>Red Sur</option>
+                <option>Red Este</option>
+                <option>Red Oeste</option>
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="filter-group">
+            <label>Filtrar por Casa de Paz</label>
+            <select>
+                <option>Todas las casas</option>
+                <option>Bethel - Sector Sur</option>
+                <option>Sion - Los Olivos</option>
+                <option>Manantial - Centro</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
             <label>Rango de Fecha</label>
             <div class="date-inputs">
                 <input type="date"/>
                 <input type="date"/>
             </div>
-        </div>
-        
-        <div class="filter-group">
-            <label>Filtrar por Líder</label>
-            <select>
-                <option>Todos los líderes</option>
-                <option>Molina, Ricardo</option>
-                <option>Pérez, Elena</option>
-                <option>Sánchez, David</option>
-            </select>
         </div>
         
         <button class="btn-filter">
@@ -44,6 +65,14 @@
     </section>
 
     <section class="table-wrapper">
+        <div class="table-header">
+            <h2>Reportes de Actividad</h2>
+            <div class="table-actions">
+                <span class="material-symbols-outlined">grid_view</span>
+                <span class="material-symbols-outlined">table_rows</span>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table>
                 <thead>
@@ -69,10 +98,25 @@
                         <td data-label="Asistencia" class="text-center"><span class="badge">24</span></td>
                         <td data-label="Ofrendas" class="text-right font-bold text-secondary">$1,250.00</td>
                         <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
-                            
+                            <button class="btn-icon btn-view"
+                                data-fecha="24 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
+                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
+                                data-regulares="15" data-ninos="5" data-visitas="3" data-comprometidos="1"
+                                data-reconciliaciones="2" data-confesiones="1" data-ofrendas="1250.00"
+                                data-cesta="Canasta básica familiar" data-tema="El poder del perdón"
+                                data-obs="Testimonio de sanidad al finalizar">
+                                <span class="material-symbols-outlined text-primary">visibility</span>
+                            </button>
                             {% if not is_supervisor %}
-                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            <button class="btn-icon btn-edit"
+                                data-fecha="24 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
+                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
+                                data-regulares="15" data-ninos="5" data-visitas="3" data-comprometidos="1"
+                                data-reconciliaciones="2" data-confesiones="1" data-ofrendas="1250.00"
+                                data-cesta="Canasta básica familiar" data-tema="El poder del perdón"
+                                data-obs="Testimonio de sanidad al finalizar">
+                                <span class="material-symbols-outlined text-secondary">edit</span>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -88,10 +132,25 @@
                         <td data-label="Asistencia" class="text-center"><span class="badge">18</span></td>
                         <td data-label="Ofrendas" class="text-right font-bold text-secondary">$840.50</td>
                         <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
-                            
+                            <button class="btn-icon btn-view"
+                                data-fecha="22 Oct 2023" data-lider="Elena Pérez" data-iniciales="EP"
+                                data-casa="Sion - Los Olivos" data-hora-inicio="18:30" data-hora-fin="20:30"
+                                data-regulares="10" data-ninos="4" data-visitas="2" data-comprometidos="2"
+                                data-reconciliaciones="1" data-confesiones="0" data-ofrendas="840.50"
+                                data-cesta="Ropa para niños" data-tema="Fe inquebrantable"
+                                data-obs="Se recibieron 2 nuevos visitantes">
+                                <span class="material-symbols-outlined text-primary">visibility</span>
+                            </button>
                             {% if not is_supervisor %}
-                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            <button class="btn-icon btn-edit"
+                                data-fecha="22 Oct 2023" data-lider="Elena Pérez" data-iniciales="EP"
+                                data-casa="Sion - Los Olivos" data-hora-inicio="18:30" data-hora-fin="20:30"
+                                data-regulares="10" data-ninos="4" data-visitas="2" data-comprometidos="2"
+                                data-reconciliaciones="1" data-confesiones="0" data-ofrendas="840.50"
+                                data-cesta="Ropa para niños" data-tema="Fe inquebrantable"
+                                data-obs="Se recibieron 2 nuevos visitantes">
+                                <span class="material-symbols-outlined text-secondary">edit</span>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -107,10 +166,25 @@
                         <td data-label="Asistencia" class="text-center"><span class="badge">31</span></td>
                         <td data-label="Ofrendas" class="text-right font-bold text-secondary">$2,100.00</td>
                         <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
-                            
+                            <button class="btn-icon btn-view"
+                                data-fecha="20 Oct 2023" data-lider="David Sánchez" data-iniciales="DS"
+                                data-casa="Manantial - Centro" data-hora-inicio="17:00" data-hora-fin="19:30"
+                                data-regulares="20" data-ninos="6" data-visitas="3" data-comprometidos="2"
+                                data-reconciliaciones="3" data-confesiones="2" data-ofrendas="2100.00"
+                                data-cesta="Alimentos no perecederos" data-tema="Discipulado y comunidad"
+                                data-obs="Reunión especial de jóvenes">
+                                <span class="material-symbols-outlined text-primary">visibility</span>
+                            </button>
                             {% if not is_supervisor %}
-                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            <button class="btn-icon btn-edit"
+                                data-fecha="20 Oct 2023" data-lider="David Sánchez" data-iniciales="DS"
+                                data-casa="Manantial - Centro" data-hora-inicio="17:00" data-hora-fin="19:30"
+                                data-regulares="20" data-ninos="6" data-visitas="3" data-comprometidos="2"
+                                data-reconciliaciones="3" data-confesiones="2" data-ofrendas="2100.00"
+                                data-cesta="Alimentos no perecederos" data-tema="Discipulado y comunidad"
+                                data-obs="Reunión especial de jóvenes">
+                                <span class="material-symbols-outlined text-secondary">edit</span>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
@@ -126,17 +200,31 @@
                         <td data-label="Asistencia" class="text-center"><span class="badge">22</span></td>
                         <td data-label="Ofrendas" class="text-right font-bold text-secondary">$1,100.00</td>
                         <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon"><span class="material-symbols-outlined text-primary">visibility</span></button>
-
+                            <button class="btn-icon btn-view"
+                                data-fecha="19 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
+                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
+                                data-regulares="12" data-ninos="4" data-visitas="4" data-comprometidos="2"
+                                data-reconciliaciones="1" data-confesiones="1" data-ofrendas="1100.00"
+                                data-cesta="Manteca, arroz, azúcar" data-tema="La oración transforma"
+                                data-obs="Visitas se integraron al grupo">
+                                <span class="material-symbols-outlined text-primary">visibility</span>
+                            </button>
                             {% if not is_supervisor %}
-                            <button class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></button>
+                            <button class="btn-icon btn-edit"
+                                data-fecha="19 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
+                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
+                                data-regulares="12" data-ninos="4" data-visitas="4" data-comprometidos="2"
+                                data-reconciliaciones="1" data-confesiones="1" data-ofrendas="1100.00"
+                                data-cesta="Manteca, arroz, azúcar" data-tema="La oración transforma"
+                                data-obs="Visitas se integraron al grupo">
+                                <span class="material-symbols-outlined text-secondary">edit</span>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
         <div class="pagination">
             <span class="pagination-info">Mostrando 4 de 45 registros encontrados</span>
             <div class="pagination-controls">
@@ -148,6 +236,125 @@
             </div>
         </div>
     </section>
+
+    <div class="modal-overlay" id="reporteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <span class="material-symbols-outlined modal-icon">description</span>
+                    <h3 class="modal-title">Detalle del Reporte</h3>
+                </div>
+                <button class="modal-close" id="modalClose">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-avatar" id="modalAvatar">RM</div>
+
+                <div class="modal-section">
+                    <h4 class="modal-section-title">Información General</h4>
+                    <div class="modal-grid">
+                        <div class="modal-field">
+                            <label>Líder</label>
+                            <input type="text" id="modalLider" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Casa de Paz</label>
+                            <input type="text" id="modalCasa" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Fecha</label>
+                            <input type="text" id="modalFecha" readonly />
+                        </div>
+                        <div class="modal-field-group">
+                            <div class="modal-field">
+                                <label>Hora Inicio</label>
+                                <input type="text" id="modalHoraInicio" readonly />
+                            </div>
+                            <div class="modal-field">
+                                <label>Hora Fin</label>
+                                <input type="text" id="modalHoraFin" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h4 class="modal-section-title">Asistencia</h4>
+                    <div class="modal-grid">
+                        <div class="modal-field-group">
+                            <div class="modal-field">
+                                <label>Regulares</label>
+                                <input type="number" id="modalRegulares" readonly />
+                            </div>
+                            <div class="modal-field">
+                                <label>Niños</label>
+                                <input type="number" id="modalNinos" readonly />
+                            </div>
+                        </div>
+                        <div class="modal-field-group">
+                            <div class="modal-field">
+                                <label>Visitas</label>
+                                <input type="number" id="modalVisitas" readonly />
+                            </div>
+                            <div class="modal-field">
+                                <label>Comprometidos</label>
+                                <input type="number" id="modalComprometidos" readonly />
+                            </div>
+                        </div>
+                        <div class="modal-field modal-field-total">
+                            <label>Asistencia Total</label>
+                            <input type="text" id="modalAsistencia" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h4 class="modal-section-title">Actividad Ministerial</h4>
+                    <div class="modal-grid">
+                        <div class="modal-field-group">
+                            <div class="modal-field">
+                                <label>Reconciliaciones</label>
+                                <input type="number" id="modalReconciliaciones" readonly />
+                            </div>
+                            <div class="modal-field">
+                                <label>Confesiones de Fe</label>
+                                <input type="number" id="modalConfesiones" readonly />
+                            </div>
+                        </div>
+                        <div class="modal-field">
+                            <label>Ofrendas</label>
+                            <input type="text" id="modalOfrendas" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Cesta de Amor</label>
+                            <input type="text" id="modalCesta" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h4 class="modal-section-title">Contenido</h4>
+                    <div class="modal-grid">
+                        <div class="modal-field">
+                            <label>Tema de la Clase</label>
+                            <input type="text" id="modalTema" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Observaciones</label>
+                            <textarea id="modalObs" rows="3" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn-modal btn-modal-cancel" id="modalCancel">Cancelar</button>
+                <button class="btn-modal btn-modal-save" id="modalSave" style="display:none;">
+                    <span class="material-symbols-outlined">save</span> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer-info">
         <div class="footer-quote">
@@ -164,4 +371,97 @@
         </div>
     </footer>
 </main>
+
+<script>
+(function() {
+    const modal = document.getElementById('reporteModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalSave = document.getElementById('modalSave');
+    const modalAvatar = document.getElementById('modalAvatar');
+    const fields = {
+        lider: document.getElementById('modalLider'),
+        casa: document.getElementById('modalCasa'),
+        fecha: document.getElementById('modalFecha'),
+        horaInicio: document.getElementById('modalHoraInicio'),
+        horaFin: document.getElementById('modalHoraFin'),
+        regulares: document.getElementById('modalRegulares'),
+        ninos: document.getElementById('modalNinos'),
+        visitas: document.getElementById('modalVisitas'),
+        comprometidos: document.getElementById('modalComprometidos'),
+        asistencia: document.getElementById('modalAsistencia'),
+        reconciliaciones: document.getElementById('modalReconciliaciones'),
+        confesiones: document.getElementById('modalConfesiones'),
+        ofrendas: document.getElementById('modalOfrendas'),
+        cesta: document.getElementById('modalCesta'),
+        tema: document.getElementById('modalTema'),
+        obs: document.getElementById('modalObs')
+    };
+
+    function calcAsistencia() {
+        const r = parseInt(fields.regulares.value) || 0;
+        const n = parseInt(fields.ninos.value) || 0;
+        const v = parseInt(fields.visitas.value) || 0;
+        const c = parseInt(fields.comprometidos.value) || 0;
+        return r + n + v + c;
+    }
+
+    function openModal(btn, isEdit) {
+        modalAvatar.textContent = btn.dataset.iniciales;
+        fields.lider.value = btn.dataset.lider;
+        fields.casa.value = btn.dataset.casa;
+        fields.fecha.value = btn.dataset.fecha;
+        fields.horaInicio.value = btn.dataset.horaInicio;
+        fields.horaFin.value = btn.dataset.horaFin;
+        fields.regulares.value = btn.dataset.regulares;
+        fields.ninos.value = btn.dataset.ninos;
+        fields.visitas.value = btn.dataset.visitas;
+        fields.comprometidos.value = btn.dataset.comprometidos;
+        fields.reconciliaciones.value = btn.dataset.reconciliaciones;
+        fields.confesiones.value = btn.dataset.confesiones;
+        fields.ofrendas.value = btn.dataset.ofrendas;
+        fields.cesta.value = btn.dataset.cesta;
+        fields.tema.value = btn.dataset.tema;
+        fields.obs.value = btn.dataset.obs;
+
+        fields.asistencia.value = calcAsistencia();
+
+        Object.values(fields).forEach(f => {
+            f.readOnly = !isEdit;
+            f.disabled = false;
+        });
+
+        modalSave.style.display = isEdit ? 'flex' : 'none';
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    [fields.regulares, fields.ninos, fields.visitas, fields.comprometidos].forEach(f => {
+        f.addEventListener('input', () => {
+            fields.asistencia.value = calcAsistencia();
+        });
+    });
+
+    document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', () => openModal(btn, false));
+    });
+
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => openModal(btn, true));
+    });
+
+    modalClose.addEventListener('click', closeModal);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal();
+    });
+
+    modalSave.addEventListener('click', () => {
+        closeModal();
+    });
+})();
+</script>
 {% endblock %}
