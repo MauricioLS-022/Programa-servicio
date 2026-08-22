@@ -962,8 +962,7 @@ header:not(.mobile-header) {
     }
 
     /* Sticky page elements stick below fixed mobile header (height ~54px) */
-    .casas-header,
-    .table-header {
+    .casas-header {
         position: sticky !important;
         top: 54px !important;
         z-index: 100 !important;
