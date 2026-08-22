@@ -766,6 +766,132 @@ body {
     }
 }
 
+/* ===============================
+   6. MODAL DE CONFIRMACIÓN
+    =============================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.modal-icon {
+    color: var(--error);
+    font-size: 2rem !important;
+}
+
+.modal-header h3 {
+    font-family: var(--font-headline);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.modal-text {
+    color: var(--on-surface-variant);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.modal-text-bold {
+    color: var(--on-surface);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.highlight {
+    color: var(--error);
+    font-weight: 800;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(137, 114, 111, 0.35);
+    border-radius: 0.75rem;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    margin-bottom: 1.25rem;
+    transition: border-color 0.2s;
+}
+
+.modal-input:focus {
+    border-color: var(--primary);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.btn-cancel {
+    background: white;
+    border: 1px solid rgba(137, 114, 111, 0.4);
+    color: var(--on-surface-variant);
+    padding: 0.7rem 1.25rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: var(--surface-container-high);
+}
+
+.btn-confirm-delete {
+    background: var(--error);
+    color: white;
+    padding: 0.7rem 1.25rem;
+    border-radius: 999px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-confirm-delete:disabled {
+    background: var(--outline-variant);
+    cursor: not-allowed;
+}
+
+.btn-confirm-delete:not(:disabled):hover {
+    background-color: #9a1515;
+}
+
 @media (max-width: 640px) {
     .main-content {
         padding: 4.5rem 0.85rem 80px 0.85rem !important;
