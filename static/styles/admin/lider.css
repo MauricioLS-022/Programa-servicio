@@ -94,7 +94,7 @@
 
 @media (min-width: 900px) {
     .filter-section {
-        grid-template-columns: minmax(260px, 1.5fr) repeat(2, minmax(180px, 1fr)) auto;
+        grid-template-columns: minmax(260px, 1.5fr) repeat(3, minmax(180px, 1fr)) auto;
         align-items: end;
     }
 }
@@ -156,9 +156,11 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     box-shadow: 0 6px 18px rgba(57, 0, 2, 0.18);
     transition: transform 0.2s ease;
+    width: 100%;
 }
 
 .btn-filter:hover {
@@ -168,7 +170,7 @@
 .table-wrapper {
     background-color: #ffffff;
     border-radius: 1rem;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid rgba(137, 114, 111, 0.2);
     box-shadow: 0 10px 35px -5px rgba(57, 0, 2, 0.06);
     display: flex;
@@ -181,6 +183,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 1rem 1rem 0 0;
 }
 
 .table-header h2 {
@@ -297,6 +300,7 @@ tbody tr:hover {
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid rgba(137, 114, 111, 0.15);
+    border-radius: 0 0 1rem 1rem;
 }
 
 .pagination-info {
@@ -431,6 +435,12 @@ tbody tr:hover {
 
     .table-responsive {
         overflow: visible;
+        padding: 1rem;
+    }
+
+    /* Compensar el header sticky que se solapa con la primera fila */
+    .table-header {
+        margin-bottom: 0.5rem;
     }
 
     .leader-table {
@@ -448,6 +458,7 @@ tbody tr:hover {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        padding-top: 0.5rem;
     }
 
     .leader-table tbody tr {

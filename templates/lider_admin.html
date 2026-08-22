@@ -35,6 +35,17 @@
         </div>
 
         <div class="filter-group">
+            <label>Casa de Paz</label>
+            <select>
+                <option>Todas las Casas</option>
+                <option>Bethel - Sector Sur</option>
+                <option>Sion - Los Olivos</option>
+                <option>Manantial - Centro</option>
+            </select>
+        </div>
+
+        {% if not is_supervisor %}
+        <div class="filter-group">
             <label>Red</label>
             <select>
                 <option>Todas las Redes</option>
@@ -43,11 +54,14 @@
                 <option>Red Central</option>
             </select>
         </div>
+        {% endif %}
 
-        <button class="btn-filter" type="button">
-            <span class="material-symbols-outlined">filter_alt</span>
-            Aplicar filtros
-        </button>
+        <div class="filter-group">
+            <button class="btn-filter" type="button">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Aplicar filtros
+            </button>
+        </div>
     </section>
 
     <section class="table-wrapper">
