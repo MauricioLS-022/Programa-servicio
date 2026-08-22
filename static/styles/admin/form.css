@@ -74,6 +74,25 @@
     margin-bottom: 0.5rem;
 }
 
+/* Divisor de secciones del formulario */
+.form-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    margin-top: 0.5rem;
+    border-bottom: 2px solid rgba(137, 114, 111, 0.2);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-divider .material-symbols-outlined {
+    font-size: 1.25rem;
+}
+
 /* Estilo general con contraste arreglado */
 .form-group input,
 .form-group select,
