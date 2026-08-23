@@ -1,65 +1,65 @@
 <header class="header-nav">
   <div>
-    {% if is_supervisor == True %}
-    <a href="/supervisor/dashboard" class="logo"></a>
-    {% elif is_cdp == True %}
-    <a href="/" class="logo"></a>
+    {% if has_role("supervisor") %}
+    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="logo"></a>
+    {% elif has_role("cdp") %}
+    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="logo"></a>
     {% else %}
-    <a href="/admin/dashboard" class="logo"></a>
+    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="logo"></a>
     {% endif %}
   </div>
   
   <nav class="link-container">
-    {% if is_supervisor == True %}
-    <a href="/supervisor/dashboard" class="botones">
+    {% if has_role("supervisor") %}
+    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Dashboard</span>
     </a>
-    <a href="/supervisor/estructura" class="botones">
+    <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Estructura</span>
     </a>
-    <a href="/supervisor/reportes" class="botones">
+    <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Reportes</span>
     </a>
-    <a href="/supervisor/lider" class="botones">
+    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Lideres</span>
     </a>
-    <a href="/supervisor/perfil" class="botones">
+    <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Perfil</span>
     </a>
-    {% elif is_cdp == True %}
-    <a href="/" class="botones">
+    {% elif has_role("cdp") %}
+    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Inicio</span>
     </a>
-    <a href="/generar_reporte" class="botones">
+    <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Generar Reporte</span>
     </a>
-    <a href="/perfil" class="botones">
+    <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Perfil</span>
     </a>
     {% else %}
-    <a href="/admin/dashboard" class="botones">
+    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Dashboard</span>
     </a>
-    <a href="/admin/estructura" class="botones">
+    <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Estructura</span>
     </a>
-    <a href="/admin/usuario" class="botones">
+    <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Usuarios</span>
     </a>
-    <a href="/admin/lider" class="botones">
+    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Lideres</span>
     </a>
-    <a href="/admin/reportes" class="botones">
+    <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Reportes</span>
     </a>
-    <a href="/admin/perfil" class="botones">
+    <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="botones">
       <span class="texto">Perfil</span>
     </a>
     {% endif %}
   </nav>
 
   <div class="">
-<a href="/logout" class="botones">
+<a href="{{ url_for('auth.logout') }}" class="botones">
       <img src="{{ url_for('static', filename='iconos/logout.webp') }}" alt="Cerrar Sesión" class="icono">
       <span class="texto">Cerrar Sesión</span>
     </a>

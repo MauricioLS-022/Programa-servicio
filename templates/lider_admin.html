@@ -44,7 +44,7 @@
             </select>
         </div>
 
-        {% if not is_supervisor %}
+        {% if not has_role("supervisor") %}
         <div class="filter-group">
             <label>Red</label>
             <select>

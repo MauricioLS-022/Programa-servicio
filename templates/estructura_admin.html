@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block content %}
-<main class="estructura-main {% if is_supervisor %}supervisor-mode{% endif %}">
+<main class="estructura-main {% if has_role("supervisor") %}supervisor-mode{% endif %}">
     <header class="page-header">
         <div class="header-text">
-            {% if is_supervisor %}
+            {% if has_role("supervisor") %}
             <h1 class="title">Estructura de mi Red</h1>
             <p class="subtitle">
                 Supervisa el estado de tus <span class="highlight">Casas de Paz</span> y monitorea el crecimiento espiritual de cada grupo bajo tu responsabilidad.
@@ -20,7 +20,7 @@
             </p>
             {% endif %}
         </div>
-        {% if not is_supervisor %}
+        {% if not has_role("supervisor") %}
         <div class="header-actions">
             <a href="/admin/red/editar" class="btn btn-outline">
                 <span class="material-symbols-outlined icon">hub</span> Nueva Red
@@ -43,15 +43,15 @@
 
             <aside class="redes-sidebar">
                 <div class="sidebar-header">
-                    <h2 class="sidebar-title">{% if is_supervisor %}Mi Red{% else %}Redes Activas{% endif %}</h2>
-                    <span class="badge badge-secondary">{{ '1 Red' if is_supervisor else '4 Redes' }}</span>
+                    <h2 class="sidebar-title">{% if has_role("supervisor") %}Mi Red{% else %}Redes Activas{% endif %}</h2>
+                    <span class="badge badge-secondary">{{ '1 Red' if has_role("supervisor") else '4 Redes' }}</span>
                 </div>
 
                 <div class="redes-list">
                     <div class="red-card active">
                         <div class="red-header">
                             <span class="red-name">Red Hebrón</span>
-                            {% if not is_supervisor %}
+                            {% if not has_role("supervisor") %}
                             <span class="material-symbols-outlined icon-more">more_vert</span>
                             {% endif %}
                         </div>
@@ -66,7 +66,7 @@
                         </div>
                     </div>
 
-                    {% if not is_supervisor %}
+                    {% if not has_role("supervisor") %}
                     <div class="red-card">
                         <div class="red-header">
                             <span class="red-name">Red Cielos Abiertos</span>
@@ -104,12 +104,12 @@
 
                 <div class="impact-card">
                     <div class="impact-content">
-                        <h3>{% if is_supervisor %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
-                        <p class="impact-subtitle">{% if is_supervisor %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
-                        <div class="impact-number">{% if is_supervisor %}14{% else %}1,402{% endif %}</div>
-                        <p class="impact-note">{% if is_supervisor %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
+                        <h3>{% if has_role("supervisor") %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
+                        <p class="impact-subtitle">{% if has_role("supervisor") %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
+                        <div class="impact-number">{% if has_role("supervisor") %}14{% else %}1,402{% endif %}</div>
+                        <p class="impact-note">{% if has_role("supervisor") %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
                     </div>
-                    <span class="material-symbols-outlined watermark-icon">{% if is_supervisor %}health_and_safety{% else %}diversity_3{% endif %}</span>
+                    <span class="material-symbols-outlined watermark-icon">{% if has_role("supervisor") %}health_and_safety{% else %}diversity_3{% endif %}</span>
                 </div>
             </aside>
         </div>
@@ -157,7 +157,7 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>12 Asistentes promedio</span>
                         </div>
-                        {% if not is_supervisor %}
+                        {% if not has_role("supervisor") %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                         {% endif %}
                     </div>
@@ -193,7 +193,7 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>8 Asistentes promedio</span>
                         </div>
-                        {% if not is_supervisor %}
+                        {% if not has_role("supervisor") %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                         {% endif %}
                     </div>
@@ -229,12 +229,12 @@
                             <span class="material-symbols-outlined">groups</span>
                             <span>15 Asistentes promedio</span>
                         </div>
-                        {% if not is_supervisor %}
+                        {% if not has_role("supervisor") %}
                         <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                         {% endif %}
                     </div>
                 </article>
-                {% if not is_supervisor %}
+                {% if not has_role("supervisor") %}
                 <div class="casa-add-card">
                     <div class="add-icon">
                         <span class="material-symbols-outlined">add</span>

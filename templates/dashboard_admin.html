@@ -10,7 +10,7 @@
     <!-- Header Section -->
     <header class="page-header">
         <div>
-            {% if is_supervisor %}
+            {% if has_role("supervisor") %}
             <h1 class="title">Panel de Supervisión Regional</h1>
             <p class="subtitle">Monitoreo de actividad de tu red ministerial. Bienvenido, {{ usuario }}.</p>
             {% else %}
@@ -22,7 +22,13 @@
 
     <!-- Filter Bar Jerárquica -->
     <section class="filter-bar-card">
-        <form id="filterForm" method="GET" action="{{ url_for('admin_dashboard') }}" class="filter-form">
+        <form id="filterForm" method="GET" action="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}{% else %}{{ url_for('admin.dashboard', id=get_usuario_id()) }}{% endif %}" class="filter-form">
+            {% if has_role("supervisor") %}
+            <!-- Supervisor: selector simplificado -->
+            <input type="hidden" name="nivel" id="selectNivel" value="red">
+            <input type="hidden" name="red_id" id="selectRed" value="{{ red_id }}">
+            {% else %}
+            <!-- Admin: selector completo -->
             <div class="filter-group">
                 <label for="selectNivel" class="filter-label">Nivel de Vista</label>
                 <select id="selectNivel" name="nivel" class="filter-select">
@@ -40,6 +46,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
             
             <div id="groupCdp" class="filter-group {% if nivel != 'cdp' %}hidden{% endif %}">
                 <label for="selectCdp" class="filter-label">Casa de Paz</label>
@@ -64,7 +71,7 @@
             </div>
             
             <div class="filter-actions">
-                <a href="{{ url_for('admin_dashboard') }}" class="btn-reset" title="Restablecer filtros">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}{% else %}{{ url_for('admin.dashboard', id=get_usuario_id()) }}{% endif %}" class="btn-reset" title="Restablecer filtros">
                     <span class="material-symbols-outlined">restart_alt</span>
                 </a>
             </div>

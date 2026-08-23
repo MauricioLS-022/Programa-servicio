@@ -9,7 +9,7 @@
 
 <main class="container">
     <div class="hero">
-        {% if is_supervisor %}
+        {% if has_role("supervisor") %}
         <h1 class="hero-title">Reportes de mi Red</h1>
         <p class="hero-subtitle">Auditoría y seguimiento de actividad ministerial</p>
         {% else %}
@@ -27,7 +27,7 @@
             </div>
         </div>
 
-        {% if not is_supervisor %}
+        {% if not has_role("supervisor") %}
         <div class="filter-group">
             <label>Filtrar por Red</label>
             <select>
@@ -107,7 +107,7 @@
                                 data-obs="Testimonio de sanidad al finalizar">
                                 <span class="material-symbols-outlined text-primary">visibility</span>
                             </button>
-                            {% if not is_supervisor %}
+                            {% if not has_role("supervisor") %}
                             <button class="btn-icon btn-edit"
                                 data-fecha="24 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
                                 data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
@@ -141,7 +141,7 @@
                                 data-obs="Se recibieron 2 nuevos visitantes">
                                 <span class="material-symbols-outlined text-primary">visibility</span>
                             </button>
-                            {% if not is_supervisor %}
+                            {% if not has_role("supervisor") %}
                             <button class="btn-icon btn-edit"
                                 data-fecha="22 Oct 2023" data-lider="Elena Pérez" data-iniciales="EP"
                                 data-casa="Sion - Los Olivos" data-hora-inicio="18:30" data-hora-fin="20:30"
@@ -175,7 +175,7 @@
                                 data-obs="Reunión especial de jóvenes">
                                 <span class="material-symbols-outlined text-primary">visibility</span>
                             </button>
-                            {% if not is_supervisor %}
+                            {% if not has_role("supervisor") %}
                             <button class="btn-icon btn-edit"
                                 data-fecha="20 Oct 2023" data-lider="David Sánchez" data-iniciales="DS"
                                 data-casa="Manantial - Centro" data-hora-inicio="17:00" data-hora-fin="19:30"
@@ -209,7 +209,7 @@
                                 data-obs="Visitas se integraron al grupo">
                                 <span class="material-symbols-outlined text-primary">visibility</span>
                             </button>
-                            {% if not is_supervisor %}
+                            {% if not has_role("supervisor") %}
                             <button class="btn-icon btn-edit"
                                 data-fecha="19 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
                                 data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"

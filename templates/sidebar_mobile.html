@@ -1,4 +1,4 @@
-<script type="module" src="{{ url_for('static', filename='scripts/menu.js')}}"></script>
+<script type="module" src="{{ url_for('static', filename='scripts/menu.js') }}"></script>
 
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -9,73 +9,73 @@
             </div>
             <div class="brand-text">
                 <h2 class="brand-title">Vino Nuevo</h2>
-                {% if is_supervisor == True %}
+                {% if has_role("supervisor") %}
                 <p class="brand-subtitle">Supervisión Regional</p>
-                {% else %}
+                {% elif has_role("admin") %}
                 <p class="brand-subtitle">Administración</p>
+                {% else %}
+                <p class="brand-subtitle">Casa de Paz</p>
                 {% endif %}
             </div>
         </div>
 
         <nav class="sidebar-nav">
-            {% if is_supervisor == True %}
-            <a href="/supervisor/dashboard" class="nav-item {{ 'active' if request.path == '/supervisor' else '' }}">
+            {% if has_role("supervisor") %}
+            <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
             </a>
-            <a href="/supervisor/estructura" class="nav-item {{ 'active' if request.path == '/supervisor/estructura' else '' }}">
+            <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'estructura' in request.path else '' }}">
                 <span class="material-symbols-outlined">account_tree</span>
                 <span>Estructura</span>
             </a>
-            <a href="/supervisor/reportes" class="nav-item {{ 'active' if request.path == '/supervisor/reportes' else '' }}">
+            <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'reportes' in request.path else '' }}">
                 <span class="material-symbols-outlined">analytics</span>
                 <span>Reportes</span>
             </a>
-            <a href="/supervisor/lider" class="nav-item {{ 'active' if request.path == '/supervisor/lider' else '' }}">
+            <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
                 <span class="material-symbols-outlined">leaderboard</span>
                 <span>Líderes</span>
             </a>
-            <a href="/supervisor/perfil" class="nav-item {{ 'active' if request.path == '/supervisor/perfil' else '' }}">
+            <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
-            {% elif is_admin == True %}
-            <a href="/admin/dashboard" class="nav-item {{ 'active' if request.path == '/admin/dashboard' else '' }}">
+            {% elif has_role("admin") %}
+            <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
             </a>
-            <a href="/admin/estructura" class="nav-item {{ 'active' if request.path == '/admin/estructura' else '' }}">
+            <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'estructura' in request.path else '' }}">
                 <span class="material-symbols-outlined">account_tree</span>
                 <span>Estructura</span>
             </a>
-            <a href="/admin/usuario" class="nav-item {{ 'active' if request.path == '/admin/usuario' else '' }}">
+            <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
                 <span class="material-symbols-outlined">group</span>
                 <span>Usuarios</span>
             </a>
-            <a href="/admin/lider" class="nav-item {{ 'active' if request.path == '/admin/lider' else '' }}">
+            <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
                 <span class="material-symbols-outlined">leaderboard</span>
                 <span>Líderes</span>
             </a>
-
-            <a href="/admin/reportes" class="nav-item {{ 'active' if request.path == '/admin/reportes' else '' }}">
+            <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
                 <span class="material-symbols-outlined">analytics</span>
                 <span>Reportes</span>
             </a>
-            <a href="/admin/perfil" class="nav-item {{ 'active' if request.path == '/admin/perfil' else '' }}">
+            <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
-
-            {% else %}
-            <a href="/" class="nav-item {{ 'active' if request.path == '/' else '' }}">
+            {% elif has_role("cdp") %}
+            <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">home</span>
                 <span>Inicio</span>
             </a>
-            <a href="/generar_reporte" class="nav-item {{ 'active' if request.path == '/generar_reporte' else '' }}">
+            <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'generar_reporte' in request.path else '' }}">
                 <span class="material-symbols-outlined">description</span>
                 <span>Generar Reporte</span>
             </a>
-            <a href="/perfil" class="nav-item {{ 'active' if request.path == '/perfil' else '' }}">
+            <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
@@ -83,7 +83,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="/logout" class="nav-item">
+            <a href="{{ url_for('auth.logout') }}" class="nav-item">
                 <span class="material-symbols-outlined logout-icon">logout</span>
                 <span>Cerrar Sesión</span>
             </a>
