@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
 </head>
 <body class="centro">
@@ -13,10 +14,29 @@
         <h1>Iniciar sesión</h1>
         <form class="form" method="post">
             <input type="text" name="usuario" placeholder="Usuario" required>
-            <input type="password" name="contrasena" placeholder="Contraseña" required>
+            <div class="password-container">
+                <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" required>
+                <button type="button" class="toggle-password" onclick="togglePassword()">
+                    <span class="material-symbols-outlined" id="eye-icon">visibility_off</span>
+                </button>
+            </div>
             <button type="submit">Iniciar sesión</button>
         </form>
         <p class="p">{{ p }}</p>
     </dialog>
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('contrasena');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = 'visibility';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = 'visibility_off';
+            }
+        }
+    </script>
 </body>
 </html>

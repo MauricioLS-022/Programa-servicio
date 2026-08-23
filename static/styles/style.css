@@ -211,6 +211,37 @@ form{
     justify-content: start;
 }
 
+.password-container{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 240px; /* Ancho ajustado para incluir el padding interno */
+    margin: 10px;
+}
+.password-container input{
+    width: 100%;
+    padding-right: 45px;
+    margin: 0; /* Eliminamos el margin extra porque ahora el contenedor lo maneja */
+}
+.toggle-password{
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color1);
+    font-size: 20px;
+}
+.toggle-password:hover{
+    background-color: transparent;
+    color: var(--color2);
+}
+
 @media (max-width: 745px){
     .texto{
         display: none;
