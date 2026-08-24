@@ -87,12 +87,13 @@
                 visitas: parseInt(ring.dataset.visitas) || 0,
                 comprometidos: parseInt(ring.dataset.comprometidos) || 0
             };
-            const total = counts.regular + counts.ninos + counts.visitas + counts.comprometidos || 1;
+            const total = counts.regular + counts.ninos + counts.visitas + counts.comprometidos;
+            const percentageBase = total || 1;
             let p = {
-                regular: Math.round(counts.regular / total * 100),
-                ninos: Math.round(counts.ninos / total * 100),
-                visitas: Math.round(counts.visitas / total * 100),
-                comprometidos: Math.round(counts.comprometidos / total * 100)
+                regular: Math.round(counts.regular / percentageBase * 100),
+                ninos: Math.round(counts.ninos / percentageBase * 100),
+                visitas: Math.round(counts.visitas / percentageBase * 100),
+                comprometidos: Math.round(counts.comprometidos / percentageBase * 100)
             };
             const sumP = p.regular + p.ninos + p.visitas + p.comprometidos;
             if (sumP !== 100 && counts.comprometidos > 0) {
@@ -121,7 +122,7 @@
                     else if (text.includes('Visita')) cnt = counts.visitas;
                     else if (text.includes('Comprometido') || text.includes('Nuevo')) cnt = counts.comprometidos;
 
-                    li.setAttribute('title', `${text}: ${cnt.toLocaleString()} (${Math.round(cnt / total * 100)}%)`);
+                    li.setAttribute('title', `${text}: ${cnt.toLocaleString()} (${Math.round(cnt / percentageBase * 100)}%)`);
 
                     li.addEventListener('mouseenter', function() {
                         if (centerNumber) centerNumber.textContent = cnt.toLocaleString();

@@ -90,14 +90,14 @@ def get_metricas_generales(conn):
         ORDER BY mes DESC
         LIMIT 8
     """)
-    rows_tendencia = cur.fetchall()
+    rows_tendencia = cur.fetchall() or []
     rows_tendencia.reverse()
     max_asistencia = max((r['asistencia'] for r in rows_tendencia), default=1) or 1
     tendencia = [
         {
             'semana': r['mes'],
-            'asistencia': int(r['asistencia']),
-            'porcentaje': round(int(r['asistencia']) / max_asistencia * 100),
+            'asistencia': int(r['asistencia']) if r['asistencia'] else 0,
+            'porcentaje': round(int(r['asistencia']) / max_asistencia * 100) if max_asistencia > 0 else 0,
         }
         for r in rows_tendencia
     ]

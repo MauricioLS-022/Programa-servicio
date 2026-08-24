@@ -41,6 +41,7 @@
             <div id="groupRed" class="filter-group {% if nivel == 'general' %}hidden{% endif %}">
                 <label for="selectRed" class="filter-label">Seleccionar Red</label>
                 <select id="selectRed" name="red_id" class="filter-select" data-search-placeholder="Buscar red...">
+                    {% if not redes %}<option value="">No hay redes disponibles</option>{% endif %}
                     {% for red in redes %}
                     <option value="{{ red.id }}" {% if red_id == red.id %}selected{% endif %} data-search="{{ red.nombre|lower }} {{ red.supervisor|lower }}">{{ red.nombre }}</option>
                     {% endfor %}
@@ -51,6 +52,7 @@
             <div id="groupCdp" class="filter-group {% if nivel != 'cdp' %}hidden{% endif %}">
                 <label for="selectCdp" class="filter-label">Casa de Paz</label>
                 <select id="selectCdp" name="cdp_id" class="filter-select" data-search-placeholder="Buscar por código, nombre o líder...">
+                    {% if not casas %}<option value="">No hay Casas de Paz disponibles</option>{% endif %}
                     {% for cdp in casas %}
                     <option value="{{ cdp.id }}" {% if cdp_id == cdp.id %}selected{% endif %} data-search="{{ cdp.nombre|lower }} {{ cdp.codigo|lower }} {{ cdp.lider|default('')|lower }}">{{ cdp.nombre }} ({{ cdp.codigo }})</option>
                     {% endfor %}
@@ -90,28 +92,28 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Total Asistencia</h3>
-                    <div class="card-number">{{ metricas.total_asistencia|default(0) }}</div>
+                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}{{ metricas.total_asistencia|default(0) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">check_circle</span>
                     <h3 class="card-title">Cumplimiento Semanal</h3>
-                    <div class="card-number">{{ metricas.cumplimiento|default(0) }}%</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.cumplimiento|default(0) }}%{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">check_circle</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
-                    <div class="card-number">${{ '{:,}'.format(metricas.ofrendas|default(0)) }}</div>
+                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">trending_up</span>
                     <h3 class="card-title">Conversiones del Mes</h3>
-                    <div class="card-number">{{ metricas.conversiones|default(0) }}</div>
+                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">trending_up</span>
                 </article>
             </section>
@@ -125,17 +127,21 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Tendencia de Asistencia Semanal</h2>
-                                <p class="section-subtitle">Histórico de las últimas 8 semanas · Crecimiento constante (+15.5%)</p>
+                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length }} mediciones</p>
                             </div>
+                            {% if metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[0].asistencia > 0 %}
                             <div class="trend-badge-pill">
-                                <span class="material-symbols-outlined">trending_up</span>
-                                <span>+15.5% vs Sem 1</span>
+                                {% set variacion = ((metricas.tendencia_semanas[-1].asistencia - metricas.tendencia_semanas[0].asistencia) / metricas.tendencia_semanas[0].asistencia * 100)|round(1) %}
+                                <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+                                <span>{{ '%+.1f'|format(variacion) }}% vs primera medición</span>
                             </div>
+                            {% endif %}
                         </div>
 
                         <!-- Gráfico de barras de tendencia -->
                         <div class="trend-chart-area">
                             <div class="trend-bars-container">
+                                {% if metricas.tendencia_semanas %}
                                 {% for item in metricas.tendencia_semanas %}
                                 <div class="trend-bar-col">
                                     <div class="trend-bar-track">
@@ -146,6 +152,12 @@
                                     <span class="trend-bar-lbl">{{ item.semana }}</span>
                                 </div>
                                 {% endfor %}
+                                {% else %}
+                                <div class="empty-state">
+                                    <span class="material-symbols-outlined empty-icon">monitoring</span>
+                                    <p class="empty-message">Aún no hay reportes para mostrar una tendencia.</p>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </section>
@@ -170,7 +182,7 @@
                                 <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
                                 <div class="donut-center">
                                     <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.total_asistencia }}</span>
+                                    <span class="donut-number">{{ metricas.total_asistencia|default(0, true) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -195,13 +207,13 @@
                                         <p class="alert-meta">{{ alerta.red }} · Líder: {{ alerta.lider }}</p>
                                         <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">schedule</span> {{ alerta.dias_sin_reporte }} días sin reporte</p>
                                     </div>
-                                    <a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Contactar por WhatsApp">
+                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Contactar por WhatsApp">
                                         <span class="material-symbols-outlined">chat</span>
                                         Contactar
-                                    </a>
+                                    </a>{% endif %}
                                 </article>
                                 {% endfor %}
-                            {% else %}
+                            {% elif metricas.total_casas|default(0) %}
                             <article class="alert-item positive">
                                 <div>
                                     <h4>¡Excelente!</h4>
@@ -209,6 +221,11 @@
                                 </div>
                                 <span class="material-symbols-outlined check-positive">check_circle</span>
                             </article>
+                            {% else %}
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">info</span>
+                                <p class="empty-message">Aún no hay Casas de Paz ni reportes para revisar.</p>
+                            </div>
                             {% endif %}
                         </div>
                     </article>
@@ -221,6 +238,7 @@
                         </div>
                         
                         <div class="network-ranking-list">
+                            {% if metricas.ranking_redes %}
                             {% for red_item in metricas.ranking_redes %}
                             <div class="ranking-item">
                                 <div class="ranking-row">
@@ -239,6 +257,12 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            {% else %}
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">leaderboard</span>
+                                <p class="empty-message">Aún no hay redes con reportes para comparar.</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </article>
                 </aside>
@@ -254,7 +278,7 @@
                 <div>
                     <h2 class="section-title">{{ metricas.nombre_red }}</h2>
                     <p class="section-subtitle">
-                        Supervisor: <strong>{{ metricas.supervisor }}</strong> · Monitoreo y métricas zonales
+                        {% if metricas.supervisor %}Supervisor: <strong>{{ metricas.supervisor }}</strong> · {% endif %}Monitoreo y métricas zonales
                     </p>
                 </div>
                 <div class="header-action-group">
@@ -271,28 +295,28 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Asistencia Total</h3>
-                    <div class="card-number">{{ metricas.asistencia_total }}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.asistencia_total }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">home_work</span>
                     <h3 class="card-title">Promedio por Casa</h3>
-                    <div class="card-number">{{ metricas.promedio_casa }}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.promedio_casa }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">home_work</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">child_care</span>
                     <h3 class="card-title">Total Niños</h3>
-                    <div class="card-number">{{ metricas.ninos }}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.ninos }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">child_care</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas de Red</h3>
-                    <div class="card-number">${{ '{:,}'.format(metricas.ofrendas) }}</div>
+                    <div class="card-number">{% if metricas.casas %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
             </section>
@@ -308,6 +332,7 @@
                             <p class="section-subtitle">Estado de reporte semanal de cada Casa de Paz en {{ metricas.nombre_red }}</p>
                         </div>
                         <div class="semaforo-grid">
+                            {% if metricas.casas %}
                             {% for casa in metricas.casas %}
                             <article class="semaforo-item">
                                 <span class="semaforo-dot {{ casa.estado }}"></span>
@@ -323,6 +348,12 @@
                                 </span>
                             </article>
                             {% endfor %}
+                            {% else %}
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">home_work</span>
+                                <p class="empty-message">Esta red todavía no tiene Casas de Paz registradas.</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </article>
 
@@ -346,7 +377,7 @@
                                 <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
                                 <div class="donut-center">
                                     <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.asistencia_total }}</span>
+                                    <span class="donut-number">{{ metricas.asistencia_total|default(0, true) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -362,6 +393,7 @@
                             <p class="section-subtitle">Casas con riesgo o reportes pendientes</p>
                         </div>
                         <div class="alert-list">
+                            {% if metricas.alertas_zonal %}
                             {% for alerta in metricas.alertas_zonal %}
                             <article class="alert-item">
                                 <div class="alert-info-text">
@@ -369,12 +401,18 @@
                                     <p class="alert-meta">Líder: {{ alerta.lider }}</p>
                                     <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                <a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Atender por WhatsApp">
+                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Atender por WhatsApp">
                                     <span class="material-symbols-outlined">support_agent</span>
                                     Atender
-                                </a>
+                                </a>{% endif %}
                             </article>
                             {% endfor %}
+                            {% else %}
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">task_alt</span>
+                                <p class="empty-message">No hay alertas pendientes en esta red.</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </article>
 
@@ -384,16 +422,16 @@
                             <h2 class="section-title">Top Crecimiento</h2>
                             <p class="section-subtitle">Mayor retención de visitas y consolidación</p>
                         </div>
-                        <div class="top-growth-box">
+                        {% if metricas.top_crecimiento and metricas.top_crecimiento.nombre %}<div class="top-growth-box">
                             <div class="growth-badge-icon">
                                 <span class="material-symbols-outlined">workspace_premium</span>
                             </div>
                             <div class="growth-details">
                                 <h3>{{ metricas.top_crecimiento.nombre }} <span class="badge-code">{{ metricas.top_crecimiento.codigo }}</span></h3>
-                                <p class="growth-rate"><strong class="text-success">{{ metricas.top_crecimiento.tasa }}</strong> crecimiento mensual</p>
-                                <p class="growth-sub">{{ metricas.top_crecimiento.visitas }} visitas retenidas · Líder: {{ metricas.top_crecimiento.lider }}</p>
+                                <p class="growth-rate"><strong class="text-success">{{ metricas.top_crecimiento.tasa|default('Sin datos') }}</strong> indicador destacado</p>
+                                <p class="growth-sub">{{ metricas.top_crecimiento.visitas|default(0) }} visitas registradas · Líder: {{ metricas.top_crecimiento.lider|default('Sin asignar') }}</p>
                             </div>
-                        </div>
+                        </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">workspace_premium</span><p class="empty-message">Aún no hay datos de crecimiento para destacar.</p></div>{% endif %}
                     </article>
 
                     <!-- Bloque 3: Equipo de Supervisores a Cargo -->
@@ -403,6 +441,7 @@
                             <p class="section-subtitle">Liderazgo y supervisión de red</p>
                         </div>
                         <div class="supervisores-list">
+                            {% if metricas.supervisores %}
                             {% for sup in metricas.supervisores %}
                             <div class="supervisor-card-item">
                                 <div class="supervisor-avatar">
@@ -417,6 +456,12 @@
                                 </a>
                             </div>
                             {% endfor %}
+                            {% else %}
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">badge</span>
+                                <p class="empty-message">No hay supervisores asignados a esta red.</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </article>
                 </aside>
@@ -431,13 +476,13 @@
             <!-- Header de Casa de Paz -->
             <div class="section-header-row">
                 <div>
-                    <h2 class="section-title">{{ metricas.nombre_cdp }}</h2>
-                    <p class="section-subtitle"><span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle;">location_on</span> {{ metricas.direccion }}</p>
+                    <h2 class="section-title">{{ metricas.nombre_cdp|default('Casa de Paz') }}</h2>
+                    <p class="section-subtitle"><span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle;">location_on</span> {{ metricas.direccion|default('Dirección no registrada') or 'Dirección no registrada' }}</p>
                 </div>
                 <div class="cdp-badges">
-                    <span class="badge-status badge-info">{{ metricas.codigo }}</span>
+                    {% if metricas.codigo %}<span class="badge-status badge-info">{{ metricas.codigo }}</span>{% endif %}
                     {% if metricas.potencial_multiplicacion %}
-                    <span class="badge-status badge-warning">🚀 Potencial de Multiplicación</span>
+                    <span class="badge-status badge-warning"><span class="material-symbols-outlined">rocket_launch</span> Potencial de Multiplicación</span>
                     {% endif %}
                 </div>
             </div>
@@ -449,8 +494,8 @@
                         <span class="material-symbols-outlined">person</span>
                     </div>
                     <div class="lider-details">
-                        <h3>{{ metricas.lider }}</h3>
-                        <p>Líder principal</p>
+                        <h3>{{ metricas.lider or 'Sin asignar' }}</h3>
+                        <p>{% if metricas.lider %}Líder principal{% else %}Falta asignar líder{% endif %}</p>
                     </div>
                 </div>
                 {% if metricas.sublider %}
@@ -467,18 +512,20 @@
 
                 <!-- Trazabilidad de Último Reporte -->
                 <div class="trazabilidad-box">
-                    <span class="material-symbols-outlined text-primary">verified</span>
+                    <span class="material-symbols-outlined {% if metricas.estado_reporte == 'enviado' %}text-primary{% else %}text-secondary{% endif %}">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
                     <div class="trazabilidad-text">
-                        <span class="trazabilidad-label">Último Reporte Enviado</span>
-                        <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por }}</strong> · {{ metricas.ultimo_reporte_fecha }}</span>
+                        <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Último Reporte Enviado{% else %}Reporte pendiente{% endif %}</span>
+                        {% if metricas.estado_reporte == 'enviado' %}<span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>{% else %}<span class="trazabilidad-author">Todavía no hay reportes registrados.</span>{% endif %}
                     </div>
                 </div>
 
                 <div class="lider-actions">
+                    {% if metricas.telefono_contacto %}
                     <a href="https://wa.me/{{ metricas.telefono_contacto|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline">
                         <span class="material-symbols-outlined">chat</span>
                         WhatsApp
                     </a>
+                    {% endif %}
                 </div>
             </section>
 
@@ -487,21 +534,21 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">event_available</span>
                     <h3 class="card-title">Asistencia Último Servicio</h3>
-                    <div class="card-number">{{ metricas.asistencia_ultimo }}</div>
+                    <div class="card-number">{% if metricas.historial %}{{ metricas.asistencia_ultimo }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">event_available</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">insights</span>
                     <h3 class="card-title">Promedio Histórico</h3>
-                    <div class="card-number">{{ metricas.promedio_historico }}</div>
+                    <div class="card-number">{% if metricas.historial %}{{ metricas.promedio_historico }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">insights</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
                     <h3 class="card-title">Nuevas Decisiones</h3>
-                    <div class="card-number">{{ metricas.conversiones }}</div>
+                    <div class="card-number">{% if metricas.historial %}{{ metricas.conversiones }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">person_add</span>
                 </article>
 
@@ -509,8 +556,8 @@
                     <span class="material-symbols-outlined card-icon text-secondary">send</span>
                     <h3 class="card-title">Estado del Reporte</h3>
                     <div class="card-number">
-                        <span class="badge-status badge-success">
-                            <span class="material-symbols-outlined" style="font-size: 0.85rem;">check</span> Enviado
+                        <span class="badge-status {% if metricas.estado_reporte == 'enviado' %}badge-success{% else %}badge-warning{% endif %}">
+                            <span class="material-symbols-outlined" style="font-size: 0.85rem;">{% if metricas.estado_reporte == 'enviado' %}check{% else %}schedule{% endif %}</span> {% if metricas.estado_reporte == 'enviado' %}Enviado{% else %}Pendiente{% endif %}
                         </span>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">send</span>
@@ -539,6 +586,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% if metricas.historial %}
                                     {% for reporte in metricas.historial %}
                                     <tr>
                                         <td data-label="Fecha"><strong>{{ reporte.fecha }}</strong></td>
@@ -548,6 +596,9 @@
                                         <td data-label="Ofrenda">${{ reporte.ofrenda }}</td>
                                     </tr>
                                     {% endfor %}
+                                    {% else %}
+                                    <tr><td colspan="5"><div class="empty-state"><span class="material-symbols-outlined empty-icon">description</span><p class="empty-message">Aún no hay reportes registrados para esta Casa de Paz.</p></div></td></tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
@@ -558,11 +609,11 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Distribución del Último Reporte</h2>
-                                <p class="section-subtitle">Asistencia registrada el {{ metricas.historial[0].fecha }} en {{ metricas.nombre_cdp }}</p>
+                                <p class="section-subtitle">{% if metricas.historial %}Asistencia registrada el {{ metricas.historial[0].fecha }} en {{ metricas.nombre_cdp }}{% else %}No hay reportes registrados{% endif %}</p>
                             </div>
                         </div>
 
-                        <div class="chart-area">
+                        {% if metricas.historial %}<div class="chart-area">
                             <ul class="chart-legend" aria-hidden="true">
                                 <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
                                 <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
@@ -572,10 +623,10 @@
                                 <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="0"></div>
                                 <div class="donut-center">
                                     <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.asistencia_ultimo }}</span>
+                                    <span class="donut-number">{{ metricas.asistencia_ultimo|default(0, true) }}</span>
                                 </div>
                             </div>
-                        </div>
+                        </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">donut_large</span><p class="empty-message">El gráfico estará disponible después del primer reporte.</p></div>{% endif %}
                     </section>
                 </div>
 
@@ -585,12 +636,12 @@
                     <article class="warning-card">
                         <div class="status-card-header">
                             <h2 class="section-title">Notas del Último Reporte</h2>
-                            <p class="section-subtitle">Registrado por {{ metricas.lider }} el {{ metricas.historial[0].fecha }}</p>
+                            <p class="section-subtitle">{% if metricas.historial %}Registrado por {{ metricas.lider }} el {{ metricas.historial[0].fecha }}{% else %}Sin registros{% endif %}</p>
                         </div>
                         <div class="observacion-box">
                             <div class="observacion-quote">
                                 <span class="material-symbols-outlined quote-icon">format_quote</span>
-                                <p>{{ metricas.historial[0].observaciones }}</p>
+                                <p>{% if metricas.historial and metricas.historial[0].observaciones %}{{ metricas.historial[0].observaciones }}{% else %}No hay observaciones{% endif %}</p>
                             </div>
                         </div>
                     </article>
@@ -601,7 +652,7 @@
                             <h2 class="section-title">Mini Histórico de Asistencia</h2>
                             <p class="section-subtitle">Últimas 4 reuniones en gráfico de barras</p>
                         </div>
-                        <div class="mini-chart-container">
+                        {% if metricas.mini_historico %}<div class="mini-chart-container">
                             <div class="mini-bars-row">
                                 {% for bar in metricas.mini_historico %}
                                 <div class="mini-bar-col">
@@ -614,7 +665,7 @@
                                 </div>
                                 {% endfor %}
                             </div>
-                        </div>
+                        </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">bar_chart</span><p class="empty-message">Aún no hay reuniones para mostrar.</p></div>{% endif %}
                     </article>
 
                     <!-- Bloque 3: Datos de Contacto y Anfitrión -->
@@ -628,21 +679,21 @@
                                 <span class="material-symbols-outlined">family_restroom</span>
                                 <div>
                                     <h4>Anfitrión</h4>
-                                    <p>{{ metricas.anfitrion }}</p>
+                                    <p>{{ metricas.anfitrion or 'Sin registrar' }}</p>
                                 </div>
                             </div>
                             <div class="anfitrion-detail-item">
                                 <span class="material-symbols-outlined">pin_drop</span>
                                 <div>
                                     <h4>Dirección</h4>
-                                    <p>{{ metricas.direccion }}</p>
+                                    <p>{{ metricas.direccion or 'Sin registrar' }}</p>
                                 </div>
                             </div>
                             <div class="anfitrion-detail-item">
                                 <span class="material-symbols-outlined">call</span>
                                 <div>
                                     <h4>Contacto</h4>
-                                    <p>{{ metricas.telefono_contacto }}</p>
+                                    <p>{{ metricas.telefono_contacto or 'Sin registrar' }}</p>
                                 </div>
                             </div>
                         </div>

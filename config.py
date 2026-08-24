@@ -19,6 +19,7 @@ class Config:
     APP_HOST = HOST
     APP_PORT = PORT
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+    MOCK_MODE = os.getenv('MOCK_MODE', 'False').lower() == 'true'
     
     # Flask
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')

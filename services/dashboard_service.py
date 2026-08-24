@@ -2,7 +2,7 @@
 Servicio de dashboard - Lógica de negocio para métricas del dashboard.
 Maneja la obtención y filtrado de métricas para Admin y Supervisor.
 """
-from flask import session, request
+from flask import current_app, session, request
 from database import get_db_connection
 from db_queries import get_metricas_generales, get_metricas_red, get_metricas_cdp
 from mock_data import (
@@ -11,6 +11,78 @@ from mock_data import (
     get_empty_generales, get_empty_red, get_empty_cdp,
 )
 from utils.cache import get_cached_value, set_cached_value
+
+
+def mock_mode_enabled():
+    """Indica si los datos demo están explícitamente habilitados en desarrollo."""
+    return (
+        current_app.config.get('FLASK_ENV') == 'development'
+        and current_app.config.get('MOCK_MODE', False)
+    )
+
+
+def sanitize_metricas(metricas):
+    """
+    Asegura que todas las claves requeridas por el template existan en metricas.
+    Agrega valores por defecto cuando los datos no están disponibles.
+    """
+    default_metricas = {
+        # KPIs principales
+        'total_asistencia': 0,
+        'total_reportes': 0,
+        'cumplimiento': 0,
+        
+        # Distribución
+        'distribucion': {
+            'regulares': 0,
+            'ninos': 0,
+            'visitas': 0,
+            'comprometidos': 0,
+        },
+        'asistencia_ultimo': 0,
+        
+        # Historial
+        'historial': [],
+        
+        # Tendencia
+        'tendencia': [],
+        
+        # Rankings
+        'ranking_redes': [],
+        'ranking_cdp': [],
+        
+        # Crecimiento
+        'top_crecimiento': {'nombre': 'Sin datos', 'codigo': '-', 'crecimiento': 0},
+        'bottom_crecimiento': {'nombre': 'Sin datos', 'codigo': '-', 'crecimiento': 0},
+        
+        # CDP info
+        'nombre_cdp': 'Sin asignar',
+        'codigo_cdp': '-',
+        'lider': 'Sin líder',
+        
+        # Métricas adicionales
+        'conversiones': 0,
+        'ofrendas': 0,
+    }
+    
+    # Merge con valores por defecto
+    result = {**default_metricas, **metricas}
+    
+    # Asegurar sub-diccionarios
+    if 'distribucion' not in result or not isinstance(result.get('distribucion'), dict):
+        result['distribucion'] = default_metricas['distribucion']
+    
+    # Asegurar listas
+    for key in ['historial', 'tendencia', 'ranking_redes', 'ranking_cdp']:
+        if key not in result or not isinstance(result.get(key), list):
+            result[key] = []
+    
+    # Asegurar dicts para crecimiento
+    for key in ['top_crecimiento', 'bottom_crecimiento']:
+        if key not in result or not isinstance(result.get(key), dict):
+            result[key] = default_metricas[key]
+    
+    return result
 
 
 def get_supervisor_red_id(usuario_id):
@@ -38,15 +110,17 @@ def get_supervisor_red_id(usuario_id):
 
 def get_selectores():
     """Obtiene las listas de redes y casas para los selectores del dashboard."""
-    cache_key = 'selectores'
+    cache_key = f"selectores_db_{mock_mode_enabled()}"
     cached = get_cached_value(cache_key)
     
     if cached:
         return cached
     
     conn = get_db_connection()
-    if not conn:
+    if not conn and mock_mode_enabled():
         return get_redes_demo(), get_casas_demo()
+    if not conn:
+        return [], []
     
     try:
         cur = conn.cursor()
@@ -60,7 +134,7 @@ def get_selectores():
         redes = cur.fetchall()
         
         cur.execute("""
-            SELECT c.id, c.codigo, c.codigo AS nombre, c.red_id,
+            SELECT c.id, c.codigo, c.codigo AS nombre, c.anfitrion, c.direccion, c.red_id,
                    CONCAT(l.nombre, ' ', l.apellido) AS lider
             FROM cdp c
             LEFT JOIN lider l ON l.cdp_id = c.id AND l.rol = 'Lider'
@@ -74,9 +148,71 @@ def get_selectores():
         return result
     except Exception as e:
         print(f"[DB] Error obteniendo selectores: {e}")
-        return get_redes_demo(), get_casas_demo()
+        return [], []
     finally:
         conn.close()
+
+
+def get_estructura_context(usuario_id, is_supervisor=False):
+    """Obtiene redes y casas para la vista de estructura.
+
+    Los datos demo solo se usan cuando MySQL no está disponible. Si la BD
+    responde pero no tiene registros, la vista conserva estados vacíos.
+    """
+    conn = get_db_connection()
+    db_connected = conn is not None
+    if conn:
+        conn.close()
+
+    if db_connected:
+        redes, casas = get_selectores()
+    elif mock_mode_enabled():
+        redes, casas = get_redes_demo(), get_casas_demo()
+    else:
+        redes, casas = [], []
+
+    supervisor_red_id = None
+    if is_supervisor:
+        supervisor_red_id = get_supervisor_red_id(usuario_id) if db_connected else (redes[0]['id'] if redes else None)
+        redes = [red for red in redes if red['id'] == supervisor_red_id]
+        casas = [casa for casa in casas if casa['red_id'] == supervisor_red_id]
+
+    def red_slug(red_id):
+        return f'red-{red_id}'
+
+    casas_por_red = {}
+    for casa in casas:
+        casas_por_red.setdefault(casa['red_id'], []).append(casa)
+
+    redes_context = []
+    for red in redes:
+        redes_context.append({
+            **red,
+            'slug': red_slug(red['id']),
+            'supervisor': red.get('supervisor') or 'Sin asignar',
+            'total_casas': len(casas_por_red.get(red['id'], [])),
+        })
+
+    casas_context = []
+    for casa in casas:
+        casas_context.append({
+            **casa,
+            'red_slug': red_slug(casa['red_id']),
+            'anfitrion': casa.get('anfitrion') or 'Sin anfitrión asignado',
+            'zona': casa.get('direccion') or 'Ubicación pendiente',
+            'supervisor': casa.get('supervisor') or '',
+            'estado': casa.get('estado') or 'pendiente',
+            'horario': casa.get('horario') or 'Horario pendiente',
+            'asistencia': casa.get('asistencia') or 0,
+        })
+
+    return {
+        'redes_estructura': redes_context,
+        'casas_estructura': casas_context,
+        'total_casas_estructura': len(casas_context),
+        'estructura_mock': not db_connected,
+        'estructura_vacia': not redes_context,
+    }
 
 
 def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, supervisor_red_id=None):
@@ -93,7 +229,7 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
     Returns:
         dict con las métricas y flag mock_used
     """
-    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}'
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{mock_mode_enabled()}'
     cached = get_cached_value(cache_key)
     
     if cached:
@@ -108,33 +244,42 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
         if nivel == 'general':
             if db_connected:
                 metricas = get_metricas_generales(conn)
-            else:
+            elif mock_mode_enabled():
                 metricas = get_mock_generales()
                 mock_used = True
+            else:
+                metricas = get_empty_generales()
         
         elif nivel == 'red':
             rid = red_id or supervisor_red_id or 1
             if db_connected:
                 result = get_metricas_red(conn, rid)
                 metricas = result if result else get_empty_red(rid)
-            else:
+            elif mock_mode_enabled():
                 metricas = get_mock_red(rid)
                 mock_used = True
+            else:
+                metricas = get_empty_red(rid)
         
         elif nivel == 'cdp':
             cid = cdp_id or 1
             if db_connected:
                 result = get_metricas_cdp(conn, cid)
                 metricas = result if result else get_empty_cdp(cid)
-            else:
+            elif mock_mode_enabled():
                 metricas = get_mock_cdp(cid)
                 mock_used = True
+            else:
+                metricas = get_empty_cdp(cid)
     except Exception as e:
         print(f"[Service] Error obteniendo métricas: {e}")
         metricas = get_empty_generales()
     finally:
         if conn:
             conn.close()
+    
+    # Sanitizar metricas para asegurar que todas las claves requeridas existan
+    metricas = sanitize_metricas(metricas)
     
     result = {**metricas, 'mock_used': mock_used}
     set_cached_value(cache_key, result)

@@ -2,7 +2,7 @@
 Rutas de API: /api/dashboard/datos
 """
 from flask import Blueprint, request, jsonify
-from services.dashboard_service import get_metricas
+from services.dashboard_service import get_metricas, mock_mode_enabled
 from database import get_db_connection
 from utils.cache import get_cached_value, set_cached_value
 
@@ -27,7 +27,7 @@ def api_dashboard_datos():
         cdp_id = None
 
     db_connected = get_db_connection() is not None
-    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}'
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{mock_mode_enabled()}'
 
     # Verificar caché primero
     cached = get_cached_value(cache_key)
