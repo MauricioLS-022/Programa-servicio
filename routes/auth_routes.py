@@ -3,6 +3,7 @@ Rutas de autenticación: /iniciar_sesion, /logout
 """
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from database import get_db_connection
+from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -30,14 +31,22 @@ def login():
             try:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT id, username, tipo_usuario FROM usuario WHERE username = %s and password = %s",
-                    (usuario, contrasena)
+                    "SELECT id, username, password, tipo_usuario FROM usuario WHERE username = %s",
+                    (usuario,)
                 )
                 r = cur.fetchone()
 
-                if not r:
+                password_valid = bool(r and _check_password(r['password'], contrasena))
+                if not password_valid:
                     p = "El usuario no se encuentra registrado"
                 else:
+                    if r['password'] == contrasena:
+                        cur.execute(
+                            "UPDATE usuario SET password = %s WHERE id = %s",
+                            (generate_password_hash(contrasena), r['id'])
+                        )
+                        conn.commit()
+
                     # Guardar todos los datos en sesión
                     session["usuario_id"] = str(r['id'])  # Convertir UUID a string
                     session["usuario"] = r['username']
@@ -69,6 +78,20 @@ def login():
                 p = "Modo demo: usa admin/admin, supervisor/supervisor o cualquier usuario/contraseña"
 
     return render_template('login.html', p=p)
+
+
+def _check_password(stored_password, provided_password):
+    """Valida hashes Werkzeug y permite migrar una contraseña legacy una vez."""
+    if not stored_password or not provided_password:
+        return False
+
+    if stored_password.count('$') < 2:
+        return stored_password == provided_password
+
+    try:
+        return check_password_hash(stored_password, provided_password)
+    except (ValueError, TypeError):
+        return False
 
 
 @auth_bp.route('/logout')
