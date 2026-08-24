@@ -394,6 +394,9 @@ body {
 
 .redes-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .red-card {
+    position: relative;
+    width: 100%;
+    text-align: left;
     background-color: #fcfaf9; /* Fondo grisáceo muy leve para contrastar con el sidebar blanco */
     border: 1px solid rgba(137, 114, 111, 0.2);
     padding: 0.75rem 0.9rem;
@@ -402,6 +405,23 @@ body {
     transition: all 0.3s ease;
     opacity: 0.9;
 }
+.red-card:focus-visible {
+    outline: 3px solid var(--primary-fixed-dim);
+    outline-offset: 2px;
+}
+.red-filter-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.red-filter-trigger:focus-visible { outline: none; }
+.red-card-all .material-symbols-outlined { color: var(--secondary); }
 .red-card:hover { 
     opacity: 1; 
     background-color: #ffffff; 
@@ -416,6 +436,88 @@ body {
 .red-card.active .icon-more {
     color: var(--primary);
 }
+
+.menu-trigger {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.menu-trigger:hover,
+.menu-trigger:focus-visible { background: var(--surface-container-high); }
+.menu-trigger:focus-visible { outline: 2px solid var(--primary-fixed-dim); }
+.red-menu {
+    position: absolute;
+    top: 2.7rem;
+    right: 0.65rem;
+    z-index: 30;
+    display: none;
+    min-width: 190px;
+    padding: 0.4rem;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: 0.65rem;
+    box-shadow: var(--shadow-hover);
+}
+.red-card.menu-open .red-menu { display: grid; animation: fadeInUp 0.16s ease-out; }
+.red-menu a,
+.red-menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--on-surface);
+    font: inherit;
+    font-size: 0.72rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.red-menu a:hover,
+.red-menu button:hover,
+.red-menu a:focus-visible,
+.red-menu button:focus-visible { background: var(--surface-container-low); outline: none; }
+.red-menu .material-symbols-outlined { font-size: 1rem; color: var(--on-surface-variant); }
+.red-menu .menu-danger { color: var(--primary); }
+.red-card.menu-open {
+    z-index: 40;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: var(--on-surface-variant);
+    text-align: center;
+}
+.empty-state .material-symbols-outlined { color: var(--outline-variant); font-size: 2rem; }
+.empty-state strong { color: var(--primary); font-size: 0.85rem; }
+.empty-state span:last-child { font-size: 0.7rem; }
+.empty-state-sidebar { min-height: 8rem; padding: 1rem; }
+.empty-state-casas {
+    grid-column: 1 / -1;
+    min-height: 12rem;
+    padding: 2rem;
+    border: 1px dashed var(--outline-variant);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+}
+.status-pendiente { background-color: var(--surface-container-high); color: var(--on-surface-variant); }
 
 .red-card.active { 
     background-color: #ffffff; 
@@ -1034,3 +1136,5 @@ body {
         font-size: 0.65rem;
     }
 }
+.casa-card.is-filtered-out,
+.casa-add-card.is-filtered-out { display: none; }

@@ -12,7 +12,7 @@
             <h1 class="title">Estructura de mi Red</h1>
             <p class="subtitle">
                 Supervisa el estado de tus <span class="highlight">Casas de Paz</span> y monitorea el crecimiento espiritual de cada grupo bajo tu responsabilidad.
-            </p>
+                            <span class="material-symbols-outlined">apps</span>
             {% else %}
             <h1 class="title">Estructura Organizacional</h1>
             <p class="subtitle">
@@ -44,60 +44,57 @@
             <aside class="redes-sidebar">
                 <div class="sidebar-header">
                     <h2 class="sidebar-title">{% if has_role("supervisor") %}Mi Red{% else %}Redes Activas{% endif %}</h2>
-                    <span class="badge badge-secondary">{{ '1 Red' if has_role("supervisor") else '4 Redes' }}</span>
+                    <span class="badge badge-secondary">{{ redes_estructura|length }} {{ 'Red' if redes_estructura|length == 1 else 'Redes' }}</span>
                 </div>
 
                 <div class="redes-list">
-                    <div class="red-card active">
+                    {% if not has_role("supervisor") and redes_estructura %}
+                    <button class="red-card red-card-all active" type="button" data-red-filter="all" aria-pressed="true">
                         <div class="red-header">
-                            <span class="red-name">Red Hebrón</span>
-                            {% if not has_role("supervisor") %}
-                            <span class="material-symbols-outlined icon-more">more_vert</span>
-                            {% endif %}
+                            <span class="red-name">Todas las redes</span>
+                            <span class="material-symbols-outlined">apps</span>
                         </div>
-                        <p class="red-leader">Líder: Juan Carlos Pérez</p>
+                        <p class="red-leader">Vista general</p>
                         <div class="red-stats">
-                            <div class="avatars">
-                                <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
-                                <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
-                                <div class="avatar-more">+12</div>
+                            <span class="red-count">Mostrar todas las casas</span>
+                        </div>
+                    </button>
+                    {% endif %}
+
+                    {% for red in redes_estructura %}
+                    <div class="red-card {% if has_role("supervisor") and loop.first %}active{% endif %}">
+                        <button class="red-filter-trigger {% if has_role("supervisor") and loop.first %}active{% endif %}" type="button" data-red-filter="{{ red.slug }}" data-red-name="{{ red.nombre }}" aria-pressed="{{ 'true' if has_role("supervisor") and loop.first else 'false' }}">
+                            <div class="red-header">
+                                <span class="red-name">{{ red.nombre }}</span>
                             </div>
-                            <span class="red-count">14 Casas Vinculadas</span>
+                            <p class="red-leader">Supervisor: {{ red.supervisor }}</p>
+                            <div class="red-stats">
+                                {% if estructura_mock and red.total_casas > 0 %}<div class="avatars">
+                                    <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
+                                    <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
+                                    <div class="avatar-more">+12</div>
+                                </div>{% endif %}
+                                <span class="red-count">{{ red.total_casas }} {{ 'Casa de Paz' if red.total_casas == 1 else 'Casas de Paz' }}</span>
+                            </div>
+                        </button>
+                        {% if not has_role("supervisor") %}
+                        <button class="icon-more menu-trigger" type="button" aria-label="Opciones de {{ red.nombre }}" aria-expanded="false" aria-haspopup="true">
+                            <span class="material-symbols-outlined">more_vert</span>
+                        </button>
+                        <div class="red-menu" role="menu">
+                            <a href="#" role="menuitem"><span class="material-symbols-outlined">edit</span>Editar red</a>
+                            <a href="#" role="menuitem"><span class="material-symbols-outlined">home_work</span>Gestionar casas de paz</a>
+                            <a href="#" role="menuitem"><span class="material-symbols-outlined">person</span>Ver supervisor</a>
+                            <button type="button" role="menuitem" class="menu-danger"><span class="material-symbols-outlined">pause_circle</span>Poner en pausa</button>
                         </div>
+                        {% endif %}
                     </div>
-
-                    {% if not has_role("supervisor") %}
-                    <div class="red-card">
-                        <div class="red-header">
-                            <span class="red-name">Red Cielos Abiertos</span>
-                            <span class="material-symbols-outlined icon-more">more_vert</span>
-                        </div>
-                        <p class="red-leader">Líder: Maria Fernanda S.</p>
-                        <div class="red-stats">
-                            <span class="red-count">8 Casas Vinculadas</span>
-                        </div>
-                    </div>
-
-                    <div class="red-card">
-                        <div class="red-header">
-                            <span class="red-name">Red Enmanuel</span>
-                            <span class="material-symbols-outlined icon-more">more_vert</span>
-                        </div>
-                        <p class="red-leader">Líder: Fam. Rodriguez</p>
-                        <div class="red-stats">
-                            <span class="red-count">11 Casas Vinculadas</span>
-                        </div>
-                    </div>
-
-                    <div class="red-card">
-                        <div class="red-header">
-                            <span class="red-name">Red Yahweh</span>
-                            <span class="material-symbols-outlined icon-more">more_vert</span>
-                        </div>
-                        <p class="red-leader">Líder: Ing. Roberto Gil</p>
-                        <div class="red-stats">
-                            <span class="red-count">5 Casas Vinculadas</span>
-                        </div>
+                    {% endfor %}
+                    {% if not redes_estructura %}
+                    <div class="empty-state empty-state-sidebar">
+                        <span class="material-symbols-outlined">hub</span>
+                        <strong>Sin redes registradas</strong>
+                        <span>Crea una red para comenzar.</span>
                     </div>
                     {% endif %}
                 </div>
@@ -106,8 +103,8 @@
                     <div class="impact-content">
                         <h3>{% if has_role("supervisor") %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
                         <p class="impact-subtitle">{% if has_role("supervisor") %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
-                        <div class="impact-number">{% if has_role("supervisor") %}14{% else %}1,402{% endif %}</div>
-                        <p class="impact-note">{% if has_role("supervisor") %}Casas bajo supervisión{% else %}Miembros activos este mes{% endif %}</p>
+                        <div class="impact-number">{{ total_casas_estructura }}</div>
+                        <p class="impact-note">Casas de Paz registradas</p>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">{% if has_role("supervisor") %}health_and_safety{% else %}diversity_3{% endif %}</span>
                 </div>
@@ -118,7 +115,7 @@
             <div class="casas-header">
                 <div>
                     <h3 class="section-title">Casas de Paz</h3>
-                    <p class="section-subtitle">Mostrando todas las casas de la <strong>Red Hebrón</strong></p>
+                    <p class="section-subtitle">Mostrando las casas de <strong id="casasFilterLabel">{% if has_role("supervisor") and redes_estructura %}{{ redes_estructura[0].nombre }}{% else %}todas las redes{% endif %}</strong></p>
                 </div>
                 <div class="search-bar">
                     <span class="material-symbols-outlined icon-search">search</span>
@@ -127,115 +124,36 @@
             </div>
 
             <div class="casas-grid">
-                <article class="casa-card">
+                {% for casa in casas_estructura %}
+                <article class="casa-card" data-red="{{ casa.red_slug }}">
                     <div class="casa-header">
                         <div class="casa-info-top">
-                            <div class="casa-icon">
-                                <span class="material-symbols-outlined filled">home</span>
-                            </div>
+                            <div class="casa-icon"><span class="material-symbols-outlined filled">home</span></div>
                             <div>
-                                <h4 class="casa-name">Casa "CA-5"</h4>
-                                <span class="casa-zone">Sector 4 - Zona Norte</span>
+                                <h4 class="casa-name">Casa "{{ casa.codigo or casa.nombre }}"</h4>
+                                <span class="casa-zone">{{ casa.zona }}</span>
                             </div>
                         </div>
-                        <span class="status status-active">ACTIVA</span>
+                        <span class="status status-{{ casa.estado }}">{{ casa.estado|replace('_', ' ')|upper }}</span>
                     </div>
-                    
                     <div class="casa-details">
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">person</span>
-                            <span>Anfitrión: <strong>David G. & Elena R.</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">calendar_today</span>
-                            <span>Martes • 7:30 PM</span>
-                        </div>
+                        <div class="detail-row"><span class="material-symbols-outlined">person</span><span>Anfitrión: <strong>{{ casa.anfitrion }}</strong></span></div>
+                        <div class="detail-row"><span class="material-symbols-outlined">calendar_today</span><span>{{ casa.horario }}</span></div>
                     </div>
-
                     <div class="casa-footer">
-                        <div class="attendance">
-                            <span class="material-symbols-outlined">groups</span>
-                            <span>12 Asistentes promedio</span>
-                        </div>
-                        {% if not has_role("supervisor") %}
-                        <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
-                        {% endif %}
+                        <div class="attendance"><span class="material-symbols-outlined">groups</span><span>{{ casa.asistencia }} Asistentes promedio</span></div>
+                        {% if not has_role("supervisor") %}<a href="#" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>{% endif %}
                     </div>
                 </article>
-
-                <article class="casa-card">
-                    <div class="casa-header">
-                        <div class="casa-info-top">
-                            <div class="casa-icon">
-                                <span class="material-symbols-outlined filled">home</span>
-                            </div>
-                            <div>
-                                <h4 class="casa-name">Casa "HB-6"</h4>
-                                <span class="casa-zone">Colonia Los Alamos</span>
-                            </div>
-                        </div>
-                        <span class="status status-active">ACTIVA</span>
-                    </div>
-                    
-                    <div class="casa-details">
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">person</span>
-                            <span>Anfitrión: <strong>Ricardo Morales</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">calendar_today</span>
-                            <span>Jueves • 8:00 PM</span>
-                        </div>
-                    </div>
-
-                    <div class="casa-footer">
-                        <div class="attendance">
-                            <span class="material-symbols-outlined">groups</span>
-                            <span>8 Asistentes promedio</span>
-                        </div>
-                        {% if not has_role("supervisor") %}
-                        <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
-                        {% endif %}
-                    </div>
-                </article>
-
-                <article class="casa-card">
-                    <div class="casa-header">
-                        <div class="casa-info-top">
-                            <div class="casa-icon">
-                                <span class="material-symbols-outlined filled">home</span>
-                            </div>
-                            <div>
-                                <h4 class="casa-name">Casa "EM-3"</h4>
-                                <span class="casa-zone">Residencial del Valle</span>
-                            </div>
-                        </div>
-                        <span class="status status-paused">EN PAUSA</span>
-                    </div>
-                    
-                    <div class="casa-details">
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">person</span>
-                            <span>Anfitrión: <strong>Beatriz Valdéz</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="material-symbols-outlined">calendar_today</span>
-                            <span>Lunes • 7:00 PM</span>
-                        </div>
-                    </div>
-
-                    <div class="casa-footer">
-                        <div class="attendance">
-                            <span class="material-symbols-outlined">groups</span>
-                            <span>15 Asistentes promedio</span>
-                        </div>
-                        {% if not has_role("supervisor") %}
-                        <a href="/admin/casa_de_paz" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
-                        {% endif %}
-                    </div>
-                </article>
+                {% else %}
+                <div class="empty-state empty-state-casas">
+                    <span class="material-symbols-outlined">home_work</span>
+                    <strong>Sin Casas de Paz registradas</strong>
+                    <span>Esta red todavía no tiene casas vinculadas.</span>
+                </div>
+                {% endfor %}
                 {% if not has_role("supervisor") %}
-                <div class="casa-add-card">
+                <div class="casa-add-card" data-filtered-add-card>
                     <div class="add-icon">
                         <span class="material-symbols-outlined">add</span>
                     </div>
@@ -248,51 +166,5 @@
     </div>
 </main>
 
-<script>
-(function() {
-    const sidebar = document.querySelector('.redes-sidebar');
-    const arrowLeft = document.querySelector('.scroll-arrow-left');
-    const arrowRight = document.querySelector('.scroll-arrow-right');
-
-    if (!sidebar || !arrowLeft || !arrowRight) return;
-
-    const SCROLL_AMOUNT = 150;
-
-    function updateArrows() {
-        const scrollLeft = sidebar.scrollLeft;
-        const maxScroll = sidebar.scrollWidth - sidebar.clientWidth;
-
-        if (maxScroll <= 10) {
-            arrowLeft.classList.remove('visible');
-            arrowRight.classList.remove('visible');
-            return;
-        }
-
-        if (scrollLeft <= 5) {
-            arrowLeft.classList.remove('visible');
-        } else {
-            arrowLeft.classList.add('visible');
-        }
-
-        if (scrollLeft >= maxScroll - 5) {
-            arrowRight.classList.remove('visible');
-        } else {
-            arrowRight.classList.add('visible');
-        }
-    }
-
-    arrowLeft.addEventListener('click', function() {
-        sidebar.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
-    });
-
-    arrowRight.addEventListener('click', function() {
-        sidebar.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
-    });
-
-    sidebar.addEventListener('scroll', updateArrows);
-    window.addEventListener('resize', updateArrows);
-
-    updateArrows();
-})();
-</script>
+<script src="{{ url_for('static', filename='scripts/estructura.js') }}" defer></script>
 {% endblock %}

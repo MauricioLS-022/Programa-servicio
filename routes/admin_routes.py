@@ -3,7 +3,7 @@ Rutas del administrador: /admin/<uuid:id>/...
 """
 from flask import Blueprint, render_template, request, session
 from utils.auth import login_required, role_required
-from services.dashboard_service import get_dashboard_context
+from services.dashboard_service import get_dashboard_context, get_estructura_context
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -21,7 +21,8 @@ def dashboard(id):
 @login_required
 @role_required("admin")
 def estructura(id):
-    return render_template('estructura_admin.html')
+    context = get_estructura_context(str(id), is_supervisor=False)
+    return render_template('estructura_admin.html', **context)
 
 
 @admin_bp.route('/<uuid:id>/usuario')

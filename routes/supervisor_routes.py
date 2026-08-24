@@ -3,7 +3,7 @@ Rutas del supervisor: /supervisor/<uuid:id>/...
 """
 from flask import Blueprint, render_template, session
 from utils.auth import login_required, role_required, owner_required
-from services.dashboard_service import get_dashboard_context
+from services.dashboard_service import get_dashboard_context, get_estructura_context
 from database import get_db_connection
 
 supervisor_bp = Blueprint('supervisor', __name__, url_prefix='/supervisor')
@@ -26,7 +26,8 @@ def dashboard(id):
 def estructura(id):
     """Estructura de la red del supervisor."""
     usuario = session.get("usuario")
-    return render_template('estructura_admin.html', usuario=usuario)
+    context = get_estructura_context(str(id), is_supervisor=True)
+    return render_template('estructura_admin.html', usuario=usuario, **context)
 
 
 @supervisor_bp.route('/<uuid:id>/reportes')
