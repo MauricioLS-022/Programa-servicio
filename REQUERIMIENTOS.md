@@ -6,54 +6,82 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 ---
 
-## 1. Requerimientos Faltantes (Backend no implementado)
+## 1. Estado general de requerimientos
 
-| # | Requerimiento | Estado | Detalle |
+**Criterio:** se considera implementado solo lo que está conectado a una ruta, servicio, consulta o listener funcional. El HTML estático por sí solo se considera maquetado.
+
+| # | Requerimiento | Estado actual | Evidencia y trabajo pendiente |
 |---|---|---|---|
-| 1 | **INSERT de reportes en BD** | ❌ No funciona | `app.py:54-56` — Captura los datos del form pero nunca ejecuta `INSERT INTO`. Solo hace `print(val)` |
-| 2 | **CRUD de Usuarios** | ❌ No funciona | Las rutas `/admin/usuarios`, `/admin/usuarios/editar` solo renderizan HTML estático. No hay consultas a BD |
-| 3 | **CRUD de Casas de Paz** | ❌ No funciona | `/admin/casa_de_paz/editar` no consulta ni modifica la BD |
-| 4 | **CRUD de Redes** | ❌ No funciona | `/admin/red/editar` igual, solo HTML estático |
-| 5 | **CRUD de Líderes** | ❌ No funciona | `/admin/lider/editar` solo HTML estático |
-| 6 | **Dashboard con datos reales** | ❌ Datos hardcodeados | `dashboard_admin.html` muestra números fijos (1,248 reportes, 86 usuarios, etc.) |
-| 7 | **Vista "Reportes enviados"** | ❌ Vacía | `index.html` extiende `layout.html` pero el block `content` está vacío |
-| 8 | **Filtros de reportes** | ❌ No funcionan | Los filtros de fecha/líder en `reportes_admin.html` no tienen backend |
-| 9 | **Paginación real** | ❌ No implementada | Los controles de paginación son decorativos |
-| 10 | **Exportar PDF/Excel** | ❌ No implementado | Botones existen en el HTML pero no hacen nada |
-| 11 | **Búsqueda en tiempo real** | ❌ No implementada | El ícono de búsqueda en usuarios/estructura es decorativo |
-| 12 | **Flash messages (notificaciones)** | ❌ No implementado | No hay feedback al crear/editar/eliminar |
-| 13 | **Contactar por WhatsApp** | ❌ No implementado | Botón "Contactar" en alertas no tiene funcionalidad |
-| 14 | **Gestión de contraseña** | ❌ No implementado | No se puede cambiar contraseña desde perfil |
-| 15 | **Rol "supervisor" sin vistas** | ❌ Sin implementar | El rol existe pero no tiene rutas propias (excepto perfil) |
+| 1 | **INSERT de reportes en BD** | ⚠️ Defectuoso | `services/cdp_service.py` intenta hacer `INSERT`, pero usa nombres de columnas que no coinciden con este esquema (`regulares` vs. `nro_regulares`, `horaini` vs. `hr_inicio`, etc.). No asigna correctamente `cdp_id` ni `enviado_por_lider_id`. |
+| 2 | **CRUD de Usuarios** | ❌ Pendiente | `routes/admin_routes.py` solo renderiza plantillas. `usuarios_admin.html` y `form_usuario.html` contienen datos demo y botones sin POST funcional. |
+| 3 | **CRUD de Casas de Paz** | ❌ Pendiente | Las rutas de consulta, creación, edición y eliminación no ejecutan operaciones sobre la BD. |
+| 4 | **CRUD de Redes** | ❌ Pendiente | `red/editar` solo muestra el formulario; las acciones del menú de estructura usan enlaces `#`. |
+| 5 | **CRUD de Líderes** | ❌ Pendiente | `lider_admin.html` muestra filas estáticas y `lider/editar` no procesa formularios. |
+| 6 | **Dashboard con datos reales** | ✅ Parcialmente cumplido | `dashboard_service.py` y `db_queries.py` tienen consultas reales, métricas por nivel, filtros jerárquicos, modo mock y estados vacíos. Debe verificarse y completar la consistencia de todas las métricas. |
+| 7 | **Vista de reportes enviados para CDP** | ✅ Maquetado / ⚠️ Datos demo | `index.html` ya tiene dashboard, acceso a nuevo reporte y estado vacío, pero sus métricas, historial y equipo están hardcodeados. |
+| 8 | **Filtros de reportes** | ❌ Pendiente | `reportes_admin.html` tiene controles visuales sin `name`, `action` ni backend para buscar por texto, red, CDP o fechas. |
+| 9 | **Paginación real** | ❌ Pendiente | Los controles de paginación de reportes y líderes son decorativos y no consultan páginas en BD. |
+| 10 | **Exportar PDF/Excel** | ❌ Pendiente | Los botones existen, pero no hay endpoints ni generación de archivos. El dashboard usa un `alert()` simulado. |
+| 11 | **Búsqueda en tiempo real** | ⚠️ Parcial | El dashboard busca en selectores y puede enviar el formulario. Usuarios, líderes y estructura tienen inputs visuales sin filtrado conectado. |
+| 12 | **Flash messages y toasts** | ❌ Pendiente | Solo existe un `flash()` para accesos no autorizados en `utils/auth.py`. Los layouts no renderizan mensajes y los CRUD no los generan. |
+| 13 | **Contactar por WhatsApp** | ⚠️ Parcial | El dashboard general construye enlaces `wa.me` usando el teléfono del líder. La alerta zonal no devuelve el teléfono y falta normalización robusta del número. |
+| 14 | **Gestión de contraseña** | ❌ Pendiente | El login usa hashes Werkzeug, pero el perfil solo muestra usuario y rol; no existe formulario ni ruta para cambiar contraseña. |
+| 15 | **Vistas de supervisor** | ⚠️ Parcial | Dashboard y estructura tienen rutas, autorización y aislamiento por red. Reportes y líderes solo renderizan maquetas sin contexto de BD. |
+
+### Funcionalidades ya cumplidas o disponibles
+
+- Login con validación de hashes Werkzeug y migración de contraseñas legacy después de un acceso válido.
+- Decoradores de autenticación, autorización por rol y validación de propiedad de la URL.
+- Conexión centralizada a MySQL mediante `database.py`, con circuit breaker y cierre de conexiones en los servicios principales.
+- Dashboard con vistas general, red y Casa de Paz.
+- Consultas agregadas para asistencia, ofrendas, conversiones, rankings, tendencias y alertas.
+- Modo mock explícito para desarrollo y estados vacíos cuando la BD está disponible pero no tiene datos.
+- Navegación responsive con sidebar, header móvil y barra inferior móvil.
+- Filtros locales de redes en la vista de estructura.
+
+### Inconsistencias técnicas confirmadas
+
+- El formulario de reporte envía `lider_id`, pero la ruta no lo procesa y el servicio espera `anfitrion`.
+- El servicio de reportes intenta insertar columnas que no aparecen en la tabla `reporte` documentada.
+- La home CDP usa enlaces hardcodeados como `/generar_reporte` y `/historial` en lugar de rutas con `url_for()`.
+- Las rutas admin de edición no incluyen métodos `POST` ni identificadores de entidad para distinguir creación y edición.
+- `api_routes.py` abre una conexión para comprobar disponibilidad y no la cierra.
+- La API de dashboard no valida explícitamente sesión ni rol.
+- El esquema SQL no contiene `email`, aunque algunos helpers de perfil intentan consultarlo y actualizarlo.
 
 ---
 
-## 2. Problemas de Seguridad
+## 2. Problemas de seguridad
 
-| # | Problema | Severidad | Detalle |
+| # | Problema | Estado / severidad | Detalle |
 |---|---|---|---|
-| 1 | **Contraseñas en texto plano** | 🔴 Crítica | `app.py:125` — Compara passwords directamente, sin hash |
-| 2 | **Sin CSRF protection** | 🔴 Alta | Los formularios POST no tienen token CSRF |
-| 3 | **Credenciales de BD hardcodeadas** | 🟡 Media | `app.py:26,51,64,75,122` — Usuario root sin contraseña |
-| 4 | **Conexiones BD sin cerrar** | 🟡 Media | Nunca se hace `connect.close()` ni `C.close()` |
-| 5 | **`debug=True` en producción** | 🟡 Media | `app.py:145` — Expone traceback completo |
+| 1 | **Contraseñas en texto plano** | ✅ Resuelto parcialmente | El login valida hashes Werkzeug y migra registros legacy. Debe asegurarse que todos los nuevos usuarios se creen siempre con hash y que no se expongan contraseñas en formularios. |
+| 2 | **Sin protección CSRF** | 🔴 Alta / Pendiente | Los formularios POST no incluyen tokens CSRF. Integrar Flask-WTF o una protección equivalente antes de activar los CRUD. |
+| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` permite usuario `root` y contraseña vacía por defecto. En producción deben ser obligatorias las variables de entorno y una cuenta con permisos mínimos. |
+| 4 | **Manejo de conexiones** | ⚠️ Parcial | La mayoría de servicios usa `finally` para cerrar conexiones, pero todavía deben revisarse API, cursores y cualquier nueva operación CRUD. |
+| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG` y desarrollo están activos por defecto. La configuración de producción debe impedir trazas y secretos de desarrollo. |
+| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Cuando no hay BD, el login acepta cualquier usuario y contraseña como CDP. Debe limitarse estrictamente a desarrollo y no estar disponible en producción. |
+| 7 | **API sin autorización explícita** | 🟡 Media / Pendiente | `/api/dashboard/datos` debe exigir sesión, rol permitido y aplicar el aislamiento de red del supervisor. |
+| 8 | **Ausencia de validación de entrada** | 🟡 Media / Pendiente | Formularios y parámetros deben validar tipos, rangos numéricos, fechas, relaciones existentes y errores de duplicados antes de persistir. |
 
 ---
 
 ## 3. Mejoras UI/UX
 
-| # | Mejora | Prioridad | Detalle |
+| # | Mejora | Estado actual | Trabajo pendiente |
 |---|---|---|---|
-| 1 | **index.html vacío** | Alta | La home del líder CDP no muestra nada (ni reportes enviados, ni resumen) |
-| 2 | **Responsive en móviles** | Alta | Las tablas de usuarios/reportes no tienen `overflow-x: auto` |
-| 3 | **Estados vacíos** | Media | Cuando no hay datos, mostrar mensaje amigable en vez de tabla vacía |
-| 4 | **Feedback de botones copiar** | Media | Los iconos de copiar usuario/contraseña no tienen JS |
-| 5 | **Tooltips en gráfico donut** | Media | El gráfico del dashboard no muestra tooltips al hacer hover |
-| 6 | **Eliminar barra de progreso lineal** | Baja | El dashboard tiene dos medidores para el mismo dato |
-| 7 | **Filtros de búsqueda en tiempo real** | Media | Implementar JS para filtrar tablas sin recargar |
-| 8 | **Adaptar sidebar en móvil** | Media | La barra de navegación del líder se rompe en pantallas pequeñas |
-| 9 | **CSS duplicado** | Baja | `style.css` y `admin/admin.css` comparten variables y estilos repetidos |
-| 10 | **Inconsistentes de naming** | Baja | Archivos con espacios ("generar reporte.html") dificultan mantenimiento |
+| 1 | **Home CDP** | ✅ Maquetada / ⚠️ Parcial | Ya tiene contenido visual y estado vacío; falta cargar métricas, historial y equipo reales. |
+| 2 | **Responsive en móviles** | ⚠️ Parcial | Existen contenedores `.table-responsive` y estilos responsive; verificar que todas las tablas apliquen `overflow-x: auto` y no usen datos rígidos. |
+| 3 | **Estados vacíos** | ⚠️ Parcial | Dashboard y estructura ya tienen estados vacíos. Reportes, usuarios y líderes deben mostrar estados basados en resultados reales. |
+| 4 | **Feedback de botones copiar** | ❌ Pendiente | Implementar Clipboard API, cambio temporal a icono de confirmación y mensaje accesible. |
+| 5 | **Tooltips del gráfico donut** | ⚠️ Parcial | La leyenda tiene `title` y cambia el número central al hacer hover; falta tooltip visual y soporte de interacción directa sobre los segmentos. |
+| 6 | **Eliminar medidor redundante** | ❌ Pendiente | Definir y retirar únicamente la barra que duplica el cumplimiento; usar el espacio para mostrar casas pendientes de reportar. |
+| 7 | **Búsqueda sin recargar** | ⚠️ Parcial | Dashboard funciona de forma limitada. Conectar búsqueda en usuarios, líderes, estructura y reportes. |
+| 8 | **Sidebar móvil** | ✅ Parcialmente cumplido | El menú móvil, overlay y bottom nav existen. Debe probarse en 375px, 768px y con navegación completa del supervisor. |
+| 9 | **Mensajes de operación** | ❌ Pendiente | Renderizar `get_flashed_messages()` en los layouts y generar mensajes de éxito/error en todas las operaciones. |
+| 10 | **Consistencia de enlaces y botones** | ❌ Pendiente | Reemplazar `href="#"`, `alert()` y URLs hardcodeadas por rutas Flask y acciones reales. |
+| 11 | **CSS duplicado** | 🟡 Baja / Pendiente | Revisar variables y estilos repetidos entre `style.css` y `admin.css` después de terminar las funciones principales. |
+| 12 | **Nombres de archivos** | 🟡 Baja / Pendiente | Evitar espacios en nuevos nombres y migrar gradualmente nombres legacy sin romper rutas existentes. |
 
 ---
 
@@ -140,7 +168,7 @@ CREATE TABLE `reporte` (
 CREATE TABLE `usuario` (
   `id` char(36) NOT NULL DEFAULT uuid(),
   `username` varchar(150) NOT NULL,
-  `password` varchar(128) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `tipo_usuario` enum('admin','supervisor','cdp') NOT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `nombre` varchar(30) DEFAULT NULL,
@@ -152,9 +180,9 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`id`, `username`, `password`, `tipo_usuario`, `is_active`, `nombre`, `apellido`) VALUES
-('1d4f7c99-7d51-11f1-bf9e-2016d8516279', 'lider', '01234567', 'cdp', 1, 'Mauricio', 'Leal'),
-('702f2129-7d4e-11f1-bf9e-2016d8516279', 'admin', '01234567', 'admin', 1, 'Mauricio', 'Leal'),
-('ca58cfc6-8337-11f1-8217-2016d8516279', 'super', '01234567', 'supervisor', 1, 'Mauricio', 'Leal');
+('1d4f7c99-7d51-11f1-bf9e-2016d8516279', 'lider', 'scrypt:32768:8:1$tmeJa8FoOIXrVNBa$d6233d2695ddf1452fd4afbce1b459ba56e2d4c05307a239fe1987a5dce6f62e4f9f54415755f0ce9df853859b9b695b449a045b025f8a9454a00151c326c175', 'cdp', 1, 'Mauricio', 'Leal'),
+('702f2129-7d4e-11f1-bf9e-2016d8516279', 'admin', 'scrypt:32768:8:1$M2qNh7uNiBJLSNrh$f90e51fc287f96a402bc301fbda8c6be26ab4ccc40a9daef55334779a0df71bc656bd5344e35d19f70de175e3f6956227c003f21298d69a83daf03f98fee2f6e', 'admin', 1, 'Mauricio', 'Leal'),
+('ca58cfc6-8337-11f1-8217-2016d8516279', 'super', 'scrypt:32768:8:1$RVN06VZ6PGH6HiZv$a5383b718026a38e08db84fe68694f86a4b8101486f6cbec5df391296e77ac3079111670ed276ff472770dff32d84b08f8e36f46765bfc1d2521a3a9aef7f92', 'supervisor', 1, 'Mauricio', 'Leal');
 
 --
 -- Índices para tablas volcadas
@@ -261,26 +289,43 @@ COMMIT;
 
 ## 5. Priorización por Fases
 
-### Fase 1 — Core funcional
-1. Crear tablas en BD y relaciones
-2. Implementar INSERT de reportes
-3. Implementar login con passwords hasheados (bcrypt/werkzeug)
-4. Cerrar conexiones de BD correctamente (usar context managers o try/finally)
+### Fase 1 — Corrección del núcleo
+1. Confirmar que la BD instalada coincide con el esquema de este documento
+2. Corregir el INSERT de reportes y relacionarlo con `cdp_id` y `enviado_por_lider_id`
+3. Alinear nombres de campos del formulario, servicio y tabla `reporte`
+4. Validar tipos, rangos, fechas y relaciones antes de guardar
+5. Revisar cierre de conexiones y cursores en todos los endpoints
+6. Mantener el login con hashes Werkzeug y eliminar cualquier creación de usuarios en texto plano
 
 ### Fase 2 — CRUD completo
-5. CRUD Usuarios (listar, crear, editar, eliminar)
-6. CRUD Casas de Paz
-7. CRUD Redes
-8. CRUD Líderes
+7. CRUD Usuarios: listar, crear, editar, activar/desactivar y eliminar
+8. CRUD Casas de Paz: crear, editar, eliminar y vincular usuario/red
+9. CRUD Redes: crear, editar, eliminar y asignar supervisor
+10. CRUD Líderes: crear, editar, eliminar y vincular Casa de Paz
+11. Incorporar POST, PRG, validaciones y flash messages en cada operación
 
 ### Fase 3 — Dashboard y reportes
-9. Dashboard con datos reales (consultas agregadas)
-10. Filtros funcionales
-11. Paginación real
+12. Completar la home CDP con historial, resumen y equipo reales
+13. Construir la vista de reportes con consultas y joins reales
+14. Implementar filtros por texto, red, Casa de Paz y rango de fechas
+15. Implementar paginación server-side
+16. Completar reportes y líderes del supervisor con aislamiento por red
+17. Proteger API y endpoints de consulta con sesión, rol y permisos
 
 ### Fase 4 — UX y polish
-12. Flash messages
-13. Estados vacíos
-14. Responsive completo
-15. Exportar PDF/Excel
-16. Búsqueda en tiempo real
+18. Renderizar toasts de éxito y error en layouts y formularios
+19. Agregar estados vacíos a reportes, usuarios y líderes
+20. Implementar búsqueda local sin recarga en tablas y estructura
+21. Implementar feedback de copiado de credenciales
+22. Mejorar tooltips e interacción accesible del gráfico donut
+23. Retirar el medidor redundante y mostrar casas pendientes de reporte
+24. Completar responsive de tablas y navegación móvil
+25. Reemplazar enlaces `#`, `alert()` y URLs hardcodeadas por acciones reales
+
+### Fase 5 — Seguridad y operación
+26. Integrar protección CSRF en formularios POST
+27. Hacer obligatorias las credenciales de producción mediante variables de entorno
+28. Desactivar debug y modo demo en producción
+29. Agregar cambio de contraseña con hash y verificación de contraseña actual
+30. Implementar exportación PDF/Excel con permisos y filtros aplicados
+31. Actualizar este documento después de cada fase completada

@@ -34,7 +34,7 @@ def role_required(*roles):
 def owner_required(param_name="id"):
     """
     Decorador que valida que el parámetro URL coincida con el ID del usuario en sesión.
-    El rol admin tiene bypass y puede acceder a cualquier ruta.
+    TODOS los usuarios deben tener su ID en la URL coincidencia con su sesión.
     
     Args:
         param_name: Nombre del parámetro URL que contiene el UUID (default: "id")
@@ -42,10 +42,6 @@ def owner_required(param_name="id"):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Admin bypass: los administradores pueden acceder a cualquier ruta
-            if session.get("rol") == "admin":
-                return f(*args, **kwargs)
-            
             # Obtener el ID del parámetro URL
             url_id = kwargs.get(param_name)
             session_id = session.get("usuario_id")
