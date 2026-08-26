@@ -1,67 +1,67 @@
 <header class="header-nav">
-  <div>
+  <div class="logo-container">
     {% if has_role("supervisor") %}
-    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="logo"></a>
+    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
     {% elif has_role("cdp") %}
-    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="logo"></a>
+    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
     {% else %}
-    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="logo"></a>
+    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
     {% endif %}
   </div>
   
   <nav class="link-container">
     {% if has_role("supervisor") %}
-    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Dashboard</span>
+    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Dashboard</span>
     </a>
-    <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Estructura</span>
+    <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Estructura</span>
     </a>
-    <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Reportes</span>
+    <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Reportes</span>
     </a>
-    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Lideres</span>
+    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Lideres</span>
     </a>
-    <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Perfil</span>
+    <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Perfil</span>
     </a>
     {% elif has_role("cdp") %}
-    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Inicio</span>
+    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Inicio</span>
     </a>
-    <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Generar Reporte</span>
+    <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Generar Reporte</span>
     </a>
-    <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Perfil</span>
+    <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Perfil</span>
     </a>
     {% else %}
-    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Dashboard</span>
+    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Dashboard</span>
     </a>
-    <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Estructura</span>
+    <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Estructura</span>
     </a>
-    <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Usuarios</span>
+    <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Usuarios</span>
     </a>
-    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Lideres</span>
+    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Lideres</span>
     </a>
-    <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Reportes</span>
+    <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Reportes</span>
     </a>
-    <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="botones">
-      <span class="texto">Perfil</span>
+    <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="nav-btn">
+      <span class="nav-text">Perfil</span>
     </a>
     {% endif %}
   </nav>
 
-  <div class="">
-<a href="{{ url_for('auth.logout') }}" class="botones">
-      <img src="{{ url_for('static', filename='iconos/logout.webp') }}" alt="Cerrar Sesión" class="icono">
-      <span class="texto">Cerrar Sesión</span>
+  <div class="logout-section">
+    <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+      <img src="{{ url_for('static', filename='iconos/logout.webp') }}" alt="Cerrar Sesión" class="logout-icon">
+      <span class="logout-text">Cerrar Sesión</span>
     </a>
   </div>
 </header>

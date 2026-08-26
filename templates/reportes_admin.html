@@ -18,51 +18,50 @@
         {% endif %}
     </div>
 
-    <section class="filter-section">
+    <form class="filter-section" method="get" action="{{ url_for('supervisor.reportes', id=get_usuario_id()) if has_role('supervisor') else url_for('admin.reportes', id=get_usuario_id()) }}">
         <div class="filter-group">
-            <label>Buscar</label>
+            <label for="filter-search">Buscar</label>
             <div class="search-input">
                 <span class="material-symbols-outlined icon-small">search</span>
-                <input type="text" placeholder="Buscar por líder, casa de paz..."/>
+                <input id="filter-search" type="search" name="q" value="{{ search }}" placeholder="Buscar por líder, casa de paz, tema..."/>
             </div>
         </div>
 
         {% if not has_role("supervisor") %}
         <div class="filter-group">
-            <label>Filtrar por Red</label>
-            <select>
-                <option>Todas las redes</option>
-                <option>Red Norte</option>
-                <option>Red Sur</option>
-                <option>Red Este</option>
-                <option>Red Oeste</option>
+            <label for="filter-red">Filtrar por Red</label>
+            <select id="filter-red" name="red_id">
+                <option value="" {% if not red_id %}selected{% endif %}>Todas las redes</option>
+                {% for r in redes %}
+                <option value="{{ r.id }}" {% if red_id|string == r.id|string %}selected{% endif %}>{{ r.nombre }}</option>
+                {% endfor %}
             </select>
         </div>
         {% endif %}
 
         <div class="filter-group">
-            <label>Filtrar por Casa de Paz</label>
-            <select>
-                <option>Todas las casas</option>
-                <option>Bethel - Sector Sur</option>
-                <option>Sion - Los Olivos</option>
-                <option>Manantial - Centro</option>
+            <label for="filter-cdp">Filtrar por Casa de Paz</label>
+            <select id="filter-cdp" name="cdp_id">
+                <option value="" {% if not cdp_id %}selected{% endif %}>Todas las casas</option>
+                {% for c in casas %}
+                <option value="{{ c.id }}" {% if cdp_id|string == c.id|string %}selected{% endif %}>{{ c.nombre or c.codigo }}</option>
+                {% endfor %}
             </select>
         </div>
         
         <div class="filter-group">
             <label>Rango de Fecha</label>
             <div class="date-inputs">
-                <input type="date"/>
-                <input type="date"/>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" title="Desde"/>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" title="Hasta"/>
             </div>
         </div>
         
-        <button class="btn-filter">
+        <button class="btn-filter" type="submit">
             <span class="material-symbols-outlined icon-small">filter_alt</span>
             Aplicar Filtros
         </button>
-    </section>
+    </form>
 
     <section class="table-wrapper">
         <div class="table-header">
@@ -86,153 +85,94 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for reporte in reportes %}
                     <tr>
-                        <td data-label="Fecha" class="font-bold text-variant">24 Oct 2023</td>
+                        <td data-label="Fecha" class="font-bold text-variant">{{ reporte.fecha_formateada }}</td>
                         <td data-label="Líder">
                             <div class="leader-cell">
-                                <div class="avatar bg-primary-light text-primary">RM</div>
-                                <span class="font-semibold">Ricardo Molina</span>
+                                <div class="avatar {{ reporte.avatar_class|default('bg-primary-light text-primary') }}">{{ reporte.iniciales }}</div>
+                                <span class="font-semibold">{{ reporte.lider_nombre }}</span>
                             </div>
                         </td>
-                        <td data-label="Casa de Paz" class="font-italic text-variant">Bethel - Sector Sur</td>
-                        <td data-label="Asistencia" class="text-center"><span class="badge">24</span></td>
-                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">$1,250.00</td>
+                        <td data-label="Casa de Paz" class="font-italic text-variant">{{ reporte.cdp_nombre }}</td>
+                        <td data-label="Asistencia" class="text-center"><span class="badge">{{ reporte.asistencia }}</span></td>
+                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">${{ "{:,.2f}".format(reporte.ofrendas) }}</td>
                         <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon btn-view"
-                                data-fecha="24 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
-                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
-                                data-regulares="15" data-ninos="5" data-visitas="3" data-comprometidos="1"
-                                data-reconciliaciones="2" data-confesiones="1" data-ofrendas="1250.00"
-                                data-cesta="Canasta básica familiar" data-tema="El poder del perdón"
-                                data-obs="Testimonio de sanidad al finalizar">
-                                <span class="material-symbols-outlined text-primary">visibility</span>
-                            </button>
-                            {% if not has_role("supervisor") %}
-                            <button class="btn-icon btn-edit"
-                                data-fecha="24 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
-                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
-                                data-regulares="15" data-ninos="5" data-visitas="3" data-comprometidos="1"
-                                data-reconciliaciones="2" data-confesiones="1" data-ofrendas="1250.00"
-                                data-cesta="Canasta básica familiar" data-tema="El poder del perdón"
-                                data-obs="Testimonio de sanidad al finalizar">
-                                <span class="material-symbols-outlined text-secondary">edit</span>
-                            </button>
-                            {% endif %}
+                            <div class="action-buttons">
+                                <button class="btn-icon btn-view"
+                                    data-fecha="{{ reporte.fecha_formateada }}"
+                                    data-lider="{{ reporte.lider_nombre }}"
+                                    data-iniciales="{{ reporte.iniciales }}"
+                                    data-casa="{{ reporte.cdp_nombre }}"
+                                    data-hora-inicio="{{ reporte.hr_inicio }}"
+                                    data-hora-fin="{{ reporte.hr_fin }}"
+                                    data-regulares="{{ reporte.nro_regulares }}"
+                                    data-ninos="{{ reporte.nro_niños }}"
+                                    data-visitas="{{ reporte.nro_visitas }}"
+                                    data-comprometidos="{{ reporte.nro_comprometidos }}"
+                                    data-reconciliaciones="{{ reporte.reconciliaciones }}"
+                                    data-confesiones="{{ reporte.confesiones }}"
+                                    data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
+                                    data-cesta="{{ reporte.cesta_amor_desc }}"
+                                    data-tema="{{ reporte.tema }}"
+                                    data-obs="{{ reporte.observaciones }}"
+                                    aria-label="Ver detalle del reporte">
+                                    <span class="material-symbols-outlined text-primary">visibility</span>
+                                </button>
+                                {% if not has_role("supervisor") %}
+                                <button class="btn-icon btn-edit"
+                                    data-fecha="{{ reporte.fecha_formateada }}"
+                                    data-lider="{{ reporte.lider_nombre }}"
+                                    data-iniciales="{{ reporte.iniciales }}"
+                                    data-casa="{{ reporte.cdp_nombre }}"
+                                    data-hora-inicio="{{ reporte.hr_inicio }}"
+                                    data-hora-fin="{{ reporte.hr_fin }}"
+                                    data-regulares="{{ reporte.nro_regulares }}"
+                                    data-ninos="{{ reporte.nro_niños }}"
+                                    data-visitas="{{ reporte.nro_visitas }}"
+                                    data-comprometidos="{{ reporte.nro_comprometidos }}"
+                                    data-reconciliaciones="{{ reporte.reconciliaciones }}"
+                                    data-confesiones="{{ reporte.confesiones }}"
+                                    data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
+                                    data-cesta="{{ reporte.cesta_amor_desc }}"
+                                    data-tema="{{ reporte.tema }}"
+                                    data-obs="{{ reporte.observaciones }}"
+                                    aria-label="Editar reporte">
+                                    <span class="material-symbols-outlined text-secondary">edit</span>
+                                </button>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
+                    {% else %}
                     <tr>
-                        <td data-label="Fecha" class="font-bold text-variant">22 Oct 2023</td>
-                        <td data-label="Líder">
-                            <div class="leader-cell">
-                                <div class="avatar bg-secondary-light text-secondary">EP</div>
-                                <span class="font-semibold">Elena Pérez</span>
-                            </div>
-                        </td>
-                        <td data-label="Casa de Paz" class="font-italic text-variant">Sion - Los Olivos</td>
-                        <td data-label="Asistencia" class="text-center"><span class="badge">18</span></td>
-                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">$840.50</td>
-                        <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon btn-view"
-                                data-fecha="22 Oct 2023" data-lider="Elena Pérez" data-iniciales="EP"
-                                data-casa="Sion - Los Olivos" data-hora-inicio="18:30" data-hora-fin="20:30"
-                                data-regulares="10" data-ninos="4" data-visitas="2" data-comprometidos="2"
-                                data-reconciliaciones="1" data-confesiones="0" data-ofrendas="840.50"
-                                data-cesta="Ropa para niños" data-tema="Fe inquebrantable"
-                                data-obs="Se recibieron 2 nuevos visitantes">
-                                <span class="material-symbols-outlined text-primary">visibility</span>
-                            </button>
-                            {% if not has_role("supervisor") %}
-                            <button class="btn-icon btn-edit"
-                                data-fecha="22 Oct 2023" data-lider="Elena Pérez" data-iniciales="EP"
-                                data-casa="Sion - Los Olivos" data-hora-inicio="18:30" data-hora-fin="20:30"
-                                data-regulares="10" data-ninos="4" data-visitas="2" data-comprometidos="2"
-                                data-reconciliaciones="1" data-confesiones="0" data-ofrendas="840.50"
-                                data-cesta="Ropa para niños" data-tema="Fe inquebrantable"
-                                data-obs="Se recibieron 2 nuevos visitantes">
-                                <span class="material-symbols-outlined text-secondary">edit</span>
-                            </button>
-                            {% endif %}
-                        </td>
+                        <td colspan="6" class="empty-state">No se encontraron reportes con los filtros seleccionados.</td>
                     </tr>
-                    <tr>
-                        <td data-label="Fecha" class="font-bold text-variant">20 Oct 2023</td>
-                        <td data-label="Líder">
-                            <div class="leader-cell">
-                                <div class="avatar bg-primary-light text-primary">DS</div>
-                                <span class="font-semibold">David Sánchez</span>
-                            </div>
-                        </td>
-                        <td data-label="Casa de Paz" class="font-italic text-variant">Manantial - Centro</td>
-                        <td data-label="Asistencia" class="text-center"><span class="badge">31</span></td>
-                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">$2,100.00</td>
-                        <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon btn-view"
-                                data-fecha="20 Oct 2023" data-lider="David Sánchez" data-iniciales="DS"
-                                data-casa="Manantial - Centro" data-hora-inicio="17:00" data-hora-fin="19:30"
-                                data-regulares="20" data-ninos="6" data-visitas="3" data-comprometidos="2"
-                                data-reconciliaciones="3" data-confesiones="2" data-ofrendas="2100.00"
-                                data-cesta="Alimentos no perecederos" data-tema="Discipulado y comunidad"
-                                data-obs="Reunión especial de jóvenes">
-                                <span class="material-symbols-outlined text-primary">visibility</span>
-                            </button>
-                            {% if not has_role("supervisor") %}
-                            <button class="btn-icon btn-edit"
-                                data-fecha="20 Oct 2023" data-lider="David Sánchez" data-iniciales="DS"
-                                data-casa="Manantial - Centro" data-hora-inicio="17:00" data-hora-fin="19:30"
-                                data-regulares="20" data-ninos="6" data-visitas="3" data-comprometidos="2"
-                                data-reconciliaciones="3" data-confesiones="2" data-ofrendas="2100.00"
-                                data-cesta="Alimentos no perecederos" data-tema="Discipulado y comunidad"
-                                data-obs="Reunión especial de jóvenes">
-                                <span class="material-symbols-outlined text-secondary">edit</span>
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Fecha" class="font-bold text-variant">19 Oct 2023</td>
-                        <td data-label="Líder">
-                            <div class="leader-cell">
-                                <div class="avatar bg-secondary-light text-secondary">RM</div>
-                                <span class="font-semibold">Ricardo Molina</span>
-                            </div>
-                        </td>
-                        <td data-label="Casa de Paz" class="font-italic text-variant">Bethel - Sector Sur</td>
-                        <td data-label="Asistencia" class="text-center"><span class="badge">22</span></td>
-                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">$1,100.00</td>
-                        <td data-label="Acciones" class="text-center">
-                            <button class="btn-icon btn-view"
-                                data-fecha="19 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
-                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
-                                data-regulares="12" data-ninos="4" data-visitas="4" data-comprometidos="2"
-                                data-reconciliaciones="1" data-confesiones="1" data-ofrendas="1100.00"
-                                data-cesta="Manteca, arroz, azúcar" data-tema="La oración transforma"
-                                data-obs="Visitas se integraron al grupo">
-                                <span class="material-symbols-outlined text-primary">visibility</span>
-                            </button>
-                            {% if not has_role("supervisor") %}
-                            <button class="btn-icon btn-edit"
-                                data-fecha="19 Oct 2023" data-lider="Ricardo Molina" data-iniciales="RM"
-                                data-casa="Bethel - Sector Sur" data-hora-inicio="18:00" data-hora-fin="20:00"
-                                data-regulares="12" data-ninos="4" data-visitas="4" data-comprometidos="2"
-                                data-reconciliaciones="1" data-confesiones="1" data-ofrendas="1100.00"
-                                data-cesta="Manteca, arroz, azúcar" data-tema="La oración transforma"
-                                data-obs="Visitas se integraron al grupo">
-                                <span class="material-symbols-outlined text-secondary">edit</span>
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
         <div class="pagination">
-            <span class="pagination-info">Mostrando 4 de 45 registros encontrados</span>
+            <span class="pagination-info">Mostrando {{ reportes|length }} de {{ total_reportes }} registros encontrados</span>
             <div class="pagination-controls">
-                <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+                {% set endpoint = 'supervisor.reportes' if has_role('supervisor') else 'admin.reportes' %}
+                {% if page > 1 %}
+                <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined">chevron_left</span></a>
+                {% else %}
+                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_left</span></span>
+                {% endif %}
+                {% for page_number in range(1, pages + 1) %}
+                    {% if page_number == page %}
+                    <span class="page-btn active" aria-current="page">{{ page_number }}</span>
+                    {% else %}
+                    <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if page < pages %}
+                <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined">chevron_right</span></a>
+                {% else %}
+                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_right</span></span>
+                {% endif %}
             </div>
         </div>
     </section>

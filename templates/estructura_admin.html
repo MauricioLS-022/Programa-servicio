@@ -49,16 +49,17 @@
 
                 <div class="redes-list">
                     {% if not has_role("supervisor") and redes_estructura %}
-                    <button class="red-card red-card-all active" type="button" data-red-filter="all" aria-pressed="true">
-                        <div class="red-header">
-                            <span class="red-name">Todas las redes</span>
-                            <span class="material-symbols-outlined">apps</span>
-                        </div>
-                        <p class="red-leader">Vista general</p>
-                        <div class="red-stats">
-                            <span class="red-count">Mostrar todas las casas</span>
-                        </div>
-                    </button>
+                    <div class="red-card red-card-all active">
+                        <button class="red-filter-trigger active" type="button" data-red-filter="all" data-red-name="todas las redes" aria-pressed="true">
+                            <div class="red-header">
+                                <span class="red-name">Todas las redes</span>
+                            </div>
+                            <p class="red-leader">Vista general</p>
+                            <div class="red-stats">
+                                <span class="red-count">{{ total_casas_estructura }} {{ 'Casa Vinculada' if total_casas_estructura == 1 else 'Casas Vinculadas' }}</span>
+                            </div>
+                        </button>
+                    </div>
                     {% endif %}
 
                     {% for red in redes_estructura %}
@@ -67,14 +68,20 @@
                             <div class="red-header">
                                 <span class="red-name">{{ red.nombre }}</span>
                             </div>
-                            <p class="red-leader">Supervisor: {{ red.supervisor }}</p>
+                            <p class="red-leader">LÍDER: {{ red.supervisor }}</p>
                             <div class="red-stats">
-                                {% if estructura_mock and red.total_casas > 0 %}<div class="avatars">
-                                    <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 1">
-                                    <img src="{{ url_for('static', filename='iconos/user_11145573.png') }}" alt="Avatar 2">
-                                    <div class="avatar-more">+12</div>
-                                </div>{% endif %}
-                                <span class="red-count">{{ red.total_casas }} {{ 'Casa de Paz' if red.total_casas == 1 else 'Casas de Paz' }}</span>
+                                {% if red.total_casas > 0 %}
+                                <div class="avatars">
+                                    <span class="avatar-circle avatar-maroon"><span class="material-symbols-outlined">person</span></span>
+                                    {% if red.total_casas > 1 %}
+                                    <span class="avatar-circle avatar-maroon"><span class="material-symbols-outlined">person</span></span>
+                                    {% endif %}
+                                    {% if red.total_casas > 2 %}
+                                    <span class="avatar-circle avatar-count">+{{ red.total_casas - 2 }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                <span class="red-count">{{ red.total_casas }} {{ 'Casa Vinculada' if red.total_casas == 1 else 'Casas Vinculadas' }}</span>
                             </div>
                         </button>
                         {% if not has_role("supervisor") %}
@@ -104,7 +111,7 @@
                         <h3>{% if has_role("supervisor") %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
                         <p class="impact-subtitle">{% if has_role("supervisor") %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
                         <div class="impact-number">{{ total_casas_estructura }}</div>
-                        <p class="impact-note">Casas de Paz registradas</p>
+                        <p class="impact-note">{% if has_role("supervisor") %}Casas de Paz registradas{% else %}Miembros activos este mes{% endif %}</p>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">{% if has_role("supervisor") %}health_and_safety{% else %}diversity_3{% endif %}</span>
                 </div>

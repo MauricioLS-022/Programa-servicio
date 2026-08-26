@@ -14,6 +14,10 @@
         <span class="material-symbols-outlined">analytics</span>
         <span>Reportes</span>
     </a>
+    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
+        <span class="material-symbols-outlined">leaderboard</span>
+        <span>Líderes</span>
+    </a>
     <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
         <span class="material-symbols-outlined">person</span>
         <span>Mí</span>
@@ -43,6 +47,10 @@
     <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
         <span class="material-symbols-outlined">group</span>
         <span>Usuarios</span>
+    </a>
+    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
+        <span class="material-symbols-outlined">leaderboard</span>
+        <span>Líderes</span>
     </a>
     <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
         <span class="material-symbols-outlined">analytics</span>

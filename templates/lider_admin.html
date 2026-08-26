@@ -15,54 +15,54 @@
         </div>
     </header>
 
-    <section class="filter-section">
+    {% set lider_route = 'supervisor.lider' if has_role('supervisor') else 'admin.lider' %}
+    <form class="filter-section" method="get" action="{{ url_for(lider_route, id=get_usuario_id()) }}">
         <div class="filter-group search-group">
-            <label>Buscar</label>
+            <label for="leader-search">Buscar</label>
             <div class="search-box">
                 <span class="material-symbols-outlined">search</span>
-                <input type="text" placeholder="Buscar por nombre o teléfono...">
+                <input id="leader-search" type="search" name="q" value="{{ search }}" placeholder="Buscar por nombre o teléfono...">
             </div>
         </div>
 
         <div class="filter-group">
-            <label>Rol</label>
-            <select>
-                <option>Todos los Roles</option>
-                <option>Líder Principal</option>
-                <option>Sublíder</option>
-                <option>Co-Anfitrión</option>
+            <label for="leader-role">Rol</label>
+            <select id="leader-role" name="rol">
+                <option value="" {% if not rol %}selected{% endif %}>Todos los Roles</option>
+                <option value="Lider" {% if rol == 'Lider' %}selected{% endif %}>Líder Principal</option>
+                <option value="Sublider" {% if rol == 'Sublider' %}selected{% endif %}>Sublíder</option>
             </select>
         </div>
 
         <div class="filter-group">
-            <label>Casa de Paz</label>
-            <select>
-                <option>Todas las Casas</option>
-                <option>Bethel - Sector Sur</option>
-                <option>Sion - Los Olivos</option>
-                <option>Manantial - Centro</option>
+            <label for="leader-cdp">Casa de Paz</label>
+            <select id="leader-cdp" name="cdp_id">
+                <option value="" {% if not cdp_id %}selected{% endif %}>Todas las Casas</option>
+                {% for casa in casas_lideres %}
+                <option value="{{ casa.id }}" {% if cdp_id|string == casa.id|string %}selected{% endif %}>{{ casa.nombre }}</option>
+                {% endfor %}
             </select>
         </div>
 
         {% if not has_role("supervisor") %}
         <div class="filter-group">
-            <label>Red</label>
-            <select>
-                <option>Todas las Redes</option>
-                <option>Red Norte</option>
-                <option>Red Sur</option>
-                <option>Red Central</option>
+            <label for="leader-network">Red</label>
+            <select id="leader-network" name="red_id">
+                <option value="" {% if not red_id %}selected{% endif %}>Todas las Redes</option>
+                {% for red in redes_lideres %}
+                <option value="{{ red.id }}" {% if red_id|string == red.id|string %}selected{% endif %}>{{ red.nombre }}</option>
+                {% endfor %}
             </select>
         </div>
         {% endif %}
 
-        <div class="filter-group">
-            <button class="btn-filter" type="button">
+        <div class="filter-group filter-group-btn">
+            <button class="btn-filter" type="submit">
                 <span class="material-symbols-outlined">filter_alt</span>
                 Aplicar filtros
             </button>
         </div>
-    </section>
+    </form>
 
     <section class="table-wrapper">
         <div class="table-header">
@@ -85,66 +85,68 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for lider in lideres %}
+                    {% set nombre = ((lider.nombre or '') ~ ' ' ~ (lider.apellido or '')).strip() %}
+                    {% set iniciales = ((lider.nombre or '')[:1] ~ (lider.apellido or '')[:1]).upper() %}
                     <tr>
                         <td data-label="Nombre">
                             <div class="leader-cell">
-                                <div class="avatar bg-primary-light text-primary">MR</div>
-                                <span class="font-semibold">Mateo Rodriguez</span>
+                                <div class="avatar bg-primary-light text-primary">{{ iniciales }}</div>
+                                <span class="font-semibold">{{ nombre }}</span>
                             </div>
                         </td>
-                        <td data-label="Rol"><span class="badge badge-role">Líder Principal</span></td>
-                        <td data-label="Red">Red Norte</td>
-                        <td data-label="Casa de Paz" class="text-variant">Bethel - Sector Sur</td>
-                        <td data-label="Teléfono" class="font-bold">+52 55 1234 5678</td>
-                    </tr>
-                    <tr>
-                        <td data-label="Nombre">
-                            <div class="leader-cell">
-                                <div class="avatar bg-secondary-light text-secondary">LM</div>
-                                <span class="font-semibold">Lucía Mendoza</span>
-                            </div>
+                        {% set rol_label = {'Lider': 'Líder Principal', 'Sublider': 'Sublíder'}.get(lider.rol, lider.rol) %}
+                        <td data-label="Rol"><span class="badge badge-role">{{ rol_label }}</span></td>
+                        <td data-label="Red">{{ lider.red_nombre or 'Sin asignar' }}</td>
+                        <td data-label="Casa de Paz" class="text-variant">{{ lider.cdp_nombre or 'Sin asignar' }}</td>
+                        <td data-label="Teléfono" class="font-bold">
+                            {% if lider.telefono %}
+                            <a href="tel:{{ lider.telefono|replace(' ', '')|replace('-', '') }}" class="btn-icon btn-call" aria-label="Llamar a {{ nombre }}" title="Llamar a {{ nombre }}">
+                                <span class="material-symbols-outlined">call</span>
+                                <span>Llamar</span>
+                            </a>
+                            {% else %}
+                            <span class="text-variant">Sin teléfono</span>
+                            {% endif %}
                         </td>
-                        <td data-label="Rol"><span class="badge badge-role badge-cohost">Co-Anfitrión</span></td>
-                        <td data-label="Red">Red Sur</td>
-                        <td data-label="Casa de Paz" class="text-variant">Sion - Los Olivos</td>
-                        <td data-label="Teléfono" class="font-bold">+52 55 9876 5432</td>
                     </tr>
-                    <tr>
-                        <td data-label="Nombre">
-                            <div class="leader-cell">
-                                <div class="avatar bg-primary-light text-primary">AS</div>
-                                <span class="font-semibold">Andrés Soler</span>
-                            </div>
-                        </td>
-                        <td data-label="Rol"><span class="badge badge-role badge-subleader">Sublíder</span></td>
-                        <td data-label="Red">Red Central</td>
-                        <td data-label="Casa de Paz" class="text-variant">Manantial - Centro</td>
-                        <td data-label="Teléfono" class="font-bold">+52 55 4567 8901</td>
-                    </tr>
-                    <tr>
-                        <td data-label="Nombre">
-                            <div class="leader-cell">
-                                <div class="avatar bg-secondary-light text-secondary">EP</div>
-                                <span class="font-semibold">Elena Pérez</span>
-                            </div>
-                        </td>
-                        <td data-label="Rol"><span class="badge badge-role">Líder Principal</span></td>
-                        <td data-label="Red">Red Sur</td>
-                        <td data-label="Casa de Paz" class="text-variant">Sion - Los Olivos</td>
-                        <td data-label="Teléfono" class="font-bold">+52 55 2345 6789</td>
-                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="empty-state">No se encontraron líderes con los filtros seleccionados.</td></tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
 
         <div class="pagination">
-            <span class="pagination-info">Mostrando 4 de 124 líderes</span>
+            <span class="pagination-info">Mostrando {{ lideres|length }} de {{ total_lideres }} líderes</span>
             <div class="pagination-controls">
-                <button class="page-btn"><span class="material-symbols-outlined">chevron_left</span></button>
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+                {% if page > 1 %}
+                    <a class="page-btn" href="{{ url_for(lider_route, id=get_usuario_id(), q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=page - 1) }}" aria-label="Página anterior">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </a>
+                {% else %}
+                    <span class="page-btn disabled" aria-disabled="true">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </span>
+                {% endif %}
+
+                {% for page_number in range(1, pages + 1) %}
+                    {% if page_number == page %}
+                        <span class="page-btn active" aria-current="page">{{ page_number }}</span>
+                    {% else %}
+                        <a class="page-btn" href="{{ url_for(lider_route, id=get_usuario_id(), q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page < pages %}
+                    <a class="page-btn" href="{{ url_for(lider_route, id=get_usuario_id(), q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=page + 1) }}" aria-label="Página siguiente">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </a>
+                {% else %}
+                    <span class="page-btn disabled" aria-disabled="true">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </span>
+                {% endif %}
             </div>
         </div>
     </section>

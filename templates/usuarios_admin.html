@@ -15,37 +15,37 @@
             <p class="description">Administra los accesos y roles de la comunidad Vino Nuevo desde un panel centralizado y seguro.</p>
         </div>
         <div class="header-actions">
-            <a href="/admin/usuario/editar" class="btn-primary">
+            <a href="{{ url_for('admin.usuario_editar', id=get_usuario_id()) }}" class="btn-primary">
                 <span class="material-symbols-outlined">person_add</span>
                 Agregar Usuario
             </a>
         </div>
     </header>
 
-    <section class="filter-section">
+    <form class="filter-section" method="get" action="{{ url_for('admin.usuario', id=get_usuario_id()) }}">
         <div class="filter-group search-group">
-            <label>Buscar</label>
+            <label for="user-search">Buscar</label>
             <div class="search-box">
                 <span class="material-symbols-outlined">search</span>
-                <input type="text" placeholder="Buscar por nombre...">
+                <input id="user-search" type="search" name="q" value="{{ search }}" placeholder="Buscar por nombre o usuario...">
             </div>
         </div>
 
         <div class="filter-group">
-            <label>Rol</label>
-            <select>
-                <option>Todos los Roles</option>
-                <option>Admin</option>
-                <option>Supervisor</option>
-                <option>Líder</option>
+            <label for="user-role">Rol</label>
+            <select id="user-role" name="rol">
+                <option value="" {% if not rol %}selected{% endif %}>Todos los Roles</option>
+                <option value="admin" {% if rol == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="supervisor" {% if rol == 'supervisor' %}selected{% endif %}>Supervisor</option>
+                <option value="cdp" {% if rol == 'cdp' %}selected{% endif %}>Líder</option>
             </select>
         </div>
 
-        <button class="btn-filter" type="button">
+        <button class="btn-filter" type="submit">
             <span class="material-symbols-outlined">filter_alt</span>
             Aplicar filtros
         </button>
-    </section>
+    </form>
 
     <div class="bento-grid">
         
@@ -55,7 +55,7 @@
                     <span class="material-symbols-outlined">group</span>
                 </div>
                 <div>
-                    <h3>124</h3>
+                    <h3>{{ total_activos }}</h3>
                     <p>Usuarios Activos</p>
                 </div>
             </div>
@@ -88,92 +88,63 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for usuario in usuarios %}
+                        {% set nombre = ((usuario.nombre or '') ~ ' ' ~ (usuario.apellido or '')).strip() %}
+                        {% set rol_label = {'admin': 'Admin', 'supervisor': 'Supervisor', 'cdp': 'Líder'}.get(usuario.rol, usuario.rol|title) %}
+                        {% set rol_class = 'lider' if usuario.rol == 'cdp' else usuario.rol %}
                         <tr>
                             <td data-label="Usuario">
                                 <div class="user-info">
                                     <div class="user-details">
-                                        <strong>Mateo Rodriguez</strong>
-                                        <span>m.rodriguez@vinonuevo.org</span>
+                                        <strong>{{ nombre or usuario.username }}</strong>
+                                        <span>{{ usuario.username }}</span>
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Username" class="text-muted">@mrodriguez</td>
-                            <td data-label="Rol"><span class="badge badge-admin">Admin</span></td>
+                            <td data-label="Username" class="text-muted">@{{ usuario.username }}</td>
+                            <td data-label="Rol"><span class="badge badge-{{ rol_class }}">{{ rol_label }}</span></td>
                             <td data-label="Status">
                                 <div class="status">
-                                    <span class="dot dot-active"></span>
-                                    <span class="text-active">Activo</span>
+                                    <span class="dot {{ 'dot-active' if usuario.is_active else 'dot-inactive' }}"></span>
+                                    <span class="{{ 'text-active' if usuario.is_active else 'text-inactive' }}">{{ 'Activo' if usuario.is_active else 'Inactivo' }}</span>
                                 </div>
                             </td>
                             <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
-                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
+                                    <a href="{{ url_for('admin.usuario_editar', id=get_usuario_id(), usuario_id=usuario.id) }}" class="btn-icon" aria-label="Editar {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary">edit</span></a>
+                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar {{ nombre or usuario.username }}"><span class="material-symbols-outlined">delete</span></button>
                                 </div>
                             </td>
                         </tr>
-                        
+                        {% else %}
                         <tr>
-                            <td data-label="Usuario">
-                                <div class="user-info">
-                                    <div class="user-details">
-                                        <strong>Lucía Mendoza</strong>
-                                        <span>l.mendoza@vinonuevo.org</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Username" class="text-muted">@lumendoza</td>
-                            <td data-label="Rol"><span class="badge badge-supervisor">Supervisor</span></td>
-                            <td data-label="Status">
-                                <div class="status">
-                                    <span class="dot dot-active"></span>
-                                    <span class="text-active">Activo</span>
-                                </div>
-                            </td>
-                            <td data-label="Acciones" class="text-right">
-                                <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
-                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
-                                </div>
-                            </td>
+                            <td colspan="5" class="empty-state">No se encontraron usuarios con los filtros seleccionados.</td>
                         </tr>
-
-                        <tr>
-                            <td data-label="Usuario">
-                                <div class="user-info">
-                                    <div class="user-details">
-                                        <strong>Andrés Soler</strong>
-                                        <span>a.soler@vinonuevo.org</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Username" class="text-muted">@asoler</td>
-                            <td data-label="Rol"><span class="badge badge-lider">Lider</span></td>
-                            <td data-label="Status">
-                                <div class="status">
-                                    <span class="dot dot-inactive"></span>
-                                    <span class="text-inactive">Inactivo</span>
-                                </div>
-                            </td>
-                            <td data-label="Acciones" class="text-right">
-                                <div class="action-buttons">
-                                    <a href="/admin/usuario/editar" class="btn-icon"><span class="material-symbols-outlined text-secondary">edit</span></a>
-                                    <button class="btn-icon btn-delete"><span class="material-symbols-outlined">delete</span></button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
             
             <div class="pagination-footer">
-                <span>Mostrando 3 de 124 usuario</span>
+                <span>Mostrando {{ usuarios|length }} de {{ total_usuarios }} usuarios</span>
                 <div class="pagination-controls">
-                    <button class="btn-page"><span class="material-symbols-outlined">chevron_left</span></button>
-                    <button class="btn-page active">1</button>
-                    <button class="btn-page">2</button>
-                    <button class="btn-page">3</button>
-                    <button class="btn-page"><span class="material-symbols-outlined">chevron_right</span></button>
+                    {% if page > 1 %}
+                    <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined">chevron_left</span></a>
+                    {% else %}
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_left</span></span>
+                    {% endif %}
+                    {% for page_number in range(1, pages + 1) %}
+                        {% if page_number == page %}
+                        <span class="btn-page active" aria-current="page">{{ page_number }}</span>
+                        {% else %}
+                        <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page < pages %}
+                    <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined">chevron_right</span></a>
+                    {% else %}
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_right</span></span>
+                    {% endif %}
                 </div>
             </div>
         </section>
