@@ -24,6 +24,25 @@ def get_casas_demo():
     ]
 
 
+def get_mock_usuarios():
+    """Usuarios de demostración para la vista administrativa."""
+    return [
+        {'id': 'mock-admin', 'username': 'mrodriguez', 'nombre': 'Mateo', 'apellido': 'Rodriguez', 'rol': 'admin', 'is_active': 1},
+        {'id': 'mock-supervisor', 'username': 'lmendoza', 'nombre': 'Lucía', 'apellido': 'Mendoza', 'rol': 'supervisor', 'is_active': 1},
+        {'id': 'mock-lider', 'username': 'asoler', 'nombre': 'Andrés', 'apellido': 'Soler', 'rol': 'cdp', 'is_active': 0},
+    ]
+
+
+def get_mock_lideres():
+    """Líderes de demostración para el directorio administrativo."""
+    return [
+        {'id': 'mock-leader-1', 'nombre': 'Mateo', 'apellido': 'Rodriguez', 'rol': 'Lider', 'telefono': '+52 55 1234 5678', 'cdp_id': 1, 'cdp_nombre': 'Casa Bethel', 'red_id': 1, 'red_nombre': 'Red Hebrón'},
+        {'id': 'mock-leader-2', 'nombre': 'Lucía', 'apellido': 'Mendoza', 'rol': 'Sublider', 'telefono': '+52 55 9876 5432', 'cdp_id': 2, 'cdp_nombre': 'Casa de Oración Sur', 'red_id': 2, 'red_nombre': 'Red Sur'},
+        {'id': 'mock-leader-3', 'nombre': 'Andrés', 'apellido': 'Soler', 'rol': 'Sublider', 'telefono': '+52 55 4567 8901', 'cdp_id': 3, 'cdp_nombre': 'Casa Nueva Vida', 'red_id': 3, 'red_nombre': 'Red Central'},
+        {'id': 'mock-leader-4', 'nombre': 'Elena', 'apellido': 'Pérez', 'rol': 'Lider', 'telefono': '+52 55 2345 6789', 'cdp_id': 2, 'cdp_nombre': 'Casa de Oración Sur', 'red_id': 2, 'red_nombre': 'Red Sur'},
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
@@ -229,3 +248,114 @@ def get_empty_cdp(cdp_id):
         'historial': [],
         'mini_historico': [],
     }
+
+
+def get_mock_reportes():
+    """Reportes de demostración para la vista administrativa y de supervisores."""
+    return [
+        {
+            'id': 'mock-rep-1',
+            'fecha': '2023-10-24',
+            'fecha_formateada': '24 Oct 2023',
+            'lider_nombre': 'Ricardo Molina',
+            'iniciales': 'RM',
+            'avatar_class': 'bg-primary-light text-primary',
+            'cdp_id': 1,
+            'cdp_nombre': 'Bethel - Sector Sur',
+            'red_id': 2,
+            'red_nombre': 'Red Sur',
+            'hr_inicio': '18:00',
+            'hr_fin': '20:00',
+            'nro_regulares': 15,
+            'nro_niños': 5,
+            'nro_visitas': 3,
+            'nro_comprometidos': 1,
+            'asistencia': 24,
+            'reconciliaciones': 2,
+            'confesiones': 1,
+            'ofrendas': 1250.00,
+            'cesta_amor': 1,
+            'cesta_amor_desc': 'Canasta básica familiar',
+            'tema': 'El poder del perdón',
+            'observaciones': 'Testimonio de sanidad al finalizar',
+        },
+        {
+            'id': 'mock-rep-2',
+            'fecha': '2023-10-22',
+            'fecha_formateada': '22 Oct 2023',
+            'lider_nombre': 'Elena Pérez',
+            'iniciales': 'EP',
+            'avatar_class': 'bg-secondary-light text-secondary',
+            'cdp_id': 2,
+            'cdp_nombre': 'Sion - Los Olivos',
+            'red_id': 1,
+            'red_nombre': 'Red Hebrón',
+            'hr_inicio': '18:30',
+            'hr_fin': '20:30',
+            'nro_regulares': 10,
+            'nro_niños': 4,
+            'nro_visitas': 2,
+            'nro_comprometidos': 2,
+            'asistencia': 18,
+            'reconciliaciones': 1,
+            'confesiones': 0,
+            'ofrendas': 840.50,
+            'cesta_amor': 1,
+            'cesta_amor_desc': 'Ropa para niños',
+            'tema': 'Fe inquebrantable',
+            'observaciones': 'Se recibieron 2 nuevos visitantes',
+        },
+        {
+            'id': 'mock-rep-3',
+            'fecha': '2023-10-20',
+            'fecha_formateada': '20 Oct 2023',
+            'lider_nombre': 'David Sánchez',
+            'iniciales': 'DS',
+            'avatar_class': 'bg-primary-light text-primary',
+            'cdp_id': 3,
+            'cdp_nombre': 'Manantial - Centro',
+            'red_id': 3,
+            'red_nombre': 'Red Central',
+            'hr_inicio': '17:00',
+            'hr_fin': '19:30',
+            'nro_regulares': 20,
+            'nro_niños': 6,
+            'nro_visitas': 3,
+            'nro_comprometidos': 2,
+            'asistencia': 31,
+            'reconciliaciones': 3,
+            'confesiones': 2,
+            'ofrendas': 2100.00,
+            'cesta_amor': 1,
+            'cesta_amor_desc': 'Alimentos no perecederos',
+            'tema': 'Discipulado y comunidad',
+            'observaciones': 'Reunión especial de jóvenes',
+        },
+        {
+            'id': 'mock-rep-4',
+            'fecha': '2023-10-19',
+            'fecha_formateada': '19 Oct 2023',
+            'lider_nombre': 'Ricardo Molina',
+            'iniciales': 'RM',
+            'avatar_class': 'bg-secondary-light text-secondary',
+            'cdp_id': 1,
+            'cdp_nombre': 'Bethel - Sector Sur',
+            'red_id': 2,
+            'red_nombre': 'Red Sur',
+            'hr_inicio': '18:00',
+            'hr_fin': '20:00',
+            'nro_regulares': 12,
+            'nro_niños': 4,
+            'nro_visitas': 4,
+            'nro_comprometidos': 2,
+            'asistencia': 22,
+            'reconciliaciones': 1,
+            'confesiones': 1,
+            'ofrendas': 1100.00,
+            'cesta_amor': 1,
+            'cesta_amor_desc': 'Manteca, arroz, azúcar',
+            'tema': 'La oración transforma',
+            'observaciones': 'Visitas se integraron al grupo',
+        },
+    ]
+

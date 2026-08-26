@@ -10,6 +10,94 @@ defecto (0, listas vacías) en lugar de mock.
 from datetime import date, timedelta
 
 
+def get_usuarios(conn, search='', rol='', page=1, per_page=10):
+    """Obtiene usuarios paginados para el directorio administrativo."""
+    offset = (page - 1) * per_page
+    filters = []
+    params = []
+
+    if search:
+        filters.append("(u.nombre LIKE %s OR u.apellido LIKE %s OR u.username LIKE %s)")
+        search_value = f"%{search}%"
+        params.extend([search_value, search_value, search_value])
+    if rol:
+        filters.append("u.tipo_usuario = %s")
+        params.append(rol)
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ''
+    cur = conn.cursor()
+    cur.execute(f"SELECT COUNT(*) AS total FROM usuario u {where_clause}", params)
+    total = int(cur.fetchone()['total'])
+
+    cur.execute(f"""
+        SELECT id, username, nombre, apellido, tipo_usuario AS rol, is_active
+        FROM usuario u
+        {where_clause}
+        ORDER BY nombre IS NULL, nombre, apellido IS NULL, apellido, username
+        LIMIT %s OFFSET %s
+    """, [*params, per_page, offset])
+    usuarios = cur.fetchall() or []
+
+    cur.execute("SELECT COUNT(*) AS total FROM usuario WHERE is_active = 1")
+    total_activos = int(cur.fetchone()['total'])
+    cur.close()
+    return usuarios, total, total_activos
+
+
+def get_lideres(conn, search='', rol='', red_id='', cdp_id='', supervisor_red_id=None, page=1, per_page=10):
+    """Obtiene líderes paginados junto con las opciones de sus filtros."""
+    offset = (page - 1) * per_page
+    filters = []
+    params = []
+
+    if search:
+        filters.append("(CONCAT(l.nombre, ' ', l.apellido) LIKE %s OR l.telefono LIKE %s)")
+        search_value = f"%{search}%"
+        params.extend([search_value, search_value])
+    if rol:
+        filters.append("l.rol = %s")
+        params.append(rol)
+    if red_id:
+        filters.append("c.red_id = %s")
+        params.append(red_id)
+    if cdp_id:
+        filters.append("l.cdp_id = %s")
+        params.append(cdp_id)
+    if supervisor_red_id is not None:
+        filters.append("c.red_id = %s")
+        params.append(supervisor_red_id)
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ''
+    cur = conn.cursor()
+    cur.execute(f"""
+        SELECT COUNT(*) AS total
+        FROM lider l
+        JOIN cdp c ON c.id = l.cdp_id
+        {where_clause}
+    """, params)
+    total = int(cur.fetchone()['total'])
+
+    cur.execute(f"""
+        SELECT l.id, l.nombre, l.apellido, l.rol, l.telefono,
+               c.id AS cdp_id, c.codigo AS cdp_nombre, r.id AS red_id,
+               r.nombre AS red_nombre
+        FROM lider l
+        JOIN cdp c ON c.id = l.cdp_id
+        LEFT JOIN red r ON r.id = c.red_id
+        {where_clause}
+        ORDER BY l.nombre, l.apellido
+        LIMIT %s OFFSET %s
+    """, [*params, per_page, offset])
+    lideres = cur.fetchall() or []
+
+    cur.execute("SELECT id, nombre FROM red ORDER BY nombre")
+    redes = cur.fetchall() or []
+    cur.execute("SELECT id, codigo AS nombre, red_id FROM cdp ORDER BY codigo")
+    casas = cur.fetchall() or []
+    cur.close()
+    return lideres, total, redes, casas
+
+
 # ---------------------------------------------------------------------------
 # Helpers internos
 # ---------------------------------------------------------------------------
@@ -465,3 +553,154 @@ def get_metricas_cdp(conn, cdp_id):
         'historial': historial,
         'mini_historico': mini_historico,
     }
+
+
+def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_hasta='', supervisor_red_id=None, page=1, per_page=10):
+    """Obtiene reportes paginados con filtros de búsqueda, red, casa y rango de fechas."""
+    offset = (page - 1) * per_page
+    filters = []
+    params = []
+
+    if search:
+        filters.append("(CONCAT(COALESCE(l.nombre, ''), ' ', COALESCE(l.apellido, '')) LIKE %s OR c.codigo LIKE %s OR c.anfitrion LIKE %s OR rep.tema LIKE %s)")
+        search_value = f"%{search}%"
+        params.extend([search_value, search_value, search_value, search_value])
+    if red_id:
+        filters.append("c.red_id = %s")
+        params.append(red_id)
+    if cdp_id:
+        filters.append("rep.cdp_id = %s")
+        params.append(cdp_id)
+    if fecha_desde:
+        filters.append("rep.fecha >= %s")
+        params.append(fecha_desde)
+    if fecha_hasta:
+        filters.append("rep.fecha <= %s")
+        params.append(fecha_hasta)
+    if supervisor_red_id is not None:
+        filters.append("c.red_id = %s")
+        params.append(supervisor_red_id)
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ''
+    cur = conn.cursor()
+    cur.execute(f"""
+        SELECT COUNT(*) AS total
+        FROM reporte rep
+        LEFT JOIN cdp c ON c.id = rep.cdp_id
+        LEFT JOIN red r ON r.id = c.red_id
+        LEFT JOIN lider l ON l.id = rep.enviado_por_lider_id
+        {where_clause}
+    """, params)
+    total = int(cur.fetchone()['total'])
+
+    cur.execute(f"""
+        SELECT
+            rep.id,
+            rep.fecha,
+            rep.hr_inicio,
+            rep.hr_fin,
+            rep.nro_regulares,
+            rep.nro_niños,
+            rep.nro_visitas,
+            rep.nro_comprometidos,
+            (rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia,
+            rep.reconciliaciones,
+            rep.confesiones,
+            rep.cesta_amor,
+            rep.tema,
+            rep.observaciones,
+            rep.ofrendas,
+            rep.cdp_id,
+            c.codigo AS cdp_codigo,
+            c.anfitrion AS cdp_anfitrion,
+            r.id AS red_id,
+            r.nombre AS red_nombre,
+            rep.enviado_por_lider_id,
+            CONCAT(COALESCE(l.nombre, ''), ' ', COALESCE(l.apellido, '')) AS lider_nombre,
+            l.nombre AS lider_nombre_solo,
+            l.apellido AS lider_apellido
+        FROM reporte rep
+        LEFT JOIN cdp c ON c.id = rep.cdp_id
+        LEFT JOIN red r ON r.id = c.red_id
+        LEFT JOIN lider l ON l.id = rep.enviado_por_lider_id
+        {where_clause}
+        ORDER BY rep.fecha DESC, rep.id DESC
+        LIMIT %s OFFSET %s
+    """, [*params, per_page, offset])
+    reportes_raw = cur.fetchall() or []
+
+    meses_abr = {1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'}
+    reportes = []
+    for r in reportes_raw:
+        fecha_obj = r['fecha']
+        if hasattr(fecha_obj, 'strftime'):
+            fecha_iso = fecha_obj.strftime('%Y-%m-%d')
+            fecha_formateada = f"{fecha_obj.day} {meses_abr.get(fecha_obj.month, '')} {fecha_obj.year}"
+        else:
+            fecha_iso = str(fecha_obj or '')
+            fecha_formateada = fecha_iso
+
+        nombre_lider = (r['lider_nombre'] or '').strip() or 'Sin Asignar'
+        partes = nombre_lider.split()
+        if len(partes) >= 2:
+            iniciales = (partes[0][0] + partes[1][0]).upper()
+        elif len(partes) == 1 and partes[0]:
+            iniciales = partes[0][:2].upper()
+        else:
+            iniciales = 'VN'
+
+        hr_ini = str(r['hr_inicio'] or '')
+        hr_fin = str(r['hr_fin'] or '')
+        if len(hr_ini) >= 5 and ':' in hr_ini:
+            hr_ini = hr_ini[:5]
+        if len(hr_fin) >= 5 and ':' in hr_fin:
+            hr_fin = hr_fin[:5]
+
+        cdp_nombre = r['cdp_codigo'] or r['cdp_anfitrion'] or f"CDP #{r['cdp_id']}"
+        if r['cdp_anfitrion'] and r['cdp_codigo']:
+            cdp_nombre = f"{r['cdp_codigo']} - {r['cdp_anfitrion']}"
+
+        cesta_desc = 'Sí' if r['cesta_amor'] else 'No'
+
+        reportes.append({
+            'id': r['id'],
+            'fecha': fecha_iso,
+            'fecha_formateada': fecha_formateada,
+            'lider_nombre': nombre_lider,
+            'iniciales': iniciales,
+            'avatar_class': 'bg-primary-light text-primary',
+            'cdp_id': r['cdp_id'],
+            'cdp_nombre': cdp_nombre,
+            'red_id': r['red_id'],
+            'red_nombre': r['red_nombre'] or '',
+            'hr_inicio': hr_ini,
+            'hr_fin': hr_fin,
+            'nro_regulares': int(r['nro_regulares'] or 0),
+            'nro_niños': int(r['nro_niños'] or 0),
+            'nro_visitas': int(r['nro_visitas'] or 0),
+            'nro_comprometidos': int(r['nro_comprometidos'] or 0),
+            'asistencia': int(r['asistencia'] or 0),
+            'reconciliaciones': int(r['reconciliaciones'] or 0),
+            'confesiones': int(r['confesiones'] or 0),
+            'ofrendas': float(r['ofrendas'] or 0.0),
+            'cesta_amor': r['cesta_amor'],
+            'cesta_amor_desc': cesta_desc,
+            'tema': r['tema'] or '',
+            'observaciones': r['observaciones'] or '',
+        })
+
+    cur.execute("SELECT id, nombre FROM red ORDER BY nombre")
+    redes = cur.fetchall() or []
+    cur.execute("SELECT id, codigo, anfitrion, red_id FROM cdp ORDER BY codigo")
+    casas_raw = cur.fetchall() or []
+    casas = []
+    for c in casas_raw:
+        casas.append({
+            'id': c['id'],
+            'nombre': f"{c['codigo']} - {c['anfitrion']}" if c['anfitrion'] else c['codigo'],
+            'codigo': c['codigo'],
+            'red_id': c['red_id'],
+        })
+    cur.close()
+    return reportes, total, redes, casas
+

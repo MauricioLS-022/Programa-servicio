@@ -52,7 +52,11 @@ def get_db_connection():
             _db_fail_count += 1
             _last_db_attempt = ahora
             DB_AVAILABLE = False
-            print(f"[DB] No disponible (reintentando en {_DB_RETRY_INTERVAL}s): {e}")
+            current_app.logger.warning(
+                "[DB] No disponible (reintentando en %ss): %s",
+                _DB_RETRY_INTERVAL,
+                e,
+            )
             return None
 
 

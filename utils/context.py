@@ -1,7 +1,7 @@
 """
 Context processors para inyectar funciones helper en las plantillas Jinja2.
 """
-from flask import session
+from flask import session, url_for
 
 
 def has_role(role_name):
@@ -25,10 +25,32 @@ def get_usuario():
     return session.get("usuario")
 
 
+def get_home_url():
+    """Retorna la URL del dashboard según el rol, o login si no hay sesión."""
+    user_id = session.get("usuario_id")
+    rol = session.get("rol")
+
+    if not user_id or not rol:
+        return url_for("auth.login")
+
+    role_routes = {
+        "admin": "admin.dashboard",
+        "supervisor": "supervisor.dashboard",
+        "cdp": "cdp.dashboard",
+    }
+
+    endpoint = role_routes.get(rol)
+    if endpoint:
+        return url_for(endpoint, id=user_id)
+
+    return url_for("auth.login")
+
+
 # Diccionario de funciones para registrar como context processors
 context_functions = {
     'has_role': has_role,
     'has_any_role': has_any_role,
     'get_usuario_id': get_usuario_id,
     'get_usuario': get_usuario,
+    'get_home_url': get_home_url,
 }
