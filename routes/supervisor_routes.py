@@ -1,9 +1,11 @@
 """
 Rutas del supervisor: /supervisor/<uuid:id>/...
 """
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, request, session
 from utils.auth import login_required, role_required, owner_required
-from services.dashboard_service import get_dashboard_context, get_estructura_context
+from services.dashboard_service import get_dashboard_context, get_estructura_context, get_supervisor_red_id
+from services.leader_service import get_lideres_context
+from services.report_service import get_reportes_context
 from database import get_db_connection
 
 supervisor_bp = Blueprint('supervisor', __name__, url_prefix='/supervisor')
@@ -37,7 +39,18 @@ def estructura(id):
 def reportes(id):
     """Reportes de la red del supervisor."""
     usuario = session.get("usuario")
-    return render_template('reportes_admin.html', usuario=usuario)
+    search = request.args.get('q', '').strip()
+    cdp_id = request.args.get('cdp_id', '').strip()
+    fecha_desde = request.args.get('fecha_desde', '').strip()
+    fecha_hasta = request.args.get('fecha_hasta', '').strip()
+    page = max(request.args.get('page', 1, type=int), 1)
+    red_id = get_supervisor_red_id(id)
+    context = get_reportes_context(
+        search=search, red_id='', cdp_id=cdp_id,
+        fecha_desde=fecha_desde, fecha_hasta=fecha_hasta,
+        page=page, supervisor_red_id=red_id
+    )
+    return render_template('reportes_admin.html', usuario=usuario, **context)
 
 
 @supervisor_bp.route('/<uuid:id>/lider')
@@ -47,7 +60,14 @@ def reportes(id):
 def lider(id):
     """Líderes de la red del supervisor."""
     usuario = session.get("usuario")
-    return render_template('lider_admin.html', usuario=usuario)
+    search = request.args.get('q', '').strip()
+    rol = request.args.get('rol', '').strip()
+    cdp_id = request.args.get('cdp_id', '').strip()
+    page = max(request.args.get('page', 1, type=int), 1)
+    from services.dashboard_service import get_supervisor_red_id
+    red_id = get_supervisor_red_id(id)
+    context = get_lideres_context(search, rol, '', cdp_id, page, supervisor_red_id=red_id)
+    return render_template('lider_admin.html', usuario=usuario, **context)
 
 
 @supervisor_bp.route('/<uuid:id>/perfil', methods=['GET', 'POST'])

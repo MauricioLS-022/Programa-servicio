@@ -4,6 +4,9 @@ Rutas del administrador: /admin/<uuid:id>/...
 from flask import Blueprint, render_template, request, session
 from utils.auth import login_required, role_required
 from services.dashboard_service import get_dashboard_context, get_estructura_context
+from services.user_service import get_usuarios_context
+from services.leader_service import get_lideres_context
+from services.report_service import get_reportes_context
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -29,7 +32,11 @@ def estructura(id):
 @login_required
 @role_required("admin")
 def usuario(id):
-    return render_template('usuarios_admin.html')
+    search = request.args.get('q', '').strip()
+    rol = request.args.get('rol', '').strip().lower()
+    page = max(request.args.get('page', 1, type=int), 1)
+    context = get_usuarios_context(search=search, rol=rol, page=page)
+    return render_template('usuarios_admin.html', **context)
 
 
 @admin_bp.route('/<uuid:id>/usuario/editar')
@@ -43,14 +50,30 @@ def usuario_editar(id):
 @login_required
 @role_required("admin")
 def reportes(id):
-    return render_template('reportes_admin.html')
+    search = request.args.get('q', '').strip()
+    red_id = request.args.get('red_id', '').strip()
+    cdp_id = request.args.get('cdp_id', '').strip()
+    fecha_desde = request.args.get('fecha_desde', '').strip()
+    fecha_hasta = request.args.get('fecha_hasta', '').strip()
+    page = max(request.args.get('page', 1, type=int), 1)
+    context = get_reportes_context(
+        search=search, red_id=red_id, cdp_id=cdp_id,
+        fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, page=page
+    )
+    return render_template('reportes_admin.html', **context)
 
 
 @admin_bp.route('/<uuid:id>/lider')
 @login_required
 @role_required("admin")
 def lider(id):
-    return render_template('lider_admin.html')
+    search = request.args.get('q', '').strip()
+    rol = request.args.get('rol', '').strip()
+    red_id = request.args.get('red_id', '').strip()
+    cdp_id = request.args.get('cdp_id', '').strip()
+    page = max(request.args.get('page', 1, type=int), 1)
+    context = get_lideres_context(search, rol, red_id, cdp_id, page)
+    return render_template('lider_admin.html', **context)
 
 
 @admin_bp.route('/<uuid:id>/lider/editar')

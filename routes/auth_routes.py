@@ -53,7 +53,8 @@ def login():
                     session["rol"] = r['tipo_usuario']
                     return _redirect_by_role(r['tipo_usuario'], session["usuario_id"])
             except Exception as e:
-                print(f"[DB] Error login: {e}")
+                from flask import current_app
+                current_app.logger.exception("[DB] Error login: %s", e)
                 p = "Error al verificar credenciales"
             finally:
                 conn.close()

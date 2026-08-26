@@ -3,7 +3,7 @@ Punto de entrada de la aplicación Flask.
 Inicializa la app y registra los Blueprints.
 """
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from dotenv import load_dotenv
 
 from config import config
@@ -55,7 +55,7 @@ def dated_url_for(endpoint, **values):
                 values['v'] = int(os.stat(file_path).st_mtime)
             except OSError:
                 pass
-    return app.url_for(endpoint, **values)
+    return url_for(endpoint, **values)
 
 
 # ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ def page_not_found(e):
 @app.errorhandler(403)
 def forbidden_error(e):
     """Error 403 - Acceso denegado (violación de propiedad o rol)."""
-    return render_template('404.html'), 403
+    return render_template('403.html'), 403
 
 
 @app.errorhandler(400)
