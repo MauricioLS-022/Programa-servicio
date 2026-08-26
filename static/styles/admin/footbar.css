@@ -1,0 +1,50 @@
+/* ===============================
+   FOOTBAR - Menú Inferior Móvil
+   =============================== */
+
+/* Ocultar en desktop por defecto */
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Mostrar en móvil */
+@media (max-width: 1024px) {
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #fafaf9;
+        border-top: 1px solid rgba(231, 229, 228, 0.5);
+        justify-content: space-around;
+        padding: 0.75rem 0;
+        z-index: 9000;
+        transform: translateY(0);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .mobile-bottom-nav.hidden-nav {
+        transform: translateY(100%);
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: var(--text-muted);
+        gap: 0.25rem;
+    }
+
+    .mobile-nav-item span:last-child {
+        font-size: 0.625rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--brand-red);
+    }
+}

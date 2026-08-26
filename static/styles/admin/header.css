@@ -1,0 +1,138 @@
+/* ===============================
+   HEADER DESKTOP - Navegación Superior
+   =============================== */
+
+header:not(.mobile-header) {
+    display: flex;
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background-color: var(--color4);
+    flex-direction: row;
+    box-shadow: 0 -2px 5px var(--color3);
+    margin: 0px;
+    padding: 0px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Logo */
+.header-nav .logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.header-nav .logo-link {
+    display: inline-block;
+    width: 130px;
+    height: 50px;
+    background-image: url("../../logo.webp");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+/* Navegación */
+.header-nav .link-container {
+    display: flex;
+    gap: 20px;
+}
+
+.header-nav .nav-btn {
+    display: flex;
+    align-items: center;
+    background-color: var(--color4);
+    border: 1px solid white;
+    padding: 20px 10px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.3s ease;
+    white-space: nowrap;
+}
+
+.header-nav .nav-btn:hover {
+    border-bottom: 1px solid var(--color2);
+}
+
+.header-nav .nav-text {
+    color: var(--color1);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+}
+
+/* Logout */
+.header-nav .logout-section {
+    display: flex;
+    align-items: center;
+}
+
+.header-nav .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 10px;
+    transition: 0.3s ease;
+}
+
+.header-nav .logout-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.header-nav .logout-text {
+    color: var(--color1);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+}
+
+/* ===============================
+   RESPONSIVE HEADER DESKTOP
+   =============================== */
+
+/* Ocultar header desktop en móvil y tablet (<=1024px) */
+@media (max-width: 1024px) {
+    header:not(.mobile-header) {
+        display: none !important;
+    }
+}
+
+/* Tablet: gap más compacto, padding ligeramente reducido */
+@media (max-width: 1100px) {
+    .header-nav .link-container {
+        gap: 10px;
+    }
+    .header-nav .nav-btn {
+        padding: 14px 6px;
+    }
+    .header-nav .nav-text {
+        font-size: 13px;
+    }
+}
+
+/* Móvil pequeño: ocultar texto, solo iconos */
+@media (max-width: 745px) {
+    .header-nav .nav-text {
+        display: none;
+    }
+    .header-nav .nav-btn {
+        padding: 12px 10px;
+    }
+    .header-nav .link-container {
+        gap: 12px;
+    }
+    .header-nav .logo-link {
+        width: 40px;
+        height: 40px;
+        background-image: url("../../logo3.webp");
+    }
+    .header-nav .logout-text {
+        display: none;
+    }
+}

@@ -21,7 +21,7 @@
     --primary-wine: #4a0d0d;     /* Vino oscuro para títulos, textos principales y botón guardar */
     --primary-wine-hover: #360909;
     --text-main: #2b1111;        /* Color casi negro/vino oscuro para máxima legibilidad */
-    --text-muted: #6e5553;       /* Un marrón/grisáceo más oscuro que el actual para las labels y hints */
+    --text-muted: #5a4240;       /* Un marrón/grisáceo más oscuro que el actual para las labels y hints */
     --border-color: #e8d0cc;     /* Un borde sutil para delimitar los campos */
     --input-bg: #ffffff;         /* Fondo blanco para que los inputs resalten sobre la tarjeta */
     --danger-color: #b32626;     /* Rojo/Vino vibrante para la acción de eliminar */
@@ -289,7 +289,7 @@ body {
     display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     /* Ocultar barra lateral en móvil */
 
     .sidebar {
@@ -309,7 +309,7 @@ body {
     /* Ajustar contenido principal */
     .main-content {
         margin-left: 0;
-        padding: 5rem 1rem; 
+        padding: 60px 1rem 85px;
     }
 
     /* Mostrar Header Móvil */

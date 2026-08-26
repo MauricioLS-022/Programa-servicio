@@ -364,9 +364,10 @@ body {
   4. TABLA
    =============================== */
 .table-section {
-    background-color: #ffffff; /* Despegamos la tabla del fondo general */
+    background-color: #ffffff;
     border-radius: 1rem;
-    overflow: hidden;
+    overflow: clip;
+    min-width: 0;
     border: 1px solid rgba(137, 114, 111, 0.2);
     box-shadow: 0 10px 35px -5px rgba(57, 0, 2, 0.06); 
 }
@@ -395,14 +396,19 @@ body {
 }
 .table-actions span:hover { color: white; }
 
-.table-responsive::-webkit-scrollbar { 
-  display: no;
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table-responsive::-webkit-scrollbar {
+    display: none;
 }
 
 .user-table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
+    table-layout: fixed;
 }
 
 .user-table th {
@@ -427,6 +433,30 @@ body {
     width: 132px;
     text-align: right;
     white-space: nowrap;
+}
+
+.user-table th:nth-child(1),
+.user-table td:nth-child(1) { width: 34%; }
+.user-table th:nth-child(2),
+.user-table td:nth-child(2) { width: 20%; }
+.user-table th:nth-child(3),
+.user-table td:nth-child(3) { width: 16%; }
+.user-table th:nth-child(4),
+.user-table td:nth-child(4) { width: 16%; }
+
+.user-table .empty-state {
+    display: block;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    color: var(--on-surface-variant);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    border-bottom: none;
+}
+
+.user-table .empty-state::before {
+    display: none;
 }
 
 .user-table tr:hover {
@@ -575,6 +605,11 @@ body {
     background-color: var(--primary);
     color: white;
 }
+.btn-page.disabled {
+    color: var(--outline-variant);
+    cursor: default;
+    pointer-events: none;
+}
 
 @media (max-width: 1024px) {
     .main-content {
@@ -677,6 +712,21 @@ body {
         min-height: 2rem;
         gap: 1rem;
         min-width: 0;
+        width: 100% !important;
+    }
+
+    .user-table tbody td.empty-state {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        padding: 1.5rem 0.5rem;
+        text-align: center;
+        border-bottom: none;
+        overflow-wrap: anywhere;
+    }
+
+    .user-table tbody td.empty-state::before {
+        display: none;
     }
 
     .user-table tbody td:last-child {

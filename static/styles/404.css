@@ -7,6 +7,11 @@
     --color5: #96292b;
 }
 
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
 .error-container {
     min-height: calc(100vh - 80px);
     display: flex;
@@ -16,6 +21,8 @@
     padding: 3rem 1.5rem;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .error-decoration {
@@ -102,6 +109,13 @@
     line-height: 1;
     margin-bottom: 0.5rem;
     animation: pulse 2s infinite ease-in-out;
+}
+
+.error-code-403 {
+    background: linear-gradient(135deg, #8B6914 0%, #B8860B 50%, #DAA520 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 @keyframes pulse {
@@ -204,26 +218,43 @@
 
 /* Responsive */
 @media (max-width: 480px) {
+    .error-container {
+        min-height: calc(100vh - 120px);
+        padding: 2rem 1rem;
+    }
+    
     .error-card {
-        padding: 2.5rem 1.5rem;
+        padding: 2rem 1.25rem;
         border-radius: 16px;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0 auto;
     }
     
     .error-code {
-        font-size: 6rem;
+        font-size: 5rem;
     }
     
     .error-title {
-        font-size: 1.5rem;
+        font-size: 1.35rem;
     }
     
     .error-message {
-        font-size: 1rem;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .error-actions {
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
     }
     
     .btn {
-        padding: 0.875rem 1.25rem;
-        font-size: 0.95rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
@@ -260,4 +291,29 @@
     outline: 3px solid var(--color5);
     outline-offset: 4px;
     border-radius: 4px;
+}
+
+/* Error page layout */
+.error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+}
+
+.error-content {
+    position: relative;
+    z-index: 1;
+}
+
+.error-footer {
+    color: var(--color3);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.9rem;
+    opacity: 0.6;
+    margin-top: 2rem;
+    text-align: center;
 }

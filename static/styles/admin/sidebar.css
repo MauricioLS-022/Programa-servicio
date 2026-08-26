@@ -1,0 +1,219 @@
+/* ===============================
+   SIDEBAR - Menú Lateral
+   =============================== */
+
+/* Sidebar Desktop */
+.sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 256px;
+    height: 100vh;
+    background-color: var(--bg-sidebar);
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1rem;
+    z-index: 40;
+}
+
+/* Logo Sidebar */
+.sidebar .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+}
+
+.sidebar .logo-box {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    background-color: transparent;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Resetear la clase .logo genérica que viene de _utilities.css */
+.sidebar .logo-box .logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-image: none !important;
+    background-color: transparent;
+}
+
+.brand-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    color: var(--brand-red);
+    line-height: 1;
+}
+
+.brand-subtitle {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+/* Menú Sidebar */
+.sidebar .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-item .material-symbols-outlined {
+    font-size: 1.35rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar .nav-item:hover {
+    background-color: var(--bg-sidebar-hover);
+    transform: translateX(4px);
+}
+
+/* Estado Activo del menú */
+.sidebar .nav-item.active {
+    background-color: var(--nav-active-bg);
+    color: var(--brand-red);
+    font-weight: 600;
+}
+
+.sidebar .sidebar-footer {
+    margin-top: auto;
+    margin-bottom: 0;
+    padding-top: 2rem;
+    padding-bottom: 0.5rem;
+    border-top: 1px solid rgba(137, 114, 111, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Botón cerrar sesión - más abajo para evitar clics accidentales */
+.sidebar .sidebar-footer .nav-item {
+    color: var(--brand-red);
+    font-weight: 600;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid rgba(137, 114, 111, 0.1);
+}
+
+.sidebar .sidebar-footer .nav-item .material-symbols-outlined {
+    font-size: 1.35rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--brand-red);
+}
+
+.sidebar .sidebar-footer .nav-item:hover {
+    background-color: rgba(178, 38, 38, 0.08);
+}
+
+/* ===============================
+   RESPONSIVE SIDEBAR
+   =============================== */
+
+/* Ocultar sidebar en desktop por defecto */
+@media (min-width: 1025px) {
+    .sidebar,
+    .mobile-header,
+    .sidebar-overlay,
+    .mobile-bottom-nav {
+        display: none !important;
+    }
+}
+
+/* Mostrar sidebar en móvil */
+@media (max-width: 1024px) {
+    .sidebar {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 270px;
+        height: 100vh;
+        height: 100dvh;
+        background-color: var(--bg-sidebar);
+        flex-direction: column;
+        padding: 1.5rem;
+        gap: 1rem;
+        z-index: 9500;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        overflow-y: auto;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar .sidebar-nav {
+        flex: 1;
+    }
+
+    .sidebar .sidebar-footer {
+        margin-top: auto;
+        margin-bottom: 0;
+        padding-top: 2rem;
+        padding-bottom: 1.5rem;
+        border-top: 1px solid rgba(137, 114, 111, 0.15);
+        flex-shrink: 0;
+    }
+
+    .sidebar .sidebar-footer .nav-item {
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+}
+
+/* Overlay del sidebar */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 9400;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
