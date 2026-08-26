@@ -1,3 +1,8 @@
+@import url('header.css');
+@import url('sidebar.css');
+@import url('mobile-header.css');
+@import url('footbar.css');
+
 :root{
     --color1: #4A0203;
     --color2: #780204;
@@ -20,7 +25,7 @@
     --primary-wine: #4a0d0d;
     --primary-wine-hover: #360909;
     --text-main: #2b1111;
-    --text-muted: #6e5553;
+    --text-muted: #5a4240;
     --border-color: #e8d0cc;
     --input-bg: #ffffff;
     --danger-color: #b32626;
@@ -55,73 +60,8 @@ body{
 }
 
 /* ===============================
-   HEADER DESKTOP (existente)
+   HEADER DESKTOP - Ver header.css
    =============================== */
-
-   
-header:not(.mobile-header) {
-    display: flex; 
-} 
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background-color: var(--color4);
-  flex-direction: row;
-  box-shadow: 0 -2px 5px var(--color3);
-  margin: 0px;
-  padding: 0px 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.link-container {
-  display: flex;
-  gap: 20px;
-}
-.botones {
-  display: flex;
-  align-items: center;
-  background-color: var(--color4);
-  border: 1px solid white;
-  padding: 20px 10px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: 0.3s ease;
-}
-.botones:hover{
-  border-bottom: 1px solid var(--color2);
-}
-.icono{
-  width: 18px;
-  margin-right: 10px;
-}
-.texto{
-  color: var(--color1);
-  font-family: 'Times New Roman', Times, serif;
-  font-size: 18px;
-}
-
-.texto2{
-  color: var(--color1);
-  font-family: 'Times New Roman', Times, serif;
-  font-size: 18px;
-  margin: 10px;
-}
-
-.logo {
-  display: inline-block;
-  width: 130px;
-  height: 50px;
-  background-image: url("../../logo.webp");
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: center;
-  text-decoration: none;
-  margin-right: 10px;
-}
 
 .centro{
     display: flex;
@@ -151,107 +91,8 @@ header:not(.mobile-header) {
 }
 
 /* ===============================
-   LAYOUT ADMIN - SIDEBAR (DESKTOP)
+   SIDEBAR - Ver sidebar.css
    =============================== */
-.sidebar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 256px;
-    height: 100vh;
-    background-color: var(--bg-sidebar);
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    gap: 1rem;
-    z-index: 40;
-}
-
-/* Logo Sidebar */
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-}
-
-.logo-box {
-    width: 2.5rem;
-    height: 2.5rem;
-    background-color: transparent;
-    color: white;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.logo-box .logo {
-    width: 3.5rem;
-    object-fit: contain;
-}
-
-.brand-title {
-    font-family: var(--font-serif);
-    font-size: 1.25rem;
-    color: var(--brand-red);
-    line-height: 1;
-}
-
-.brand-subtitle {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 600;
-    margin-top: 0.25rem;
-}
-
-/* Menú Sidebar */
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.nav-item:hover {
-    background-color: var(--bg-sidebar-hover);
-    transform: translateX(4px);
-}
-
-/* Estado Activo del menú */
-.nav-item.active {
-    background-color: var(--nav-active-bg);
-    color: var(--brand-red);
-    font-weight: 600;
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    margin-bottom: 10rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-/* Color rojo corporativo solo para el ícono de salir */
-.logout-icon {
-    color: var(--brand-red);
-}
 
 .btn-new {
     width: 100%;
@@ -325,218 +166,12 @@ header:not(.mobile-header) {
 }
 
 /* ===============================
-   ESTILOS DEL OVERLAY Y BOTÓN MENÚ
+   OVERLAY Y BOTÓN MENÚ - Ver sidebar.css y mobile-header.css
    =============================== */
-.sidebar-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    z-index: 9400;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.sidebar-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.mobile-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.btn-menu {
-    background: none;
-    border: none;
-    color: var(--primary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-}
 
 /* ===============================
-   RESPONSIVO (MÓVILES Y TABLETS)
+   RESPONSIVE - Ver header.css, sidebar.css, footbar.css, mobile-header.css
    =============================== */
-
-/* Ocultar elementos móviles en desktop por defecto */
-.mobile-header, .mobile-bottom-nav {
-    display: none;
-}
-
-/* Header desktop - ocultar en móvil */
-@media (max-width: 768px) {
-    header:not(.mobile-header) {
-        display: none !important;
-    }
-}
-
-@media (max-width: 768px) {
-    /* Ocultar barra lateral en móvil */
-    .sidebar {
-        display: flex;
-        position: fixed;
-        top: 0; left: 0;
-        width: 270px;
-        height: 100vh;
-        background-color: var(--bg-sidebar);
-        flex-direction: column;
-        padding: 1.5rem;
-        gap: 1rem;
-        z-index: 9500;
-        transform: translateX(-100%); /* Lo mantiene fuera de la pantalla por defecto */
-        transition: transform 0.3s ease-in-out;
-    }
-
-    /* Clase que el JS agrega para mostrar el menú */
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    .sidebar-footer{
-        transform: translateY(-55px);
-    }
-
-    /* Mostrar Header Móvil */
-    .mobile-header {
-        display: flex;
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        background-color: rgba(250, 250, 249, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 0.75rem 1rem;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 9000;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    .mobile-brand {
-        font-family: var(--font-serif);
-        font-style: italic;
-        font-size: 1.25rem;
-        color: var(--brand-red);
-        margin: 0;
-    }
-
-    /* Mostrar Nav Inferior Móvil */
-    .mobile-bottom-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        background-color: #fafaf9;
-        border-top: 1px solid rgba(231, 229, 228, 0.5);
-        justify-content: space-around;
-        padding: 0.75rem 0;
-        z-index: 9000;
-        transform: translateY(0);
-        transition: transform 0.3s ease-in-out;
-    }
-
-    .mobile-bottom-nav.hidden-nav {
-        transform: translateY(100%);
-    }
-
-    .mobile-nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: var(--text-muted);
-        gap: 0.25rem;
-    }
-
-    .mobile-nav-item span:last-child {
-        font-size: 0.625rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: -0.05em;
-    }
-
-    .mobile-nav-item.active {
-        color: var(--brand-red);
-    }
-}
-
-/* Mantener estilos existentes para header desktop en tablets y desktop */
-@media (max-width: 745px){
-    .texto{
-        display: none;
-    }
-    .icono{
-        display: block;
-        margin-right: 0px;
-    }
-    .botones{
-        padding: 20px 20px;
-    }
-    .logo{
-        width: 50px;
-        height: 50px;
-        background-image: url("../../logo3.webp");
-    }
-}
-
-@media screen and (max-width: 910px) and (min-width: 745px){
-    .icono{
-        display: none;
-    }
-
-    .link-container{
-    gap: 12px;
-  }
-
-  header{
-    gap: 12px
-  }
-
-  .botones{
-    padding: 20px 5px;
-  }
-}
-
-@media screen and (max-width: 1200px) and (min-width: 911px){
-    .texto{
-        font-size: 15px;
-    }
-    .link-container{
-        gap: 8px;
-    }
-    .botones{
-        padding: 18px 8px;
-    }
-}
-
-/* Mostrar sidebar en pantallas de escritorio y ocultar el menú hamburguesa */
-@media (min-width: 769px) {
-        /* Ocultamos todo lo relacionado al menú hamburguesa en PC */
-    .sidebar, 
-    .mobile-header,
-    .sidebar-overlay,
-    .mobile-bottom-nav {
-        display: none !important;
-    }
-        
-
-}
-
-    /* Reglas más específicas para forzar ocultar elementos móviles en escritorio */
-    @media (min-width: 769px) {
-        .mobile-header,
-        .mobile-bottom-nav,
-        .mobile-header-left,
-        #menu-toggle,
-        .btn-menu {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-        }
-    }
 
 
     /* Estilos Generales y Layout */
@@ -914,7 +549,7 @@ header:not(.mobile-header) {
         }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
         .bottom-dashboard-grid {
             grid-template-columns: 1fr;
         }
@@ -923,7 +558,7 @@ header:not(.mobile-header) {
         }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
         main {
             padding-bottom: 80px;
         }
@@ -934,15 +569,13 @@ header:not(.mobile-header) {
    Ensures all pages have proper spacing for
    fixed mobile header (54px) and bottom nav (60px)
    ========================================= */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     /* All main containers: top padding to clear fixed mobile header */
-    main,
     .main-content,
     .dashboard-main,
     .estructura-main,
     .leadership-page,
-    .container,
-    .crud-container {
+    .container {
         padding-top: 60px !important;
         padding-bottom: 80px !important;
     }
