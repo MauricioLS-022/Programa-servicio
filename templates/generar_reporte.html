@@ -13,12 +13,12 @@
     }
 
     @media (min-width: 768px) {
-    .form-header-row {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: flex-end;
+        .form-header-row {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
     }
-}
 </style>
 <main class="crud-container">
     <header class="form-header-row">
@@ -33,19 +33,21 @@
 
         <div class="form-grid">
             
+            <!-- Selector de Líder -->
             <div class="form-group full-width">
                 <label>Líder que reporta</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">badge</span>
-                    <select name="lider_id" required>
-                        <option value="" disabled selected>Selecciona el líder encargado...</option>
+                    <select name="lider_id">
+                        <option value="" selected>Selecciona el líder encargado (Opcional)...</option>
                         {% for lider in lideres %}
-                            <option value="{{ lider.id }}">{{ lider.nombre }} {{ lider.apellido }}</option>
+                            <option value="{{ lider.id }}">{{ lider.nombre }} {% if lider.apellido %}{{ lider.apellido }}{% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
 
+            <!-- Fecha y Tiempos -->
             <div class="form-group">
                 <label>Fecha</label>
                 <div class="input-wrapper icon-left">
@@ -58,17 +60,18 @@
                 <label>Hora de inicio</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">access_time</span>
-                    <input type="time" name="horaini" required>
+                    <input type="time" name="hr_inicio" required>
                 </div>
             </div>
             <div class="form-group">
                 <label>Hora de finalización</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">access_time</span>
-                    <input type="time" name="horafin" required>
+                    <input type="time" name="hr_fin" required>
                 </div>
             </div>
 
+            <!-- Asistencia -->
             <div class="form-group full-width">
                 <div class="form-divider">
                     <span class="material-symbols-outlined">group</span>
@@ -80,14 +83,14 @@
                 <label>Regulares</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">group</span>
-                    <input type="number" name="regulares" placeholder="0" required>
+                    <input type="number" name="nro_regulares" placeholder="0" min="0" value="0" required>
                 </div>
             </div>
             <div class="form-group">
                 <label>Niños</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">child_care</span>
-                    <input type="number" name="ninos" placeholder="0" required>
+                    <input type="number" name="nro_ninos" placeholder="0" min="0" value="0" required>
                 </div>
             </div>
 
@@ -95,17 +98,18 @@
                 <label>Visitas</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">person_add</span>
-                    <input type="number" name="visitas" placeholder="0" required>
+                    <input type="number" name="nro_visitas" placeholder="0" min="0" value="0" required>
                 </div>
             </div>
             <div class="form-group">
                 <label>Comprometidos</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">thumb_up</span>
-                    <input type="number" name="comprometidos" placeholder="0" required>
+                    <input type="number" name="nro_comprometidos" placeholder="0" min="0" value="0" required>
                 </div>
             </div>
 
+            <!-- Ministerio -->
             <div class="form-group full-width">
                 <div class="form-divider">
                     <span class="material-symbols-outlined">favorite</span>
@@ -117,17 +121,18 @@
                 <label>Reconciliaciones</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">favorite</span>
-                    <input type="number" name="reconciliaciones" placeholder="0" required>
+                    <input type="number" name="reconciliaciones" placeholder="0" min="0" value="0">
                 </div>
             </div>
             <div class="form-group">
                 <label>Confesiones de fe</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">book</span>
-                    <input type="number" name="confesiones" placeholder="0" required>
+                    <input type="number" name="confesiones" placeholder="0" min="0" value="0">
                 </div>
             </div>
 
+            <!-- Ofrendas y Recursos -->
             <div class="form-group full-width">
                 <div class="form-divider">
                     <span class="material-symbols-outlined">volunteer_activism</span>
@@ -139,17 +144,18 @@
                 <label>Ofrendas</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">attach_money</span>
-                    <input type="number" step="0.01" name="ofrendas" placeholder="0.00 Bs" required>
+                    <input type="number" step="0.01" name="ofrendas" placeholder="0.00 Bs" min="0" value="0.00" required>
                 </div>
             </div>
             <div class="form-group">
                 <label>Cesta de amor</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">shopping_basket</span>
-                    <input type="text" name="cesta" placeholder="Descripción de la cesta" required>
+                    <input type="number" step="0.01" name="cesta_amor" placeholder="0.00 Bs" min="0" value="0.00" required>
                 </div>
             </div>
 
+            <!-- Tema y Observaciones -->
             <div class="form-group full-width">
                 <label>Tema de la clase</label>
                 <div class="input-wrapper icon-left">
@@ -171,7 +177,7 @@
                 <button type="submit" class="btn-save">
                     <span class="material-symbols-outlined">send</span> Enviar Reporte
                 </button>
-                <a href="/dashboard" class="btn-cancel">Cancelar</a>
+                <a href="{{ url_for('cdp.dashboard', id=session.get('usuario_id')) }}" class="btn-cancel">Cancelar</a>
             </div>
         </div>
     </form>

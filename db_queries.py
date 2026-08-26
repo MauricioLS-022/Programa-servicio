@@ -704,3 +704,53 @@ def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_ha
     cur.close()
     return reportes, total, redes, casas
 
+# ---------------------------------------------------------------------------
+# FUNCIONALIDAD PARA GENERAR REPORTES
+# ---------------------------------------------------------------------------
+
+def obtener_cdp_por_usuario(cursor, usuario_id):
+    """Obtiene la Casa de Paz asignada a un usuario específico."""
+    query = "SELECT id, codigo, red_id FROM cdp WHERE usuario_id = %s"
+    cursor.execute(query, (usuario_id,))
+    return cursor.fetchone()
+
+
+def obtener_lideres_por_cdp(cursor, cdp_id):
+    """Obtiene todos los líderes asociados a una Casa de Paz."""
+    query = "SELECT id, nombre, apellido, rol FROM lider WHERE cdp_id = %s ORDER BY nombre ASC"
+    cursor.execute(query, (cdp_id,))
+    return cursor.fetchall() or []
+
+
+def insertar_reporte(cursor, datos_reporte):
+    """
+    Inserta un nuevo registro en la tabla 'reporte'.
+    Alineado con los nombres de campos enviados por generar_reporte.html.
+    """
+    query = """
+        INSERT INTO reporte (
+            id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
+            tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
+            reconciliaciones, confesiones, ofrendas, cesta_amor, observaciones
+        ) VALUES (
+            UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+    """
+    params = (
+        datos_reporte['cdp_id'],
+        datos_reporte.get('lider_id') or None,  # Permite NULL si no se selecciona líder
+        datos_reporte['fecha'],
+        datos_reporte['hr_inicio'],
+        datos_reporte['hr_fin'],
+        datos_reporte['tema'],
+        datos_reporte.get('nro_ninos', 0),
+        datos_reporte.get('nro_regulares', 0),
+        datos_reporte.get('nro_visitas', 0),
+        datos_reporte.get('nro_comprometidos', 0),
+        datos_reporte.get('reconciliaciones', 0),
+        datos_reporte.get('confesiones', 0),
+        datos_reporte.get('ofrendas', 0.00),
+        datos_reporte.get('cesta_amor', 0.00),
+        datos_reporte.get('observaciones', '')
+    )
+    cursor.execute(query, params)
