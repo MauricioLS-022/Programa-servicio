@@ -26,6 +26,7 @@ Create focused, semantic commits from the current working tree and push the curr
 3. Group files by intent: feature, fix, refactor, tests, docs, chore, release, or configuration.
    - Keep independent changes in separate commits.
    - Use supplied context only when it accurately describes the changes.
+   - Write the commit description in Spanish, keeping the semantic type prefix (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`, or `release`) in its conventional form.
    - Match the repository's recent commit-message style.
 4. Present a proposed commit plan listing each semantic commit and its files.
    - If the grouping is clear, continue.
