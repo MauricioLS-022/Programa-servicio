@@ -12,39 +12,54 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Requerimiento | Estado actual | Evidencia y trabajo pendiente |
 |---|---|---|---|
-| 1 | **INSERT de reportes en BD** | ✅ Implementado | `services/cdp_service.py` y `db_queries.insertar_reporte()` ya están alineados con el esquema SQL (`nro_niños`, `nro_regulares`, `nro_visitas`, `nro_comprometidos`, `reconciliaciones`, `confesiones`, `cesta_amor`, `hr_inicio`, `hr_fin`, `tema`, `observaciones`, `ofrendas`, `cdp_id`, `enviado_por_lider_id`). Genera `UUID()` e invalida caché de dashboard. |
-| 2 | **CRUD de Usuarios** | ❌ Pendiente | `routes/admin_routes.py` solo renderiza plantillas. `usuarios_admin.html` y `form_usuario.html` contienen datos demo y botones sin procesamiento POST a base de datos. |
-| 3 | **CRUD de Casas de Paz** | ❌ Pendiente | Las rutas de creación, edición y eliminación de CDP no ejecutan operaciones `INSERT`/`UPDATE`/`DELETE` en BD. |
-| 4 | **CRUD de Redes** | ❌ Pendiente | `red/editar` solo muestra el formulario; las acciones del menú contextual de estructura requieren conectar rutas y lógica de persistencia. |
-| 5 | **CRUD de Líderes** | ❌ Pendiente | `lider_admin.html` muestra datos maquetados y `lider/editar` no procesa formularios a BD. |
-| 6 | **Dashboard con datos reales** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` implementan consultas reales, métricas por nivel (General, Red, CDP), filtros jerárquicos, modo mock, sistema de caché y estados vacíos. |
-| 7 | **Vista de reportes enviados para CDP** | ⚠️ Parcial | `cdp/dashboard` (`index.html`) tiene el diseño y acceso al formulario de reporte; falta conectar el historial y métricas dinámicas del líder logueado. |
-| 8 | **Filtros de reportes** | ✅ Implementado | `templates/reportes_admin.html`, `services/report_service.py` y `db_queries.get_reportes()` procesan búsqueda por texto (`q`), red (`red_id`), Casa de Paz (`cdp_id`) y rango de fechas (`fecha_desde`, `fecha_hasta`) tanto en base de datos como en modo mock. |
-| 9 | **Paginación real** | ⚠️ Parcial | **Reportes** ya cuenta con paginación server-side dinámica (`page`, `per_page`, cálculo de `total_paginas`). Falta implementar paginación conectada en **Usuarios** y **Líderes**. |
-| 10 | **Exportar PDF/Excel** | ❌ Pendiente | Botones visuales maquetados; falta implementar librerías de generación (e.g. ReportLab / openpyxl) y endpoints de descarga. |
-| 11 | **Búsqueda en tiempo real** | ⚠️ Parcial | Filtros por GET implementados en Reportes y Dashboard; en Estructura el filtrado por chips de red es dinámico en frontend. Falta filtrado en tiempo real sin recarga para tablas de Usuarios y Líderes. |
-| 12 | **Flash messages y toasts** | ❌ Pendiente | Falta integrar contenedor visual de `get_flashed_messages()` en `admin_layout.html` y emitir mensajes tras operaciones CRUD. |
-| 13 | **Contactar por WhatsApp** | ⚠️ Parcial | El dashboard genera enlaces `wa.me` con el teléfono del líder. Falta normalización de código de país y soporte en listados de líderes. |
-| 14 | **Gestión de contraseña** | ❌ Pendiente | Login usa hashes seguros (Werkzeug scrypt); falta formulario en Perfil para que los usuarios cambien su clave verificando la actual. |
-| 15 | **Vistas de supervisor** | ⚠️ Avanzado | Dashboard, Estructura y Reportes cuentan con rutas dedicadas, autorización de rol y aislamiento automático por red (`supervisor_red_id`). Falta dinamizar la vista de Líderes del supervisor. |
+| 1 | **INSERT de reportes en BD** | ✅ Implementado | `services/cdp_service.py` y `db_queries.insertar_reporte()` alineados con el esquema SQL (`nro_niños`, `nro_regulares`, `nro_visitas`, `nro_comprometidos`, `reconciliaciones`, `confesiones`, `cesta_amor`, `hr_inicio`, `hr_fin`, `tema`, `observaciones`, `ofrendas`, `cdp_id`, `enviado_por_lider_id`). Genera `UUID()` e invalida caché de dashboard. |
+| 2 | **Script de Poblado y Test Data** | ✅ Implementado | `insert_test_data.py` automatiza la inserción idempotente de usuarios (`admin`, `supervisor`, `lider_cdp`), redes, Casas de Paz, líderes y reportes históricos de 8 semanas con hashes Werkzeug y UUIDs válidos. |
+| 3 | **Dashboard con datos reales** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` implementan consultas reales, métricas por nivel (General, Red, CDP), filtros jerárquicos, modo mock, sistema de caché y estados vacíos. |
+| 4 | **Filtros de reportes** | ✅ Implementado | `templates/reportes_admin.html`, `services/report_service.py` y `db_queries.get_reportes()` procesan búsqueda por texto (`q`), red (`red_id`), Casa de Paz (`cdp_id`) y rango de fechas (`fecha_desde`, `fecha_hasta`) tanto en base de datos como en modo mock. |
+| 5 | **Paginación real conectada** | ✅ Implementado | Paginación server-side dinámica (`page`, `per_page`, `pages`, `total`) conectada en **Reportes**, **Usuarios** y **Líderes** (`services/report_service.py`, `services/user_service.py`, `services/leader_service.py`). |
+| 6 | **Vistas de supervisor aisladas** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes cuentan con aislamiento automático por red del supervisor logueado (`supervisor_red_id`). |
+| 7 | **CRUD de Usuarios (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros y paginación completados** (`get_usuarios_context`). Pendiente conectar el procesamiento `POST` en formularios de crear/editar y alternar estado activo/inactivo (`is_active`). |
+| 8 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | Visualización en estructura y asignación de líderes/usuarios funcional. Pendiente conectar operaciones `POST` (`INSERT`/`UPDATE`/`DELETE`/pausar) en formularios admin. |
+| 9 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | Visualización jerárquica y filtros de red completados. Pendiente conectar formularios de creación/edición de redes y asignación de supervisor vía `POST`. |
+| 10 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros por red/CDP y paginación completados** (`get_lideres_context`). Pendiente conectar el guardado de nuevos líderes y edición vía formulario `POST`. |
+| 11 | **Vista de reportes enviados para CDP** | ⚠️ Parcial | `cdp/dashboard` (`index.html`) cuenta con maquetación y acceso al formulario de reporte; falta dinamizar el historial semanal y resumen de métricas del líder en sesión. |
+| 12 | **Módulo de Perfil y Cambio de Contraseña** | ⚠️ Parcial | `cdp_service.get_perfil_data()` y `update_perfil()` implementados. Falta formulario específico para cambio seguro de contraseña con verificación de clave actual. |
+| 13 | **Flash messages y toasts** | ❌ Pendiente | Falta integrar contenedor visual de `get_flashed_messages()` en `admin_layout.html` y emitir mensajes tras operaciones CRUD. |
+| 14 | **Exportar PDF/Excel** | ❌ Pendiente | Botones visuales maquetados; falta implementar librerías de generación (e.g. ReportLab / openpyxl) y endpoints de descarga con filtros aplicados. |
+| 15 | **Búsqueda en tiempo real (Client-side)** | ⚠️ Parcial | Filtros por GET implementados en Reportes, Usuarios, Líderes y Dashboard; en Estructura el filtrado por chips de red es dinámico en frontend. Falta búsqueda instantánea sin recarga vía JavaScript en tablas admin. |
+| 16 | **Contactar por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados con teléfonos de líderes y CDPs. Pendiente normalización de código de país internacional (`+58`, `+52`, etc.). |
+
+---
 
 ### Funcionalidades ya cumplidas o disponibles
 
-- **Autenticación y Seguridad básica**: Login con validación de hashes Werkzeug, migración automática de contraseñas legacy, decoradores de sesión, verificación de roles (`admin`, `supervisor`, `cdp`) y protección contra manipulación de UUID en URL.
-- **Conectividad y Resiliencia**: Conexión centralizada a MySQL con `database.py`, circuit breaker, fallback transparente a `mock_data.py` cuando no hay BD activa y liberación de conexiones con `finally`.
-- **Módulo de Reportes (Admin & Supervisor)**: Consultas completas de reportes, formulario de filtros multidimensional (texto, red, casa, fechas), paginación real, modal de detalle/edición estructurado y vista responsive adaptada con botones de acción alineados.
-- **Módulo de Estructura**: Visualización jerárquica de redes y casas de paz, filtrado interactivo por chips, avatares representativos de casas (`home`), eliminación de doble scrollbar (scroll global único), resolución de bugs de visibilidad en tablet/móvil y contraste de colores bajo pautas WCAG 2.2 AA/AAA.
-- **Dashboard Multi-Nivel**: Métricas consolidadas, filtros dinámicos, ranking de casas, alertas de asistencia/ofrendas y caché en memoria.
-- **Navegación e Identidad Visual**: Menú lateral responsive (`sidebar.css`) sin scrollbars invasivas, encabezado unificado `#admin-desktop-header`, header móvil y barra de navegación inferior móvil.
+- **Autenticación y Seguridad de Acceso**:
+  - Login con validación y hasheo seguro mediante Werkzeug (`scrypt`/`pbkdf2`), con migración transparente de contraseñas legacy.
+  - Decorador `@role_required` para control de acceso estricto por roles (`admin`, `supervisor`, `lider_cdp`).
+  - Protección de endpoints contra manipulación de identificadores y aislamiento de supervisores.
+- **Conectividad, Resiliencia y Datos de Prueba**:
+  - Pool / Conexión centralizada con `database.py`, circuit breaker con reintentos automáticos y fallback a `mock_data.py`.
+  - Script automatizado `insert_test_data.py` compatible con el esquema MySQL actual, capaz de poblar usuarios, redes, CDPs, líderes y 18 reportes históricos de 8 semanas.
+- **Módulo de Reportes (Admin & Supervisor)**:
+  - Consultas SQL completas con cálculo de asistencia total, filtros combinados (búsqueda de texto, red, CDP, fechas) y paginación server-side.
+  - Modal de detalle/visualización estructurado y diseño adaptativo.
+- **Directorios Administrativos (Usuarios y Líderes)**:
+  - Servicios desacoplados `user_service.py` y `leader_service.py` con paginación server-side y filtros funcionales sobre base de datos.
+- **Módulo de Estructura**:
+  - Vista jerárquica de redes y CDPs con filtrado interactivo por chips, avatares representativos, eliminación de doble scrollbar y cumplimiento de contraste accesible WCAG 2.2 AA/AAA.
+- **Dashboard Multi-Nivel**:
+  - KPIs globales, ranking de redes con cumplimiento semanal, distribución de asistencia, tendencias mensuales y alertas de casas sin reporte (14+ días).
+
+---
 
 ### Inconsistencias técnicas y pendientes inmediatos
 
-1. **CRUDs Admin**: Conectar formularios de creación y edición (Usuarios, Redes, Casas de Paz, Líderes) con rutas `POST`, validación de datos y operaciones en base de datos.
+1. **Mutaciones POST en CRUDs Admin**: Conectar las rutas de creación y edición (Usuarios, Redes, Casas de Paz, Líderes) con validación de datos en backend y persistencia en BD.
 2. **Protección CSRF**: Incorporar tokens CSRF en todos los formularios HTML antes de habilitar mutaciones `POST`.
-3. **Módulo de Perfil**: Agregar endpoints y formularios para actualizar datos personales y cambiar contraseñas con hash.
-4. **Exportación de Reportes**: Crear generadores de archivos PDF y Excel con filtros aplicados.
-5. **Historial en Home CDP**: Conectar las métricas y reportes recientes en la vista de Casa de Paz (`index.html`).
-6. **Flash Messages**: Añadir componente Toast / Alert en el layout principal para retroalimentar al usuario en cada acción.
+3. **Módulo de Perfil (Contraseña)**: Implementar endpoint y modal para que el usuario pueda cambiar su contraseña verificando la actual.
+4. **Historial Dinámico en Home CDP**: Conectar las métricas y reportes recientes en la vista de Casa de Paz (`index.html`) con la sesión del líder.
+5. **Flash Messages & Toasts**: Añadir componente Toast / Alert en `admin_layout.html` para notificar éxito/error tras mutaciones.
+6. **Exportación de Reportes**: Crear endpoints para descarga de reportes en PDF y Excel con filtros aplicados.
 
 ---
 
@@ -52,14 +67,13 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Problema | Estado / severidad | Detalle |
 |---|---|---|---|
-| 1 | **Contraseñas en texto plano** | ✅ Resuelto en Login | El login valida hashes Werkzeug y migra registros legacy. Garantizar que el alta de usuarios en el CRUD siempre aplique `generate_password_hash()`. |
+| 1 | **Contraseñas en texto plano** | ✅ Resuelto | Login y scripts de datos usan hashes Werkzeug seguros. Los nuevos endpoints CRUD deben aplicar `generate_password_hash()`. |
 | 2 | **Sin protección CSRF** | 🔴 Alta / Pendiente | Los formularios POST no incluyen tokens CSRF. Implementar protección (Flask-WTF o token de sesión) al activar los CRUDs. |
-| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` permite usuario `root` y contraseña vacía por defecto. En producción deben ser obligatorias las variables de entorno (`.env`). |
-| 4 | **Manejo de conexiones** | ✅ Bueno | Servicios principales (`cdp_service`, `report_service`, `dashboard_service`) usan `try/finally` para asegurar el cierre de conexiones. |
-| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG` y desarrollo están activos por defecto en `run.py`/`config.py`. Desactivar en entorno de producción. |
-| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Modo mock habilitado para desarrollo sin BD. Debe quedar inhabilitado en producción. |
-| 7 | **API sin autorización explícita** | 🟡 Media / Pendiente | Validar sesión, rol y aislamiento de supervisor en `/api/dashboard/datos`. |
-| 8 | **Ausencia de validación de entrada** | 🟡 Media / Pendiente | Validar tipos, rangos numéricos, fechas y relaciones antes de ejecutar `INSERT`/`UPDATE` en los nuevos CRUDs. |
+| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` y `insert_test_data.py` permiten variables de entorno (`.env`), pero mantienen fallbacks para desarrollo local. |
+| 4 | **Manejo de conexiones** | ✅ Bueno | Servicios principales (`cdp_service`, `report_service`, `dashboard_service`, `user_service`, `leader_service`) usan `try/finally` asegurando el cierre de conexiones. |
+| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG=True` activo en desarrollo. Desactivar en configuración de producción. |
+| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Fallback mock activo solo cuando la BD no está disponible. |
+| 7 | **Validación de entrada en CRUDs** | 🟡 Media / Pendiente | Requerido validar tipos, rangos numéricos, unicidad de nombres/códigos y relaciones FK al habilitar mutaciones `POST`. |
 
 ---
 
@@ -67,74 +81,91 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Mejora | Estado actual | Detalle / Trabajo pendiente |
 |---|---|---|---|
-| 1 | **Home CDP** | ⚠️ Parcial | Maquetada; falta enlazar historial de reportes y equipo de líderes reales. |
-| 2 | **Responsive en móviles y tablets** | ✅ Avanzado | Tablas con visualización tipo tarjeta en mobile, chips horizontales con scroll táctil, header desktop oculto limpiamente vía `#admin-desktop-header` y corrección de bugs de visualización en resoluciones intermedias (769px–1024px). |
-| 3 | **Accesibilidad y Contraste de Color** | ✅ Implementado en Estructura | Colores ajustados bajo estándar WCAG 2.2 AA/AAA en `estructura.css`, selectores de foco visibles (`:focus-visible`) e insignias con alto contraste. |
-| 4 | **Doble scrollbar** | ✅ Resuelto en Estructura | Eliminado el scroll interno anidado en `.casas-section` y `.estructura-main`, dejando exclusivamente la barra de desplazamiento global de la página. |
-| 5 | **Sidebar visual limpio** | ✅ Implementado | Eliminadas las barras de desplazamiento grisáceas del menú lateral en `sidebar.css` preservando la funcionalidad de scroll táctil en dispositivos compactos. |
-| 6 | **Estados vacíos** | ✅ Parcial | Implementados en Dashboard, Estructura y Reportes (`.empty-state`). Pendiente agregar en Usuarios y Líderes. |
+| 1 | **Home CDP** | ⚠️ Parcial | Maquetada; falta enlazar historial de reportes y equipo de líderes del usuario autenticado. |
+| 2 | **Responsive en móviles y tablets** | ✅ Avanzado | Tablas con visualización tipo tarjeta en mobile, chips horizontales con scroll táctil, header desktop adaptativo y breakpoints limpios. |
+| 3 | **Accesibilidad y Contraste de Color** | ✅ Implementado | Colores ajustados bajo estándar WCAG 2.2 AA/AAA en `estructura.css`, selectores de foco visibles (`:focus-visible`) e insignias con alto contraste. |
+| 4 | **Doble scrollbar** | ✅ Resuelto | Eliminado el scroll interno anidado en `.casas-section` y `.estructura-main`, dejando exclusivamente la barra global. |
+| 5 | **Sidebar visual limpio** | ✅ Implementado | Scroll lateral estilizado y limpio en `sidebar.css` preservando navegación fluida. |
+| 6 | **Estados vacíos** | ✅ Implementado | Implementados en Dashboard, Estructura, Reportes, Usuarios y Líderes (`.empty-state`). |
 | 7 | **Feedback de botones copiar** | ❌ Pendiente | Implementar Clipboard API con feedback visual al copiar credenciales de usuarios. |
 | 8 | **Tooltips del gráfico donut** | ⚠️ Parcial | Leyenda funcional; falta tooltip flotante en los segmentos SVG/Canvas. |
 | 9 | **Mensajes de operación (Toasts)** | ❌ Pendiente | Renderizar `get_flashed_messages()` en `admin_layout.html`. |
-| 10 | **Consistencia de enlaces y botones** | ⚠️ Parcial | Enlaces de reportes y dashboard conectados; conectar enlaces `#` en menú contextual de redes y acciones de líderes/usuarios. |
+| 10 | **Consistencia de enlaces y botones** | ⚠️ Parcial | Conectar enlaces contextuales de estructura y acciones de edición en usuarios/líderes a rutas POST funcionales. |
 
 ---
 
-## 4. Estructura de Base de Datos Requerida
+## 4. Estructura de Base de Datos Actual y Verificada (`serv_comunitario`)
 
-Basado en los formularios, se necesitan estas tablas en `serv_comunitario`:
+Esquema SQL verificado en el entorno de ejecución:
 
 ```sql
+-- --------------------------------------------------------
+-- Tabla: usuario
+-- --------------------------------------------------------
+CREATE TABLE `usuario` (
+  `id` char(36) NOT NULL DEFAULT uuid(),
+  `username` varchar(30) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `tipo_usuario` enum('admin','supervisor','lider_cdp') NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `nombre` varchar(30) NOT NULL,
+  `apellido` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Tabla: red
+-- --------------------------------------------------------
+CREATE TABLE `red` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `supervisor_id` char(36) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_red_supervisor` (`supervisor_id`),
+  CONSTRAINT `fk_red_supervisor` FOREIGN KEY (`supervisor_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Tabla: cdp (Casa de Paz)
+-- --------------------------------------------------------
 CREATE TABLE `cdp` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `codigo` varchar(30) NOT NULL,
   `anfitrion` varchar(30) NOT NULL,
   `telefono` varchar(15) DEFAULT NULL,
   `direccion` varchar(100) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `red_id` int(11) NOT NULL,
-  `usuario_id` char(36) NOT NULL
+  `usuario_id` char(36) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `codigo` (`codigo`),
+  UNIQUE KEY `usuario_id` (`usuario_id`),
+  KEY `fk_cdp_red` (`red_id`),
+  CONSTRAINT `fk_cdp_red` FOREIGN KEY (`red_id`) REFERENCES `red` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_cdp_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `lider`
---
-
+-- Tabla: lider
+-- --------------------------------------------------------
 CREATE TABLE `lider` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(30) NOT NULL,
   `apellido` varchar(30) NOT NULL,
   `rol` enum('Lider','Sublider') NOT NULL,
   `telefono` varchar(15) DEFAULT NULL,
-  `cdp_id` int(11) NOT NULL
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `cdp_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_lider_cdp` (`cdp_id`),
+  CONSTRAINT `fk_lider_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `red`
---
-
-CREATE TABLE `red` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(50) NOT NULL,
-  `supervisor_id` char(36) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `red`
---
-
-INSERT INTO `red` (`id`, `nombre`, `supervisor_id`) VALUES
-(1, 'Cielos Abiertos', NULL);
-
+-- Tabla: reporte
 -- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `reporte`
---
-
 CREATE TABLE `reporte` (
   `id` char(36) NOT NULL DEFAULT uuid(),
   `nro_niños` int(11) NOT NULL DEFAULT 0,
@@ -151,157 +182,39 @@ CREATE TABLE `reporte` (
   `observaciones` text DEFAULT NULL,
   `ofrendas` decimal(10,2) NOT NULL DEFAULT 0.00,
   `cdp_id` int(11) NOT NULL,
-  `enviado_por_lider_id` int(11) DEFAULT NULL
+  `enviado_por_lider_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_reporte_cdp` (`cdp_id`),
+  KEY `fk_reporte_lider` (`enviado_por_lider_id`),
+  CONSTRAINT `fk_reporte_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_reporte_lider` FOREIGN KEY (`enviado_por_lider_id`) REFERENCES `lider` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuario`
---
-
-CREATE TABLE `usuario` (
-  `id` char(36) NOT NULL DEFAULT uuid(),
-  `username` varchar(150) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `tipo_usuario` enum('admin','supervisor','cdp') NOT NULL,
-  `is_active` tinyint(1) DEFAULT 1,
-  `nombre` varchar(30) DEFAULT NULL,
-  `apellido` varchar(30) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `usuario`
---
-
-INSERT INTO `usuario` (`id`, `username`, `password`, `tipo_usuario`, `is_active`, `nombre`, `apellido`) VALUES
-('1d4f7c99-7d51-11f1-bf9e-2016d8516279', 'lider', 'scrypt:32768:8:1$tmeJa8FoOIXrVNBa$d6233d2695ddf1452fd4afbce1b459ba56e2d4c05307a239fe1987a5dce6f62e4f9f54415755f0ce9df853859b9b695b449a045b025f8a9454a00151c326c175', 'cdp', 1, 'Mauricio', 'Leal'),
-('702f2129-7d4e-11f1-bf9e-2016d8516279', 'admin', 'scrypt:32768:8:1$M2qNh7uNiBJLSNrh$f90e51fc287f96a402bc301fbda8c6be26ab4ccc40a9daef55334779a0df71bc656bd5344e35d19f70de175e3f6956227c003f21298d69a83daf03f98fee2f6e', 'admin', 1, 'Mauricio', 'Leal'),
-('ca58cfc6-8337-11f1-8217-2016d8516279', 'super', 'scrypt:32768:8:1$RVN06VZ6PGH6HiZv$a5383b718026a38e08db84fe68694f86a4b8101486f6cbec5df391296e77ac3079111670ed276ff472770dff32d84b08f8e36f46765bfc1d2521a3a9aef7f92', 'supervisor', 1, 'Mauricio', 'Leal');
-
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `cdp`
---
-ALTER TABLE `cdp`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `codigo` (`codigo`),
-  ADD UNIQUE KEY `usuario_id` (`usuario_id`),
-  ADD KEY `fk_cdp_red` (`red_id`);
-
---
--- Indices de la tabla `lider`
---
-ALTER TABLE `lider`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_lider_cdp` (`cdp_id`);
-
---
--- Indices de la tabla `red`
---
-ALTER TABLE `red`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_red_supervisor` (`supervisor_id`);
-
---
--- Indices de la tabla `reporte`
---
-ALTER TABLE `reporte`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_reporte_cdp` (`cdp_id`),
-  ADD KEY `fk_reporte_lider` (`enviado_por_lider_id`);
-
---
--- Indices de la tabla `usuario`
---
-ALTER TABLE `usuario`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `cdp`
---
-ALTER TABLE `cdp`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `lider`
---
-ALTER TABLE `lider`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `red`
---
-ALTER TABLE `red`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `cdp`
---
-ALTER TABLE `cdp`
-  ADD CONSTRAINT `fk_cdp_red` FOREIGN KEY (`red_id`) REFERENCES `red` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_cdp_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `lider`
---
-ALTER TABLE `lider`
-  ADD CONSTRAINT `fk_lider_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `red`
---
-ALTER TABLE `red`
-  ADD CONSTRAINT `fk_red_supervisor` FOREIGN KEY (`supervisor_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `reporte`
---
-ALTER TABLE `reporte`
-  ADD CONSTRAINT `fk_reporte_cdp` FOREIGN KEY (`cdp_id`) REFERENCES `cdp` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_reporte_lider` FOREIGN KEY (`enviado_por_lider_id`) REFERENCES `lider` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
 ```
 
 ---
 
-## 5. Priorización por Fases
+## 5. Priorización por Fases Actualizada
 
-### Fase 1 — Núcleo y Reportes (Completada en su mayoría)
+### Fase 1 — Núcleo, Reportes y Datos (✅ Completada)
 - [x] Conexión centralizada a base de datos con circuit breaker y fallbacks transparentes.
 - [x] Corrección e inserción de reportes (`cdp_service.py` y `db_queries.insertar_reporte` alineados con el esquema SQL).
-- [x] Módulo de reportes dinámico para Admin y Supervisor con filtros combinados (texto, red, casa, fechas) y paginación server-side.
+- [x] Script automatizado `insert_test_data.py` con datos de prueba realistas, hashes Werkzeug y compatibilidad con el esquema.
+- [x] Módulo de reportes dinámico para Admin y Supervisor con filtros multidimensionales (texto, red, casa, fechas) y paginación server-side.
 - [x] Dashboard multi-nivel conectado a datos reales, filtros jerárquicos y caché.
+- [x] Directorios de lectura de Usuarios y Líderes con filtros y paginación conectada a BD.
 - [x] Depuración responsive, solución de doble scrollbar y accesibilidad WCAG 2.2 AA/AAA en estructura y reportes.
 
-### Fase 2 — CRUDs Administrativos (Próximo paso prioritario)
-- [ ] **CRUD Usuarios**: Listar usuarios reales de BD, formulario crear/editar, activar/desactivar y hasheo seguro de contraseñas.
-- [ ] **CRUD Casas de Paz**: Crear, editar, cambiar estado (activa/pausada), asignar usuario y vincular a red.
-- [ ] **CRUD Redes**: Crear, editar, pausar, asignar supervisor y gestionar casas asociadas.
-- [ ] **CRUD Líderes**: Crear, editar, eliminar y vincular a Casas de Paz (Admin y Supervisor).
-- [ ] Incorporación de métodos `POST`, validación de formularios y protección CSRF.
+### Fase 2 — Mutaciones CRUDs Administrativos (Próximo paso prioritario)
+- [ ] **CRUD Usuarios (POST)**: Formulario crear/editar, activar/desactivar (`is_active`) y hasheo seguro de contraseñas.
+- [ ] **CRUD Casas de Paz (POST)**: Crear, editar, pausar/activar, asignar usuario y vincular a red.
+- [ ] **CRUD Redes (POST)**: Crear, editar, pausar/activar, asignar supervisor y gestionar casas asociadas.
+- [ ] **CRUD Líderes (POST)**: Crear, editar, eliminar/desactivar y vincular a Casas de Paz.
+- [ ] Incorporación de validación de formularios backend y protección CSRF.
 
 ### Fase 3 — Home CDP, Perfil y Notificaciones
-- [ ] Historial y resumen dinámico en el panel de Casa de Paz (`index.html`).
-- [ ] Módulo de Perfil: Actualización de datos y cambio de contraseña con verificación de clave actual.
-- [ ] Sistema de Flash Messages / Toasts globales para retroalimentación de operaciones.
+- [ ] Historial y resumen dinámico en el panel de Casa de Paz (`index.html`) según líder en sesión.
+- [ ] Módulo de Perfil: Cambio de contraseña con verificación de clave actual.
+- [ ] Sistema de Flash Messages / Toasts globales en `admin_layout.html` para retroalimentación de operaciones.
 
 ### Fase 4 — Exportación y Polish final
 - [ ] Exportación de reportes y listados a PDF y Excel con filtros aplicados.
