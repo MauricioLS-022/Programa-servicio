@@ -1,4 +1,4 @@
-<header class="header-nav">
+<header id="admin-desktop-header" class="admin-desktop-header header-nav">
   <div class="logo-container">
     {% if has_role("supervisor") %}
     <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>

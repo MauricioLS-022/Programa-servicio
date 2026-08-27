@@ -2,10 +2,7 @@
    HEADER DESKTOP - Navegación Superior
    =============================== */
 
-header:not(.mobile-header) {
-    display: flex;
-}
-
+#admin-desktop-header.header-nav,
 .header-nav {
     display: flex;
     align-items: center;
@@ -98,7 +95,7 @@ header:not(.mobile-header) {
 
 /* Ocultar header desktop en móvil y tablet (<=1024px) */
 @media (max-width: 1024px) {
-    header:not(.mobile-header) {
+    #admin-desktop-header {
         display: none !important;
     }
 }
