@@ -21,61 +21,61 @@
 
         <nav class="sidebar-nav">
             {% if has_role("supervisor") %}
-            <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'dashboard' in request.path else '' }}">
+            <a href="{{ url_for('supervisor.dashboard') }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'estructura' in request.path else '' }}">
+            <a href="{{ url_for('supervisor.estructura') }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'estructura' in request.path else '' }}">
                 <span class="material-symbols-outlined">account_tree</span>
                 <span>Estructura</span>
             </a>
-            <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'reportes' in request.path else '' }}">
+            <a href="{{ url_for('supervisor.reportes') }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'reportes' in request.path else '' }}">
                 <span class="material-symbols-outlined">analytics</span>
                 <span>Reportes</span>
             </a>
-            <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
+            <a href="{{ url_for('supervisor.lider') }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
                 <span class="material-symbols-outlined">leaderboard</span>
                 <span>Líderes</span>
             </a>
-            <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
+            <a href="{{ url_for('supervisor.perfil') }}" class="nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
             {% elif has_role("admin") %}
-            <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'dashboard' in request.path else '' }}">
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">dashboard</span>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'estructura' in request.path else '' }}">
+            <a href="{{ url_for('admin.estructura') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'estructura' in request.path else '' }}">
                 <span class="material-symbols-outlined">account_tree</span>
                 <span>Estructura</span>
             </a>
-            <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
+            <a href="{{ url_for('admin.usuario') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
                 <span class="material-symbols-outlined">group</span>
                 <span>Usuarios</span>
             </a>
-            <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
+            <a href="{{ url_for('admin.lider') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
                 <span class="material-symbols-outlined">leaderboard</span>
                 <span>Líderes</span>
             </a>
-            <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
+            <a href="{{ url_for('admin.reportes') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
                 <span class="material-symbols-outlined">analytics</span>
                 <span>Reportes</span>
             </a>
-            <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'admin' in request.path and 'perfil' in request.path else '' }}">
+            <a href="{{ url_for('admin.perfil') }}" class="nav-item {{ 'active' if 'admin' in request.path and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
-            {% elif has_role("cdp") %}
-            <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'dashboard' in request.path else '' }}">
+            {% elif has_role("lider_cdp") or has_role("cdp") %}
+            <a href="{{ url_for('lider_cdp.dashboard') }}" class="nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'dashboard' in request.path else '' }}">
                 <span class="material-symbols-outlined">home</span>
                 <span>Inicio</span>
             </a>
-            <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'generar_reporte' in request.path else '' }}">
+            <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'generar_reporte' in request.path else '' }}">
                 <span class="material-symbols-outlined">description</span>
                 <span>Generar Reporte</span>
             </a>
-            <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="nav-item {{ 'active' if 'cdp' in request.path and 'perfil' in request.path else '' }}">
+            <a href="{{ url_for('lider_cdp.perfil') }}" class="nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'perfil' in request.path else '' }}">
                 <span class="material-symbols-outlined">person</span>
                 <span>Perfil</span>
             </a>
