@@ -19,13 +19,7 @@
     100% { box-shadow: 0 0 0 0 rgba(22, 101, 52, 0); }
 }
 
-/* Scrollbars */
-.estructura-main ::-webkit-scrollbar { width: 5px; height: 5px; }
-.estructura-main ::-webkit-scrollbar-track { background: transparent; }
-.estructura-main ::-webkit-scrollbar-thumb { background: var(--outline-variant, #ddc0bd); border-radius: 10px; }
-.estructura-main ::-webkit-scrollbar-thumb:hover { background: var(--primary-fixed-dim, #c9b5b4); }
-
-.material-symbols-outlined.filled { font-variation-settings: \'FILL\' 1; }
+.material-symbols-outlined.filled { font-variation-settings: 'FILL' 1; }
 
 /* Scroll arrows ocultas por defecto en desktop */
 .scroll-arrow { display: none; }
@@ -38,12 +32,11 @@
     width: 100%;
     margin: 0 auto;
     padding: 1.5rem 2vw;
-    height: calc(100vh - 70px);
+    min-height: calc(100vh - 70px);
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    overflow-y: auto;
-    font-family: var(--font-body, \'Manrope\', sans-serif);
+    font-family: var(--font-body, 'Manrope', sans-serif);
 }
 
 /* ==========================================================================
@@ -76,7 +69,7 @@
 }
 
 .estructura-main .subtitle {
-    color: var(--on-surface-variant, #5a4240);
+    color: var(--on-surface-variant, #4a3433);
     font-size: 0.88rem;
     line-height: 1.55;
 }
@@ -98,7 +91,7 @@
     gap: 0.5rem;
     font-weight: 700;
     font-size: 0.85rem;
-    font-family: var(--font-body, \'Manrope\', sans-serif);
+    font-family: var(--font-body, 'Manrope', sans-serif);
     padding: 0.6rem 1.25rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -107,27 +100,33 @@
     text-decoration: none;
 }
 
+.estructura-main .btn:focus-visible {
+    outline: 2px solid var(--primary, #390002);
+    outline-offset: 2px;
+}
+
 .estructura-main .btn-outline {
     background-color: #ffffff;
-    border: 1px solid rgba(221, 192, 189, 0.5);
+    border: 1.5px solid rgba(137, 114, 111, 0.4);
     color: var(--primary, #390002);
 }
 
 .estructura-main .btn-outline:hover {
     background-color: #fdfbfb;
+    border-color: var(--primary, #390002);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(57, 0, 2, 0.06);
+    box-shadow: 0 4px 12px rgba(57, 0, 2, 0.08);
 }
 
 .estructura-main .btn-primary {
     background: linear-gradient(to right, var(--primary, #390002), var(--primary-container, #5c0a0a));
-    color: white;
+    color: #ffffff;
     border-radius: 99px;
 }
 
 .estructura-main .btn-primary:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 15px rgba(57, 0, 2, 0.2);
+    box-shadow: 0 6px 15px rgba(57, 0, 2, 0.25);
 }
 
 /* ==========================================================================
@@ -151,13 +150,12 @@
 
 .redes-sidebar {
     background-color: #ffffff;
-    border: 1px solid rgba(137, 114, 111, 0.18);
+    border: 1.5px solid rgba(137, 114, 111, 0.25);
     border-radius: 1.25rem;
     padding: 1.25rem;
     box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
     animation: fadeInUp 0.5s ease-out;
 }
 
@@ -169,7 +167,7 @@
 }
 
 .redes-sidebar .sidebar-title {
-    font-family: var(--font-headline, \'Noto Serif\', serif);
+    font-family: var(--font-headline, 'Noto Serif', serif);
     font-size: 1.35rem;
     font-weight: 700;
     color: var(--primary, #390002);
@@ -183,8 +181,9 @@
 }
 
 .badge-secondary {
-    background-color: #fde047;
-    color: #854d0e;
+    background-color: #fef08a;
+    color: #713f12;
+    border: 1px solid rgba(113, 63, 18, 0.15);
 }
 
 .redes-list {
@@ -200,7 +199,7 @@
     width: 100%;
     text-align: left;
     background-color: #ffffff;
-    border: 1.5px solid rgba(137, 114, 111, 0.18);
+    border: 1.5px solid rgba(137, 114, 111, 0.28);
     padding: 0.85rem 1rem;
     border-radius: 0.85rem;
     cursor: pointer;
@@ -214,7 +213,7 @@
 }
 
 .red-card:focus-visible {
-    outline: 2px solid var(--primary-fixed-dim, #c9b5b4);
+    outline: 2px solid var(--primary, #390002);
     outline-offset: 2px;
 }
 
@@ -249,14 +248,14 @@ button.red-card {
 /* Hover sutil sin saltos */
 .red-card:not(.active):hover {
     background-color: #faf7f5;
-    border-color: rgba(137, 114, 111, 0.35);
-    box-shadow: 0 2px 8px rgba(57, 0, 2, 0.04);
+    border-color: rgba(137, 114, 111, 0.5);
+    box-shadow: 0 2px 8px rgba(57, 0, 2, 0.06);
 }
 
 .red-card.active {
     background-color: #ffffff;
     border: 2px solid var(--primary, #390002);
-    box-shadow: 0 4px 14px rgba(57, 0, 2, 0.05);
+    box-shadow: 0 4px 14px rgba(57, 0, 2, 0.08);
 }
 
 .red-card.active:hover {
@@ -286,8 +285,8 @@ button.red-card {
 }
 
 .red-leader {
-    font-size: 0.65rem;
-    color: #78716c;
+    font-size: 0.68rem;
+    color: #57534e;
     text-transform: uppercase;
     font-weight: 800;
     letter-spacing: 0.03em;
@@ -302,13 +301,13 @@ button.red-card {
 
 .red-count {
     font-size: 0.78rem;
-    color: #78716c;
-    font-weight: 500;
+    color: #57534e;
+    font-weight: 600;
 }
 
 .red-card.active .red-count {
-    color: #44403c;
-    font-weight: 600;
+    color: #2b1111;
+    font-weight: 700;
 }
 
 /* Avatares superpuestos */
@@ -345,10 +344,11 @@ button.red-card {
     color: #390002;
     font-size: 0.6rem;
     font-weight: 800;
+    border: 1.5px solid #ffffff;
 }
 
 .icon-more {
-    color: #78716c;
+    color: #57534e;
 }
 
 .red-card.active .icon-more {
@@ -372,8 +372,8 @@ button.red-card {
 }
 
 .menu-trigger:hover,
-.menu-trigger:focus-visible { background: rgba(0, 0, 0, 0.04); }
-.menu-trigger:focus-visible { outline: 2px solid var(--primary-fixed-dim, #c9b5b4); }
+.menu-trigger:focus-visible { background: rgba(0, 0, 0, 0.06); }
+.menu-trigger:focus-visible { outline: 2px solid var(--primary, #390002); }
 
 .red-menu {
     position: absolute;
@@ -384,9 +384,9 @@ button.red-card {
     min-width: 190px;
     padding: 0.4rem;
     background: #ffffff;
-    border: 1px solid rgba(137, 114, 111, 0.2);
+    border: 1px solid rgba(137, 114, 111, 0.3);
     border-radius: 0.65rem;
-    box-shadow: 0 4px 20px rgba(57, 0, 2, 0.08);
+    box-shadow: 0 4px 20px rgba(57, 0, 2, 0.12);
 }
 
 .red-card.menu-open .red-menu { display: grid; animation: fadeInUp 0.16s ease-out; }
@@ -403,7 +403,8 @@ button.red-card {
     background: transparent;
     color: #2b1111;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     text-align: left;
     text-decoration: none;
     cursor: pointer;
@@ -412,8 +413,8 @@ button.red-card {
 .red-menu a:hover,
 .red-menu button:hover,
 .red-menu a:focus-visible,
-.red-menu button:focus-visible { background: #faf7f5; outline: none; }
-.red-menu .material-symbols-outlined { font-size: 1rem; color: #78716c; }
+.red-menu button:focus-visible { background: #faf7f5; outline: 2px solid var(--primary, #390002); }
+.red-menu .material-symbols-outlined { font-size: 1rem; color: #57534e; }
 .red-menu .menu-danger { color: var(--primary, #390002); }
 
 .red-card.menu-open {
@@ -434,7 +435,7 @@ button.red-card {
 
 .impact-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(57, 0, 2, 0.15);
+    box-shadow: 0 8px 20px rgba(57, 0, 2, 0.2);
 }
 
 .impact-content {
@@ -445,16 +446,16 @@ button.red-card {
 }
 
 .impact-content h3 { color: #ffffff; font-size: 1.05rem; font-weight: 700; }
-.impact-subtitle { color: rgba(255, 255, 255, 0.75); font-size: 0.75rem; margin-bottom: 0.4rem; }
-.impact-number { color: #ffffff; font-family: var(--font-headline, \'Noto Serif\', serif); font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
-.impact-note { color: rgba(255, 255, 255, 0.6); font-size: 0.72rem; font-style: italic; margin-top: 0.25rem; }
+.impact-subtitle { color: rgba(255, 255, 255, 0.95); font-size: 0.75rem; margin-bottom: 0.4rem; }
+.impact-number { color: #ffffff; font-family: var(--font-headline, 'Noto Serif', serif); font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+.impact-note { color: #ffdad6; font-size: 0.72rem; font-style: italic; margin-top: 0.25rem; }
 
 .watermark-icon {
     position: absolute;
     bottom: -15px;
     right: -10px;
     font-size: 5.5rem;
-    color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.12);
     transition: transform 0.5s ease;
     z-index: 1;
     pointer-events: none;
@@ -466,8 +467,6 @@ button.red-card {
 .casas-section {
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    padding-right: 1rem;
     padding-bottom: 2rem;
 }
 
@@ -477,17 +476,17 @@ button.red-card {
     align-items: center;
     position: sticky;
     top: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(10px);
     z-index: 20;
     padding: 1.25rem 1.5rem 0.75rem 1.25rem;
-    border-bottom: 1px solid rgba(137, 114, 111, 0.15);
+    border-bottom: 1px solid rgba(137, 114, 111, 0.2);
     margin-bottom: 1.5rem;
     border-radius: 1rem;
 }
 
 .section-title {
-    font-family: var(--font-headline, \'Noto Serif\', serif);
+    font-family: var(--font-headline, 'Noto Serif', serif);
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary, #390002);
@@ -496,7 +495,7 @@ button.red-card {
 
 .section-subtitle {
     font-size: 0.85rem;
-    color: #2b1111;
+    color: #4a3433;
     margin-top: 0.2rem;
 }
 
@@ -508,24 +507,24 @@ button.red-card {
 
 .search-bar input {
     background-color: #ffffff;
-    border: 1px solid rgba(137, 114, 111, 0.35);
+    border: 1.5px solid rgba(137, 114, 111, 0.4);
     border-radius: 99px;
     padding: 0.65rem 1.25rem 0.65rem 2.5rem;
     width: 100%;
     font-size: 0.85rem;
-    color: #2b1111;
+    color: #1c1917;
     outline: none;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
     transition: all 0.3s ease;
 }
 
 .search-bar input::placeholder {
-    color: #5a4240;
+    color: #6e5553;
 }
 
 .search-bar input:focus {
     border-color: var(--primary, #390002);
-    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.15);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.18);
 }
 
 .icon-search {
@@ -555,13 +554,13 @@ button.red-card {
     padding: 1.5rem;
     border-radius: 1.25rem;
     box-shadow: 0 10px 25px -4px rgba(57, 0, 2, 0.06), 0 4px 12px -2px rgba(57, 0, 2, 0.03);
-    border: 1px solid rgba(137, 114, 111, 0.25);
+    border: 1.5px solid rgba(137, 114, 111, 0.28);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .casa-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 16px 32px rgba(57, 0, 2, 0.1);
+    box-shadow: 0 16px 32px rgba(57, 0, 2, 0.12);
     border-color: var(--primary, #390002);
 }
 
@@ -598,7 +597,7 @@ button.red-card {
     font-weight: 700;
     font-size: 1.05rem;
     margin-bottom: 0.2rem;
-    color: #2b1111;
+    color: #1c1917;
 }
 
 .casa-zone {
@@ -612,7 +611,7 @@ button.red-card {
 .status {
     font-size: 0.65rem;
     font-weight: 800;
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.65rem;
     border-radius: 99px;
     letter-spacing: 0.05em;
 }
@@ -621,6 +620,7 @@ button.red-card {
 .status-active {
     background-color: #dcfce7;
     color: #14532d;
+    border: 1px solid rgba(20, 83, 45, 0.2);
     animation: pulseSoft 2s infinite;
 }
 
@@ -628,7 +628,8 @@ button.red-card {
 .status-paused,
 .status-pendiente {
     background-color: #f5f5f4;
-    color: #78716c;
+    color: #3b3936;
+    border: 1px solid rgba(120, 113, 108, 0.25);
 }
 
 .casa-details {
@@ -643,12 +644,12 @@ button.red-card {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.85rem;
-    color: #2b1111;
+    color: #231919;
 }
 
 .detail-row span.material-symbols-outlined {
     font-size: 1.2rem;
-    color: #78716c;
+    color: #5c4342;
 }
 
 .detail-row strong {
@@ -658,7 +659,7 @@ button.red-card {
 
 .casa-footer {
     padding-top: 1rem;
-    border-top: 1px dashed rgba(221, 192, 189, 0.4);
+    border-top: 1px dashed rgba(137, 114, 111, 0.35);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -682,6 +683,13 @@ button.red-card {
     gap: 0.2rem;
     text-decoration: none;
     transition: gap 0.3s ease;
+    border-radius: 4px;
+    padding: 0.15rem 0.3rem;
+}
+
+.btn-manage:focus-visible {
+    outline: 2px solid var(--primary, #390002);
+    outline-offset: 2px;
 }
 
 .casa-card:hover .btn-manage {
@@ -691,8 +699,8 @@ button.red-card {
 
 /* Botón Añadir Casa */
 .casa-add-card {
-    border: 2px dashed rgba(137, 114, 111, 0.45);
-    background-color: rgba(255, 255, 255, 0.6);
+    border: 2px dashed rgba(87, 0, 2, 0.45);
+    background-color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(4px);
     border-radius: 1.25rem;
     display: flex;
@@ -708,12 +716,12 @@ button.red-card {
 .add-icon {
     width: 3.5rem;
     height: 3.5rem;
-    background-color: #f5f5f4;
+    background-color: #fee9e9;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #78716c;
+    color: var(--primary, #390002);
     margin-bottom: 1rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -722,11 +730,11 @@ button.red-card {
     background-color: #ffffff;
     border-color: var(--primary, #390002);
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(57, 0, 2, 0.06);
+    box-shadow: 0 10px 25px rgba(57, 0, 2, 0.08);
 }
 
 .casa-add-card:hover .add-icon {
-    background-color: #fee2e2;
+    background-color: #fdd5d5;
     color: var(--primary, #390002);
     transform: scale(1.1) rotate(90deg);
 }
@@ -739,8 +747,8 @@ button.red-card {
 }
 
 .casa-add-card p {
-    font-size: 0.75rem;
-    color: #2b1111;
+    font-size: 0.78rem;
+    color: #4a3433;
     padding: 0 1rem;
 }
 
@@ -752,21 +760,21 @@ button.red-card {
     justify-content: center;
     gap: 0.35rem;
     padding: 0;
-    color: #78716c;
+    color: #57534e;
     text-align: center;
 }
 
-.empty-state .material-symbols-outlined { color: #ddc0bd; font-size: 2rem; }
+.empty-state .material-symbols-outlined { color: #8c716f; font-size: 2rem; }
 .empty-state strong { color: var(--primary, #390002); font-size: 0.85rem; }
-.empty-state span:last-child { font-size: 0.7rem; color: #78716c; }
+.empty-state span:last-child { font-size: 0.75rem; color: #57534e; }
 .empty-state-sidebar { min-height: 8rem; padding: 1rem; }
 .empty-state-casas {
     grid-column: 1 / -1;
     min-height: 12rem;
     padding: 2rem;
-    border: 1px dashed rgba(137, 114, 111, 0.3);
+    border: 1px dashed rgba(137, 114, 111, 0.35);
     border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .casa-card.is-filtered-out,
@@ -798,7 +806,7 @@ button.red-card {
     }
 
     .estructura-main > .page-header {
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         align-items: flex-start;
         gap: 0.6rem;
@@ -877,12 +885,12 @@ button.red-card {
         height: auto;
         padding: 0.55rem 1.15rem;
         border-radius: 99px;
-        border: 1.5px solid rgba(137, 114, 111, 0.25);
+        border: 1.5px solid rgba(137, 114, 111, 0.35);
         background: #ffffff;
         cursor: pointer;
         opacity: 1;
         transform: none !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
@@ -899,16 +907,16 @@ button.red-card {
 
     .red-card:not(.active):hover {
         background-color: #faf7f5;
-        border-color: rgba(137, 114, 111, 0.4);
+        border-color: rgba(137, 114, 111, 0.5);
         transform: none !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     }
 
     .red-card.active {
         background: var(--primary, #390002) !important;
         border: 1.5px solid var(--primary, #390002) !important;
         border-left: 1.5px solid var(--primary, #390002) !important;
-        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.15);
+        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.2);
         transform: none !important;
         opacity: 1;
     }
@@ -923,7 +931,7 @@ button.red-card {
         font-size: 0.82rem;
         font-weight: 700;
         white-space: nowrap;
-        color: #2b1111;
+        color: #1c1917;
     }
 
     .red-card.active .red-name {
@@ -932,14 +940,15 @@ button.red-card {
 
     .red-count {
         font-size: 0.78rem;
-        font-weight: 400;
+        font-weight: 500;
         white-space: nowrap;
         margin-left: 0.15rem;
-        color: #78716c;
+        color: #57534e;
     }
 
     .red-card.active .red-count {
-        color: rgba(255, 255, 255, 0.85) !important;
+        color: #ffdad6 !important;
+        font-weight: 500;
     }
 
     .red-card-all {
@@ -947,7 +956,7 @@ button.red-card {
     }
 
     .red-card-all:not(.active) .red-name {
-        color: #2b1111;
+        color: #1c1917;
     }
 
     .red-card-all.active {
@@ -955,9 +964,12 @@ button.red-card {
         border-color: var(--primary, #390002) !important;
     }
 
-    .red-card-all.active .red-name,
-    .red-card-all.active .red-count {
+    .red-card-all.active .red-name {
         color: #ffffff !important;
+    }
+
+    .red-card-all.active .red-count {
+        color: #ffdad6 !important;
     }
 
     .red-leader,
