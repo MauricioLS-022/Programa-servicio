@@ -12,42 +12,39 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Requerimiento | Estado actual | Evidencia y trabajo pendiente |
 |---|---|---|---|
-| 1 | **INSERT de reportes en BD** | ⚠️ Defectuoso | `services/cdp_service.py` intenta hacer `INSERT`, pero usa nombres de columnas que no coinciden con este esquema (`regulares` vs. `nro_regulares`, `horaini` vs. `hr_inicio`, etc.). No asigna correctamente `cdp_id` ni `enviado_por_lider_id`. |
-| 2 | **CRUD de Usuarios** | ❌ Pendiente | `routes/admin_routes.py` solo renderiza plantillas. `usuarios_admin.html` y `form_usuario.html` contienen datos demo y botones sin POST funcional. |
-| 3 | **CRUD de Casas de Paz** | ❌ Pendiente | Las rutas de consulta, creación, edición y eliminación no ejecutan operaciones sobre la BD. |
-| 4 | **CRUD de Redes** | ❌ Pendiente | `red/editar` solo muestra el formulario; las acciones del menú de estructura usan enlaces `#`. |
-| 5 | **CRUD de Líderes** | ❌ Pendiente | `lider_admin.html` muestra filas estáticas y `lider/editar` no procesa formularios. |
-| 6 | **Dashboard con datos reales** | ✅ Parcialmente cumplido | `dashboard_service.py` y `db_queries.py` tienen consultas reales, métricas por nivel, filtros jerárquicos, modo mock y estados vacíos. Debe verificarse y completar la consistencia de todas las métricas. |
-| 7 | **Vista de reportes enviados para CDP** | ✅ Maquetado / ⚠️ Datos demo | `index.html` ya tiene dashboard, acceso a nuevo reporte y estado vacío, pero sus métricas, historial y equipo están hardcodeados. |
-| 8 | **Filtros de reportes** | ❌ Pendiente | `reportes_admin.html` tiene controles visuales sin `name`, `action` ni backend para buscar por texto, red, CDP o fechas. |
-| 9 | **Paginación real** | ❌ Pendiente | Los controles de paginación de reportes y líderes son decorativos y no consultan páginas en BD. |
-| 10 | **Exportar PDF/Excel** | ❌ Pendiente | Los botones existen, pero no hay endpoints ni generación de archivos. El dashboard usa un `alert()` simulado. |
-| 11 | **Búsqueda en tiempo real** | ⚠️ Parcial | El dashboard busca en selectores y puede enviar el formulario. Usuarios, líderes y estructura tienen inputs visuales sin filtrado conectado. |
-| 12 | **Flash messages y toasts** | ❌ Pendiente | Solo existe un `flash()` para accesos no autorizados en `utils/auth.py`. Los layouts no renderizan mensajes y los CRUD no los generan. |
-| 13 | **Contactar por WhatsApp** | ⚠️ Parcial | El dashboard general construye enlaces `wa.me` usando el teléfono del líder. La alerta zonal no devuelve el teléfono y falta normalización robusta del número. |
-| 14 | **Gestión de contraseña** | ❌ Pendiente | El login usa hashes Werkzeug, pero el perfil solo muestra usuario y rol; no existe formulario ni ruta para cambiar contraseña. |
-| 15 | **Vistas de supervisor** | ⚠️ Parcial | Dashboard y estructura tienen rutas, autorización y aislamiento por red. Reportes y líderes solo renderizan maquetas sin contexto de BD. |
+| 1 | **INSERT de reportes en BD** | ✅ Implementado | `services/cdp_service.py` y `db_queries.insertar_reporte()` ya están alineados con el esquema SQL (`nro_niños`, `nro_regulares`, `nro_visitas`, `nro_comprometidos`, `reconciliaciones`, `confesiones`, `cesta_amor`, `hr_inicio`, `hr_fin`, `tema`, `observaciones`, `ofrendas`, `cdp_id`, `enviado_por_lider_id`). Genera `UUID()` e invalida caché de dashboard. |
+| 2 | **CRUD de Usuarios** | ❌ Pendiente | `routes/admin_routes.py` solo renderiza plantillas. `usuarios_admin.html` y `form_usuario.html` contienen datos demo y botones sin procesamiento POST a base de datos. |
+| 3 | **CRUD de Casas de Paz** | ❌ Pendiente | Las rutas de creación, edición y eliminación de CDP no ejecutan operaciones `INSERT`/`UPDATE`/`DELETE` en BD. |
+| 4 | **CRUD de Redes** | ❌ Pendiente | `red/editar` solo muestra el formulario; las acciones del menú contextual de estructura requieren conectar rutas y lógica de persistencia. |
+| 5 | **CRUD de Líderes** | ❌ Pendiente | `lider_admin.html` muestra datos maquetados y `lider/editar` no procesa formularios a BD. |
+| 6 | **Dashboard con datos reales** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` implementan consultas reales, métricas por nivel (General, Red, CDP), filtros jerárquicos, modo mock, sistema de caché y estados vacíos. |
+| 7 | **Vista de reportes enviados para CDP** | ⚠️ Parcial | `cdp/dashboard` (`index.html`) tiene el diseño y acceso al formulario de reporte; falta conectar el historial y métricas dinámicas del líder logueado. |
+| 8 | **Filtros de reportes** | ✅ Implementado | `templates/reportes_admin.html`, `services/report_service.py` y `db_queries.get_reportes()` procesan búsqueda por texto (`q`), red (`red_id`), Casa de Paz (`cdp_id`) y rango de fechas (`fecha_desde`, `fecha_hasta`) tanto en base de datos como en modo mock. |
+| 9 | **Paginación real** | ⚠️ Parcial | **Reportes** ya cuenta con paginación server-side dinámica (`page`, `per_page`, cálculo de `total_paginas`). Falta implementar paginación conectada en **Usuarios** y **Líderes**. |
+| 10 | **Exportar PDF/Excel** | ❌ Pendiente | Botones visuales maquetados; falta implementar librerías de generación (e.g. ReportLab / openpyxl) y endpoints de descarga. |
+| 11 | **Búsqueda en tiempo real** | ⚠️ Parcial | Filtros por GET implementados en Reportes y Dashboard; en Estructura el filtrado por chips de red es dinámico en frontend. Falta filtrado en tiempo real sin recarga para tablas de Usuarios y Líderes. |
+| 12 | **Flash messages y toasts** | ❌ Pendiente | Falta integrar contenedor visual de `get_flashed_messages()` en `admin_layout.html` y emitir mensajes tras operaciones CRUD. |
+| 13 | **Contactar por WhatsApp** | ⚠️ Parcial | El dashboard genera enlaces `wa.me` con el teléfono del líder. Falta normalización de código de país y soporte en listados de líderes. |
+| 14 | **Gestión de contraseña** | ❌ Pendiente | Login usa hashes seguros (Werkzeug scrypt); falta formulario en Perfil para que los usuarios cambien su clave verificando la actual. |
+| 15 | **Vistas de supervisor** | ⚠️ Avanzado | Dashboard, Estructura y Reportes cuentan con rutas dedicadas, autorización de rol y aislamiento automático por red (`supervisor_red_id`). Falta dinamizar la vista de Líderes del supervisor. |
 
 ### Funcionalidades ya cumplidas o disponibles
 
-- Login con validación de hashes Werkzeug y migración de contraseñas legacy después de un acceso válido.
-- Decoradores de autenticación, autorización por rol y validación de propiedad de la URL.
-- Conexión centralizada a MySQL mediante `database.py`, con circuit breaker y cierre de conexiones en los servicios principales.
-- Dashboard con vistas general, red y Casa de Paz.
-- Consultas agregadas para asistencia, ofrendas, conversiones, rankings, tendencias y alertas.
-- Modo mock explícito para desarrollo y estados vacíos cuando la BD está disponible pero no tiene datos.
-- Navegación responsive con sidebar, header móvil y barra inferior móvil.
-- Filtros locales de redes en la vista de estructura.
+- **Autenticación y Seguridad básica**: Login con validación de hashes Werkzeug, migración automática de contraseñas legacy, decoradores de sesión, verificación de roles (`admin`, `supervisor`, `cdp`) y protección contra manipulación de UUID en URL.
+- **Conectividad y Resiliencia**: Conexión centralizada a MySQL con `database.py`, circuit breaker, fallback transparente a `mock_data.py` cuando no hay BD activa y liberación de conexiones con `finally`.
+- **Módulo de Reportes (Admin & Supervisor)**: Consultas completas de reportes, formulario de filtros multidimensional (texto, red, casa, fechas), paginación real, modal de detalle/edición estructurado y vista responsive adaptada con botones de acción alineados.
+- **Módulo de Estructura**: Visualización jerárquica de redes y casas de paz, filtrado interactivo por chips, avatares representativos de casas (`home`), eliminación de doble scrollbar (scroll global único), resolución de bugs de visibilidad en tablet/móvil y contraste de colores bajo pautas WCAG 2.2 AA/AAA.
+- **Dashboard Multi-Nivel**: Métricas consolidadas, filtros dinámicos, ranking de casas, alertas de asistencia/ofrendas y caché en memoria.
+- **Navegación e Identidad Visual**: Menú lateral responsive (`sidebar.css`) sin scrollbars invasivas, encabezado unificado `#admin-desktop-header`, header móvil y barra de navegación inferior móvil.
 
-### Inconsistencias técnicas confirmadas
+### Inconsistencias técnicas y pendientes inmediatos
 
-- El formulario de reporte envía `lider_id`, pero la ruta no lo procesa y el servicio espera `anfitrion`.
-- El servicio de reportes intenta insertar columnas que no aparecen en la tabla `reporte` documentada.
-- La home CDP usa enlaces hardcodeados como `/generar_reporte` y `/historial` en lugar de rutas con `url_for()`.
-- Las rutas admin de edición no incluyen métodos `POST` ni identificadores de entidad para distinguir creación y edición.
-- `api_routes.py` abre una conexión para comprobar disponibilidad y no la cierra.
-- La API de dashboard no valida explícitamente sesión ni rol.
-- El esquema SQL no contiene `email`, aunque algunos helpers de perfil intentan consultarlo y actualizarlo.
+1. **CRUDs Admin**: Conectar formularios de creación y edición (Usuarios, Redes, Casas de Paz, Líderes) con rutas `POST`, validación de datos y operaciones en base de datos.
+2. **Protección CSRF**: Incorporar tokens CSRF en todos los formularios HTML antes de habilitar mutaciones `POST`.
+3. **Módulo de Perfil**: Agregar endpoints y formularios para actualizar datos personales y cambiar contraseñas con hash.
+4. **Exportación de Reportes**: Crear generadores de archivos PDF y Excel con filtros aplicados.
+5. **Historial en Home CDP**: Conectar las métricas y reportes recientes en la vista de Casa de Paz (`index.html`).
+6. **Flash Messages**: Añadir componente Toast / Alert en el layout principal para retroalimentar al usuario en cada acción.
 
 ---
 
@@ -55,33 +52,31 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Problema | Estado / severidad | Detalle |
 |---|---|---|---|
-| 1 | **Contraseñas en texto plano** | ✅ Resuelto parcialmente | El login valida hashes Werkzeug y migra registros legacy. Debe asegurarse que todos los nuevos usuarios se creen siempre con hash y que no se expongan contraseñas en formularios. |
-| 2 | **Sin protección CSRF** | 🔴 Alta / Pendiente | Los formularios POST no incluyen tokens CSRF. Integrar Flask-WTF o una protección equivalente antes de activar los CRUD. |
-| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` permite usuario `root` y contraseña vacía por defecto. En producción deben ser obligatorias las variables de entorno y una cuenta con permisos mínimos. |
-| 4 | **Manejo de conexiones** | ⚠️ Parcial | La mayoría de servicios usa `finally` para cerrar conexiones, pero todavía deben revisarse API, cursores y cualquier nueva operación CRUD. |
-| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG` y desarrollo están activos por defecto. La configuración de producción debe impedir trazas y secretos de desarrollo. |
-| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Cuando no hay BD, el login acepta cualquier usuario y contraseña como CDP. Debe limitarse estrictamente a desarrollo y no estar disponible en producción. |
-| 7 | **API sin autorización explícita** | 🟡 Media / Pendiente | `/api/dashboard/datos` debe exigir sesión, rol permitido y aplicar el aislamiento de red del supervisor. |
-| 8 | **Ausencia de validación de entrada** | 🟡 Media / Pendiente | Formularios y parámetros deben validar tipos, rangos numéricos, fechas, relaciones existentes y errores de duplicados antes de persistir. |
+| 1 | **Contraseñas en texto plano** | ✅ Resuelto en Login | El login valida hashes Werkzeug y migra registros legacy. Garantizar que el alta de usuarios en el CRUD siempre aplique `generate_password_hash()`. |
+| 2 | **Sin protección CSRF** | 🔴 Alta / Pendiente | Los formularios POST no incluyen tokens CSRF. Implementar protección (Flask-WTF o token de sesión) al activar los CRUDs. |
+| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` permite usuario `root` y contraseña vacía por defecto. En producción deben ser obligatorias las variables de entorno (`.env`). |
+| 4 | **Manejo de conexiones** | ✅ Bueno | Servicios principales (`cdp_service`, `report_service`, `dashboard_service`) usan `try/finally` para asegurar el cierre de conexiones. |
+| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG` y desarrollo están activos por defecto en `run.py`/`config.py`. Desactivar en entorno de producción. |
+| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Modo mock habilitado para desarrollo sin BD. Debe quedar inhabilitado en producción. |
+| 7 | **API sin autorización explícita** | 🟡 Media / Pendiente | Validar sesión, rol y aislamiento de supervisor en `/api/dashboard/datos`. |
+| 8 | **Ausencia de validación de entrada** | 🟡 Media / Pendiente | Validar tipos, rangos numéricos, fechas y relaciones antes de ejecutar `INSERT`/`UPDATE` en los nuevos CRUDs. |
 
 ---
 
 ## 3. Mejoras UI/UX
 
-| # | Mejora | Estado actual | Trabajo pendiente |
+| # | Mejora | Estado actual | Detalle / Trabajo pendiente |
 |---|---|---|---|
-| 1 | **Home CDP** | ✅ Maquetada / ⚠️ Parcial | Ya tiene contenido visual y estado vacío; falta cargar métricas, historial y equipo reales. |
-| 2 | **Responsive en móviles** | ⚠️ Parcial | Existen contenedores `.table-responsive` y estilos responsive; verificar que todas las tablas apliquen `overflow-x: auto` y no usen datos rígidos. |
-| 3 | **Estados vacíos** | ⚠️ Parcial | Dashboard y estructura ya tienen estados vacíos. Reportes, usuarios y líderes deben mostrar estados basados en resultados reales. |
-| 4 | **Feedback de botones copiar** | ❌ Pendiente | Implementar Clipboard API, cambio temporal a icono de confirmación y mensaje accesible. |
-| 5 | **Tooltips del gráfico donut** | ⚠️ Parcial | La leyenda tiene `title` y cambia el número central al hacer hover; falta tooltip visual y soporte de interacción directa sobre los segmentos. |
-| 6 | **Eliminar medidor redundante** | ❌ Pendiente | Definir y retirar únicamente la barra que duplica el cumplimiento; usar el espacio para mostrar casas pendientes de reportar. |
-| 7 | **Búsqueda sin recargar** | ⚠️ Parcial | Dashboard funciona de forma limitada. Conectar búsqueda en usuarios, líderes, estructura y reportes. |
-| 8 | **Sidebar móvil** | ✅ Parcialmente cumplido | El menú móvil, overlay y bottom nav existen. Debe probarse en 375px, 768px y con navegación completa del supervisor. |
-| 9 | **Mensajes de operación** | ❌ Pendiente | Renderizar `get_flashed_messages()` en los layouts y generar mensajes de éxito/error en todas las operaciones. |
-| 10 | **Consistencia de enlaces y botones** | ❌ Pendiente | Reemplazar `href="#"`, `alert()` y URLs hardcodeadas por rutas Flask y acciones reales. |
-| 11 | **CSS duplicado** | 🟡 Baja / Pendiente | Revisar variables y estilos repetidos entre `style.css` y `admin.css` después de terminar las funciones principales. |
-| 12 | **Nombres de archivos** | 🟡 Baja / Pendiente | Evitar espacios en nuevos nombres y migrar gradualmente nombres legacy sin romper rutas existentes. |
+| 1 | **Home CDP** | ⚠️ Parcial | Maquetada; falta enlazar historial de reportes y equipo de líderes reales. |
+| 2 | **Responsive en móviles y tablets** | ✅ Avanzado | Tablas con visualización tipo tarjeta en mobile, chips horizontales con scroll táctil, header desktop oculto limpiamente vía `#admin-desktop-header` y corrección de bugs de visualización en resoluciones intermedias (769px–1024px). |
+| 3 | **Accesibilidad y Contraste de Color** | ✅ Implementado en Estructura | Colores ajustados bajo estándar WCAG 2.2 AA/AAA en `estructura.css`, selectores de foco visibles (`:focus-visible`) e insignias con alto contraste. |
+| 4 | **Doble scrollbar** | ✅ Resuelto en Estructura | Eliminado el scroll interno anidado en `.casas-section` y `.estructura-main`, dejando exclusivamente la barra de desplazamiento global de la página. |
+| 5 | **Sidebar visual limpio** | ✅ Implementado | Eliminadas las barras de desplazamiento grisáceas del menú lateral en `sidebar.css` preservando la funcionalidad de scroll táctil en dispositivos compactos. |
+| 6 | **Estados vacíos** | ✅ Parcial | Implementados en Dashboard, Estructura y Reportes (`.empty-state`). Pendiente agregar en Usuarios y Líderes. |
+| 7 | **Feedback de botones copiar** | ❌ Pendiente | Implementar Clipboard API con feedback visual al copiar credenciales de usuarios. |
+| 8 | **Tooltips del gráfico donut** | ⚠️ Parcial | Leyenda funcional; falta tooltip flotante en los segmentos SVG/Canvas. |
+| 9 | **Mensajes de operación (Toasts)** | ❌ Pendiente | Renderizar `get_flashed_messages()` en `admin_layout.html`. |
+| 10 | **Consistencia de enlaces y botones** | ⚠️ Parcial | Enlaces de reportes y dashboard conectados; conectar enlaces `#` en menú contextual de redes y acciones de líderes/usuarios. |
 
 ---
 
@@ -289,43 +284,27 @@ COMMIT;
 
 ## 5. Priorización por Fases
 
-### Fase 1 — Corrección del núcleo
-1. Confirmar que la BD instalada coincide con el esquema de este documento
-2. Corregir el INSERT de reportes y relacionarlo con `cdp_id` y `enviado_por_lider_id`
-3. Alinear nombres de campos del formulario, servicio y tabla `reporte`
-4. Validar tipos, rangos, fechas y relaciones antes de guardar
-5. Revisar cierre de conexiones y cursores en todos los endpoints
-6. Mantener el login con hashes Werkzeug y eliminar cualquier creación de usuarios en texto plano
+### Fase 1 — Núcleo y Reportes (Completada en su mayoría)
+- [x] Conexión centralizada a base de datos con circuit breaker y fallbacks transparentes.
+- [x] Corrección e inserción de reportes (`cdp_service.py` y `db_queries.insertar_reporte` alineados con el esquema SQL).
+- [x] Módulo de reportes dinámico para Admin y Supervisor con filtros combinados (texto, red, casa, fechas) y paginación server-side.
+- [x] Dashboard multi-nivel conectado a datos reales, filtros jerárquicos y caché.
+- [x] Depuración responsive, solución de doble scrollbar y accesibilidad WCAG 2.2 AA/AAA en estructura y reportes.
 
-### Fase 2 — CRUD completo
-7. CRUD Usuarios: listar, crear, editar, activar/desactivar y eliminar
-8. CRUD Casas de Paz: crear, editar, eliminar y vincular usuario/red
-9. CRUD Redes: crear, editar, eliminar y asignar supervisor
-10. CRUD Líderes: crear, editar, eliminar y vincular Casa de Paz
-11. Incorporar POST, PRG, validaciones y flash messages en cada operación
+### Fase 2 — CRUDs Administrativos (Próximo paso prioritario)
+- [ ] **CRUD Usuarios**: Listar usuarios reales de BD, formulario crear/editar, activar/desactivar y hasheo seguro de contraseñas.
+- [ ] **CRUD Casas de Paz**: Crear, editar, cambiar estado (activa/pausada), asignar usuario y vincular a red.
+- [ ] **CRUD Redes**: Crear, editar, pausar, asignar supervisor y gestionar casas asociadas.
+- [ ] **CRUD Líderes**: Crear, editar, eliminar y vincular a Casas de Paz (Admin y Supervisor).
+- [ ] Incorporación de métodos `POST`, validación de formularios y protección CSRF.
 
-### Fase 3 — Dashboard y reportes
-12. Completar la home CDP con historial, resumen y equipo reales
-13. Construir la vista de reportes con consultas y joins reales
-14. Implementar filtros por texto, red, Casa de Paz y rango de fechas
-15. Implementar paginación server-side
-16. Completar reportes y líderes del supervisor con aislamiento por red
-17. Proteger API y endpoints de consulta con sesión, rol y permisos
+### Fase 3 — Home CDP, Perfil y Notificaciones
+- [ ] Historial y resumen dinámico en el panel de Casa de Paz (`index.html`).
+- [ ] Módulo de Perfil: Actualización de datos y cambio de contraseña con verificación de clave actual.
+- [ ] Sistema de Flash Messages / Toasts globales para retroalimentación de operaciones.
 
-### Fase 4 — UX y polish
-18. Renderizar toasts de éxito y error en layouts y formularios
-19. Agregar estados vacíos a reportes, usuarios y líderes
-20. Implementar búsqueda local sin recarga en tablas y estructura
-21. Implementar feedback de copiado de credenciales
-22. Mejorar tooltips e interacción accesible del gráfico donut
-23. Retirar el medidor redundante y mostrar casas pendientes de reporte
-24. Completar responsive de tablas y navegación móvil
-25. Reemplazar enlaces `#`, `alert()` y URLs hardcodeadas por acciones reales
-
-### Fase 5 — Seguridad y operación
-26. Integrar protección CSRF en formularios POST
-27. Hacer obligatorias las credenciales de producción mediante variables de entorno
-28. Desactivar debug y modo demo en producción
-29. Agregar cambio de contraseña con hash y verificación de contraseña actual
-30. Implementar exportación PDF/Excel con permisos y filtros aplicados
-31. Actualizar este documento después de cada fase completada
+### Fase 4 — Exportación y Polish final
+- [ ] Exportación de reportes y listados a PDF y Excel con filtros aplicados.
+- [ ] Búsqueda en tiempo real sin recarga en tablas de Usuarios y Líderes.
+- [ ] Tooltips interactivos y accesibles en gráficos del dashboard.
+- [ ] Configuración segura de producción (variables de entorno obligatorias, `DEBUG=False`, desactivación de modo mock).
