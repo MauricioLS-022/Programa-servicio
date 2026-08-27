@@ -22,10 +22,10 @@
         </div>
         {% if not has_role("supervisor") %}
         <div class="header-actions">
-            <a href="/admin/red/editar" class="btn btn-outline">
+            <a href="{{ url_for('admin.red_crear') }}" class="btn btn-outline">
                 <span class="material-symbols-outlined icon">hub</span> Nueva Red
             </a>
-            <a href="/admin/casa_de_paz/editar" class="btn btn-primary">
+            <a href="{{ url_for('admin.casa_de_paz_crear') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined icon filled">add_home</span> Nueva Casa de Paz
             </a>
         </div>
@@ -68,7 +68,7 @@
                             <div class="red-header">
                                 <span class="red-name">{{ red.nombre }}</span>
                             </div>
-                            <p class="red-leader">LÍDER: {{ red.supervisor }}</p>
+                            <p class="red-leader">Supervisor: {{ red.supervisor }}</p>
                             <div class="red-stats">
                                 {% if red.total_casas > 0 %}
                                 <div class="avatars">

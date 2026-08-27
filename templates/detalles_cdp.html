@@ -18,11 +18,11 @@
   </div>
 
   <div class="detail-actions">
-    <a href="/admin/casa_de_paz/editar" class="btn-secondary">
+    <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or 1) }}" class="btn-secondary">
       <span class="material-symbols-outlined">edit</span>
       Editar
     </a>
-    <a href="/admin/lider/editar" class="btn-primary-detail">
+    <a href="{{ url_for('admin.lider_crear') }}" class="btn-primary-detail">
       <span class="material-symbols-outlined">person_add</span>
       Añadir líder
     </a>

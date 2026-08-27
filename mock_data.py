@@ -29,7 +29,7 @@ def get_mock_usuarios():
     return [
         {'id': 'mock-admin', 'username': 'mrodriguez', 'nombre': 'Mateo', 'apellido': 'Rodriguez', 'rol': 'admin', 'is_active': 1},
         {'id': 'mock-supervisor', 'username': 'lmendoza', 'nombre': 'Lucía', 'apellido': 'Mendoza', 'rol': 'supervisor', 'is_active': 1},
-        {'id': 'mock-lider', 'username': 'asoler', 'nombre': 'Andrés', 'apellido': 'Soler', 'rol': 'cdp', 'is_active': 0},
+        {'id': 'mock-lider', 'username': 'asoler', 'nombre': 'Andrés', 'apellido': 'Soler', 'rol': 'lider_cdp', 'is_active': 0},
     ]
 
 

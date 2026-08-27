@@ -14,13 +14,13 @@ def login():
     p = ""
 
     # Helper para redirigir según el rol
-    def _redirect_by_role(role, usuario_id):
+    def _redirect_by_role(role):
         if role == "admin":
-            return redirect(url_for('admin.dashboard', id=usuario_id))
+            return redirect(url_for('admin.dashboard'))
         elif role == "supervisor":
-            return redirect(url_for('supervisor.dashboard', id=usuario_id))
-        else:  # cdp
-            return redirect(url_for('cdp.dashboard', id=usuario_id))
+            return redirect(url_for('supervisor.dashboard'))
+        else:  # lider_cdp / cdp
+            return redirect(url_for('lider_cdp.dashboard'))
 
     if request.method == 'POST':
         usuario = request.form['usuario']
@@ -50,8 +50,10 @@ def login():
                     # Guardar todos los datos en sesión
                     session["usuario_id"] = str(r['id'])  # Convertir UUID a string
                     session["usuario"] = r['username']
-                    session["rol"] = r['tipo_usuario']
-                    return _redirect_by_role(r['tipo_usuario'], session["usuario_id"])
+                    # Normalizar 'cdp' a 'lider_cdp' si viene de BD legacy
+                    rol_final = 'lider_cdp' if r['tipo_usuario'] == 'cdp' else r['tipo_usuario']
+                    session["rol"] = rol_final
+                    return _redirect_by_role(rol_final)
             except Exception as e:
                 from flask import current_app
                 current_app.logger.exception("[DB] Error login: %s", e)
@@ -64,17 +66,17 @@ def login():
                 session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
                 session["usuario"] = "admin"
                 session["rol"] = "admin"
-                return _redirect_by_role("admin", session["usuario_id"])
+                return _redirect_by_role("admin")
             elif usuario == "supervisor" and contrasena == "supervisor":
                 session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
                 session["usuario"] = "supervisor"
                 session["rol"] = "supervisor"
-                return _redirect_by_role("supervisor", session["usuario_id"])
+                return _redirect_by_role("supervisor")
             elif usuario and contrasena:
                 session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
                 session["usuario"] = usuario
-                session["rol"] = "cdp"
-                return _redirect_by_role("cdp", session["usuario_id"])
+                session["rol"] = "lider_cdp"
+                return _redirect_by_role("lider_cdp")
             else:
                 p = "Modo demo: usa admin/admin, supervisor/supervisor o cualquier usuario/contraseña"
 
@@ -111,12 +113,11 @@ def index():
     if "usuario_id" not in session:
         return redirect(url_for("auth.login"))
     
-    usuario_id = session.get("usuario_id")
     rol = session.get("rol")
     
     if rol == "admin":
-        return redirect(url_for('admin.dashboard', id=usuario_id), code=301)
+        return redirect(url_for('admin.dashboard'), code=301)
     elif rol == "supervisor":
-        return redirect(url_for('supervisor.dashboard', id=usuario_id), code=301)
-    else:  # cdp
-        return redirect(url_for('cdp.dashboard', id=usuario_id), code=301)
+        return redirect(url_for('supervisor.dashboard'), code=301)
+    else:  # lider_cdp / cdp
+        return redirect(url_for('lider_cdp.dashboard'), code=301)

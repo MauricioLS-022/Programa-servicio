@@ -1,58 +1,58 @@
 <header id="admin-desktop-header" class="admin-desktop-header header-nav">
   <div class="logo-container">
     {% if has_role("supervisor") %}
-    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
-    {% elif has_role("cdp") %}
-    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
+    <a href="{{ url_for('supervisor.dashboard') }}" class="logo-link"></a>
+    {% elif has_role("lider_cdp") or has_role("cdp") %}
+    <a href="{{ url_for('lider_cdp.dashboard') }}" class="logo-link"></a>
     {% else %}
-    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="logo-link"></a>
+    <a href="{{ url_for('admin.dashboard') }}" class="logo-link"></a>
     {% endif %}
   </div>
   
   <nav class="link-container">
     {% if has_role("supervisor") %}
-    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('supervisor.dashboard') }}" class="nav-btn">
       <span class="nav-text">Dashboard</span>
     </a>
-    <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('supervisor.estructura') }}" class="nav-btn">
       <span class="nav-text">Estructura</span>
     </a>
-    <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('supervisor.reportes') }}" class="nav-btn">
       <span class="nav-text">Reportes</span>
     </a>
-    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('supervisor.lider') }}" class="nav-btn">
       <span class="nav-text">Lideres</span>
     </a>
-    <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('supervisor.perfil') }}" class="nav-btn">
       <span class="nav-text">Perfil</span>
     </a>
-    {% elif has_role("cdp") %}
-    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+    {% elif has_role("lider_cdp") or has_role("cdp") %}
+    <a href="{{ url_for('lider_cdp.dashboard') }}" class="nav-btn">
       <span class="nav-text">Inicio</span>
     </a>
-    <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="nav-btn">
       <span class="nav-text">Generar Reporte</span>
     </a>
-    <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('lider_cdp.perfil') }}" class="nav-btn">
       <span class="nav-text">Perfil</span>
     </a>
     {% else %}
-    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.dashboard') }}" class="nav-btn">
       <span class="nav-text">Dashboard</span>
     </a>
-    <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.estructura') }}" class="nav-btn">
       <span class="nav-text">Estructura</span>
     </a>
-    <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.usuario') }}" class="nav-btn">
       <span class="nav-text">Usuarios</span>
     </a>
-    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.lider') }}" class="nav-btn">
       <span class="nav-text">Lideres</span>
     </a>
-    <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.reportes') }}" class="nav-btn">
       <span class="nav-text">Reportes</span>
     </a>
-    <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="nav-btn">
+    <a href="{{ url_for('admin.perfil') }}" class="nav-btn">
       <span class="nav-text">Perfil</span>
     </a>
     {% endif %}

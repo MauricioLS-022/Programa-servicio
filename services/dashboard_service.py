@@ -126,21 +126,26 @@ def get_selectores():
         cur = conn.cursor()
         cur.execute("""
             SELECT r.id, r.nombre,
-                   CONCAT(u.nombre, ' ', u.apellido) AS supervisor
+                   COALESCE(CONCAT(u.nombre, ' ', u.apellido), 'Sin asignar') AS supervisor
             FROM red r
             LEFT JOIN usuario u ON r.supervisor_id = u.id
             ORDER BY r.nombre
         """)
-        redes = cur.fetchall()
+        redes = cur.fetchall() or []
         
         cur.execute("""
             SELECT c.id, c.codigo, c.codigo AS nombre, c.anfitrion, c.direccion, c.red_id,
-                   CONCAT(l.nombre, ' ', l.apellido) AS lider
+                   COALESCE(
+                       (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
+                       (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
+                       CONCAT(u.nombre, ' ', u.apellido),
+                       'Sin líder'
+                   ) AS lider
             FROM cdp c
-            LEFT JOIN lider l ON l.cdp_id = c.id AND l.rol = 'Lider'
+            LEFT JOIN usuario u ON c.usuario_id = u.id
             ORDER BY c.codigo
         """)
-        casas = cur.fetchall()
+        casas = cur.fetchall() or []
         cur.close()
         
         result = (redes, casas)
@@ -332,6 +337,12 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     if is_supervisor:
         redes = [r for r in redes if r['id'] == supervisor_red_id] if supervisor_red_id else redes[:1]
         casas = [c for c in casas if c['red_id'] == supervisor_red_id] if supervisor_red_id else casas
+
+    # Si se seleccionó nivel red o cdp sin ID específico, usar el primero disponible
+    if nivel == 'red' and not red_id and redes:
+        red_id = redes[0]['id']
+    elif nivel == 'cdp' and not cdp_id and casas:
+        cdp_id = casas[0]['id']
 
     # Obtener métricas
     metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id)

@@ -15,43 +15,43 @@
             <p class="description">Administra los accesos y roles de la comunidad Vino Nuevo desde un panel centralizado y seguro.</p>
         </div>
         <div class="header-actions">
-            <a href="{{ url_for('admin.usuario_editar', id=get_usuario_id()) }}" class="btn-primary">
+            <a href="{{ url_for('admin.usuario_crear') }}" class="btn-primary">
                 <span class="material-symbols-outlined">person_add</span>
                 Agregar Usuario
             </a>
         </div>
     </header>
 
-    <form class="filter-section" method="get" action="{{ url_for('admin.usuario', id=get_usuario_id()) }}">
+    <form class="filter-section" method="get" action="{{ url_for('admin.usuario') }}" role="search" aria-label="Filtros de usuarios">
         <div class="filter-group search-group">
             <label for="user-search">Buscar</label>
             <div class="search-box">
-                <span class="material-symbols-outlined">search</span>
-                <input id="user-search" type="search" name="q" value="{{ search }}" placeholder="Buscar por nombre o usuario...">
+                <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                <input id="user-search" type="search" name="q" value="{{ search }}" aria-label="Buscar usuarios por nombre o username" placeholder="Buscar por nombre o usuario...">
             </div>
         </div>
 
         <div class="filter-group">
             <label for="user-role">Rol</label>
-            <select id="user-role" name="rol">
+            <select id="user-role" name="rol" aria-label="Filtrar por rol de usuario">
                 <option value="" {% if not rol %}selected{% endif %}>Todos los Roles</option>
                 <option value="admin" {% if rol == 'admin' %}selected{% endif %}>Admin</option>
                 <option value="supervisor" {% if rol == 'supervisor' %}selected{% endif %}>Supervisor</option>
-                <option value="cdp" {% if rol == 'cdp' %}selected{% endif %}>Líder</option>
+                <option value="lider_cdp" {% if rol in ('lider_cdp', 'cdp') %}selected{% endif %}>Líder</option>
             </select>
         </div>
 
-        <button class="btn-filter" type="submit">
-            <span class="material-symbols-outlined">filter_alt</span>
+        <button class="btn-filter" type="submit" aria-label="Aplicar filtros de usuarios">
+            <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>
             Aplicar filtros
         </button>
     </form>
 
     <div class="bento-grid">
         
-        <aside class="stats-sidebar">
+        <aside class="stats-sidebar" aria-label="Estadísticas de usuarios">
             <div class="stat-card stat-primary">
-                <div class="icon-box">
+                <div class="icon-box" aria-hidden="true">
                     <span class="material-symbols-outlined">group</span>
                 </div>
                 <div>
@@ -61,7 +61,7 @@
             </div>
             
             <div class="stat-card stat-info">
-                <span class="material-symbols-outlined watermark-icon">verified_user</span>
+                <span class="material-symbols-outlined watermark-icon" aria-hidden="true">verified_user</span>
                 <h3 class="info-title">Seguridad de Roles</h3>
                 <p class="info-desc">Solo los administradores pueden modificar estructuras de jerarquía y reportes financieros.</p>
             </div>
@@ -71,27 +71,28 @@
             <div class="table-header">
                 <h2>Directorio General</h2>
                 <div class="table-actions">
-                    <span class="material-symbols-outlined">filter_list</span>
-                    <span class="material-symbols-outlined">search</span>
+                    <button type="button" id="btnExportUsers" class="btn-icon" style="color: white;" aria-label="Exportar usuarios a CSV/Excel" title="Exportar a CSV/Excel">
+                        <span class="material-symbols-outlined" aria-hidden="true">download</span>
+                    </button>
                 </div>
             </div>
             
-            <div class="table-responsive">
-                <table class="user-table">
+            <div class="table-responsive" role="region" aria-label="Directorio general de usuarios" tabindex="0">
+                <table class="user-table" aria-label="Directorio general de usuarios del sistema">
                     <thead>
                         <tr>
-                            <th>Usuario</th>
-                            <th>Username</th>
-                            <th>Rol</th>
-                            <th>Status</th>
-                            <th class="text-right">Acciones</th>
+                            <th scope="col">Usuario</th>
+                            <th scope="col">Username</th>
+                            <th scope="col">Rol</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for usuario in usuarios %}
                         {% set nombre = ((usuario.nombre or '') ~ ' ' ~ (usuario.apellido or '')).strip() %}
-                        {% set rol_label = {'admin': 'Admin', 'supervisor': 'Supervisor', 'cdp': 'Líder'}.get(usuario.rol, usuario.rol|title) %}
-                        {% set rol_class = 'lider' if usuario.rol == 'cdp' else usuario.rol %}
+                        {% set rol_label = {'admin': 'Admin', 'supervisor': 'Supervisor', 'lider_cdp': 'Líder', 'cdp': 'Líder'}.get(usuario.rol, usuario.rol|title) %}
+                        {% set rol_class = 'lider' if usuario.rol in ('lider_cdp', 'cdp') else usuario.rol %}
                         <tr>
                             <td data-label="Usuario">
                                 <div class="user-info">
@@ -105,14 +106,14 @@
                             <td data-label="Rol"><span class="badge badge-{{ rol_class }}">{{ rol_label }}</span></td>
                             <td data-label="Status">
                                 <div class="status">
-                                    <span class="dot {{ 'dot-active' if usuario.is_active else 'dot-inactive' }}"></span>
+                                    <span class="dot {{ 'dot-active' if usuario.is_active else 'dot-inactive' }}" aria-hidden="true"></span>
                                     <span class="{{ 'text-active' if usuario.is_active else 'text-inactive' }}">{{ 'Activo' if usuario.is_active else 'Inactivo' }}</span>
                                 </div>
                             </td>
                             <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="{{ url_for('admin.usuario_editar', id=get_usuario_id(), usuario_id=usuario.id) }}" class="btn-icon" aria-label="Editar {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary">edit</span></a>
-                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar {{ nombre or usuario.username }}"><span class="material-symbols-outlined">delete</span></button>
+                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon" aria-label="Editar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
+                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
                                 </div>
                             </td>
                         </tr>
@@ -129,7 +130,7 @@
                 <span>Mostrando {{ usuarios|length }} de {{ total_usuarios }} usuarios</span>
                 <div class="pagination-controls">
                     {% if page > 1 %}
-                    <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined">chevron_left</span></a>
+                    <a class="btn-page" href="{{ url_for('admin.usuario', q=search or none, rol=rol or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined">chevron_left</span></a>
                     {% else %}
                     <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_left</span></span>
                     {% endif %}
@@ -137,11 +138,11 @@
                         {% if page_number == page %}
                         <span class="btn-page active" aria-current="page">{{ page_number }}</span>
                         {% else %}
-                        <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                        <a class="btn-page" href="{{ url_for('admin.usuario', q=search or none, rol=rol or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
                         {% endif %}
                     {% endfor %}
                     {% if page < pages %}
-                    <a class="btn-page" href="{{ url_for('admin.usuario', id=get_usuario_id(), q=search or none, rol=rol or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined">chevron_right</span></a>
+                    <a class="btn-page" href="{{ url_for('admin.usuario', q=search or none, rol=rol or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined">chevron_right</span></a>
                     {% else %}
                     <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_right</span></span>
                     {% endif %}
@@ -151,58 +152,23 @@
     </div>
 </main>
 
-<div id="deleteModal" class="modal-overlay" style="display:none;">
+<div id="deleteModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-hidden="true">
     <div class="modal-content">
         <div class="modal-header">
-            <span class="material-symbols-outlined modal-icon">warning</span>
-            <h3>Confirmar Eliminación</h3>
+            <span class="material-symbols-outlined modal-icon" aria-hidden="true">warning</span>
+            <h3 id="deleteModalTitle">Confirmar Eliminación</h3>
         </div>
         <p class="modal-text">¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.</p>
         <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
-        <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off">
+        <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la baja del usuario">
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-            <button class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="confirmDelete()">Eliminar</button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+            <button class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="confirmDeleteUser()">Eliminar</button>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    let deleteBtn = null;
-
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            deleteBtn = this;
-            document.getElementById('deleteModal').style.display = 'flex';
-            document.getElementById('deleteInput').value = '';
-            document.getElementById('btnConfirmDelete').disabled = true;
-            document.getElementById('deleteInput').focus();
-        });
-    });
-
-    document.getElementById('deleteInput').addEventListener('input', function() {
-        document.getElementById('btnConfirmDelete').disabled = this.value !== 'ELIMINAR';
-    });
-
-    function closeModal() {
-        document.getElementById('deleteModal').style.display = 'none';
-        deleteBtn = null;
-    }
-
-    function confirmDelete() {
-        if (deleteBtn) {
-            // Redirigir o enviar form de eliminación
-            // deleteBtn.closest('form').submit(); // Si los botones están dentro de un form
-        }
-        closeModal();
-    }
-
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeModal();
-    });
-</script>
+{% block custom_scripts %}
+<script src="{{ url_for('static', filename='scripts/admin/usuarios.js') }}"></script>
 {% endblock %}

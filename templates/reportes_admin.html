@@ -6,7 +6,6 @@
 {% endblock %}
 
 {% block content %}
-
 <main class="container">
     <div class="hero">
         {% if has_role("supervisor") %}
@@ -18,19 +17,19 @@
         {% endif %}
     </div>
 
-    <form class="filter-section" method="get" action="{{ url_for('supervisor.reportes', id=get_usuario_id()) if has_role('supervisor') else url_for('admin.reportes', id=get_usuario_id()) }}">
+    <form class="filter-section" method="get" action="{{ url_for('supervisor.reportes') if has_role('supervisor') else url_for('admin.reportes') }}" role="search" aria-label="Filtros de reportes">
         <div class="filter-group">
             <label for="filter-search">Buscar</label>
             <div class="search-input">
-                <span class="material-symbols-outlined icon-small">search</span>
-                <input id="filter-search" type="search" name="q" value="{{ search }}" placeholder="Buscar por líder, casa de paz, tema..."/>
+                <span class="material-symbols-outlined icon-small" aria-hidden="true">search</span>
+                <input id="filter-search" type="search" name="q" value="{{ search }}" aria-label="Buscar por líder, casa de paz o tema" placeholder="Buscar por líder, casa de paz, tema..."/>
             </div>
         </div>
 
         {% if not has_role("supervisor") %}
         <div class="filter-group">
-            <label for="filter-red">Filtrar por Red</label>
-            <select id="filter-red" name="red_id">
+            <label for="filter-red">Red</label>
+            <select id="filter-red" name="red_id" aria-label="Filtrar por red ministerial">
                 <option value="" {% if not red_id %}selected{% endif %}>Todas las redes</option>
                 {% for r in redes %}
                 <option value="{{ r.id }}" {% if red_id|string == r.id|string %}selected{% endif %}>{{ r.nombre }}</option>
@@ -40,8 +39,8 @@
         {% endif %}
 
         <div class="filter-group">
-            <label for="filter-cdp">Filtrar por Casa de Paz</label>
-            <select id="filter-cdp" name="cdp_id">
+            <label for="filter-cdp">Casa de Paz</label>
+            <select id="filter-cdp" name="cdp_id" aria-label="Filtrar por Casa de Paz">
                 <option value="" {% if not cdp_id %}selected{% endif %}>Todas las casas</option>
                 {% for c in casas %}
                 <option value="{{ c.id }}" {% if cdp_id|string == c.id|string %}selected{% endif %}>{{ c.nombre or c.codigo }}</option>
@@ -52,13 +51,13 @@
         <div class="filter-group">
             <label>Rango de Fecha</label>
             <div class="date-inputs">
-                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" title="Desde"/>
-                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" title="Hasta"/>
+                <input type="date" id="fecha_desde" name="fecha_desde" value="{{ fecha_desde }}" aria-label="Fecha desde" title="Desde"/>
+                <input type="date" id="fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}" aria-label="Fecha hasta" title="Hasta"/>
             </div>
         </div>
         
-        <button class="btn-filter" type="submit">
-            <span class="material-symbols-outlined icon-small">filter_alt</span>
+        <button class="btn-filter" type="submit" aria-label="Aplicar filtros de reportes">
+            <span class="material-symbols-outlined icon-small" aria-hidden="true">filter_alt</span>
             Aplicar Filtros
         </button>
     </form>
@@ -66,22 +65,22 @@
     <section class="table-wrapper">
         <div class="table-header">
             <h2>Reportes de Actividad</h2>
-            <div class="table-actions">
+            <div class="table-actions" aria-hidden="true">
                 <span class="material-symbols-outlined">grid_view</span>
                 <span class="material-symbols-outlined">table_rows</span>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table>
+        <div class="table-responsive" role="region" aria-label="Historial de reportes de actividad" tabindex="0">
+            <table aria-label="Historial de reportes de actividad ministerial">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Líder</th>
-                        <th>Casa de Paz</th>
-                        <th class="text-center">Asistencia</th>
-                        <th class="text-right">Ofrendas</th>
-                        <th class="text-center">Acciones</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Líder</th>
+                        <th scope="col">Casa de Paz</th>
+                        <th scope="col" class="text-center">Asistencia</th>
+                        <th scope="col" class="text-right">Ofrendas</th>
+                        <th scope="col" class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,7 +89,7 @@
                         <td data-label="Fecha" class="font-bold text-variant">{{ reporte.fecha_formateada }}</td>
                         <td data-label="Líder">
                             <div class="leader-cell">
-                                <div class="avatar {{ reporte.avatar_class|default('bg-primary-light text-primary') }}">{{ reporte.iniciales }}</div>
+                                <div class="avatar {{ reporte.avatar_class|default('bg-primary-light text-primary') }}" aria-hidden="true">{{ reporte.iniciales }}</div>
                                 <span class="font-semibold">{{ reporte.lider_nombre }}</span>
                             </div>
                         </td>
@@ -116,8 +115,8 @@
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
-                                    aria-label="Ver detalle del reporte">
-                                    <span class="material-symbols-outlined text-primary">visibility</span>
+                                    aria-label="Ver detalle del reporte de {{ reporte.lider_nombre }} del {{ reporte.fecha_formateada }}">
+                                    <span class="material-symbols-outlined text-primary" aria-hidden="true">visibility</span>
                                 </button>
                                 {% if not has_role("supervisor") %}
                                 <button class="btn-icon btn-edit"
@@ -137,8 +136,8 @@
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
-                                    aria-label="Editar reporte">
-                                    <span class="material-symbols-outlined text-secondary">edit</span>
+                                    aria-label="Editar reporte de {{ reporte.lider_nombre }} del {{ reporte.fecha_formateada }}">
+                                    <span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span>
                                 </button>
                                 {% endif %}
                             </div>
@@ -157,35 +156,35 @@
             <div class="pagination-controls">
                 {% set endpoint = 'supervisor.reportes' if has_role('supervisor') else 'admin.reportes' %}
                 {% if page > 1 %}
-                <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined">chevron_left</span></a>
+                <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></a>
                 {% else %}
-                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_left</span></span>
+                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></span>
                 {% endif %}
                 {% for page_number in range(1, pages + 1) %}
                     {% if page_number == page %}
                     <span class="page-btn active" aria-current="page">{{ page_number }}</span>
                     {% else %}
-                    <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                    <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
                     {% endif %}
                 {% endfor %}
                 {% if page < pages %}
-                <a class="page-btn" href="{{ url_for(endpoint, id=get_usuario_id(), q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined">chevron_right</span></a>
+                <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
                 {% else %}
-                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_right</span></span>
+                <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></span>
                 {% endif %}
             </div>
         </div>
     </section>
 
-    <div class="modal-overlay" id="reporteModal">
+    <div class="modal-overlay" id="reporteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
         <div class="modal">
             <div class="modal-header">
                 <div class="modal-title-group">
-                    <span class="material-symbols-outlined modal-icon">description</span>
-                    <h3 class="modal-title">Detalle del Reporte</h3>
+                    <span class="material-symbols-outlined modal-icon" aria-hidden="true">description</span>
+                    <h3 class="modal-title" id="modalTitle">Detalle del Reporte</h3>
                 </div>
-                <button class="modal-close" id="modalClose">
-                    <span class="material-symbols-outlined">close</span>
+                <button class="modal-close" id="modalClose" aria-label="Cerrar modal de detalles">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -302,106 +301,17 @@
             <p class="quote-author">Mateo 18:20</p>
         </div>
         <div class="footer-actions">
-            <button class="btn-outline">
-                <span class="material-symbols-outlined">download</span> Exportar PDF
+            <button class="btn-outline" aria-label="Exportar reportes de actividad a PDF">
+                <span class="material-symbols-outlined" aria-hidden="true">download</span> Exportar PDF
             </button>
-            <button class="btn-outline">
-                <span class="material-symbols-outlined">table_chart</span> Excel
+            <button class="btn-outline" aria-label="Exportar reportes de actividad a Excel/CSV">
+                <span class="material-symbols-outlined" aria-hidden="true">table_chart</span> Excel
             </button>
         </div>
     </footer>
 </main>
+{% endblock %}
 
-<script>
-(function() {
-    const modal = document.getElementById('reporteModal');
-    const modalClose = document.getElementById('modalClose');
-    const modalCancel = document.getElementById('modalCancel');
-    const modalSave = document.getElementById('modalSave');
-    const modalAvatar = document.getElementById('modalAvatar');
-    const fields = {
-        lider: document.getElementById('modalLider'),
-        casa: document.getElementById('modalCasa'),
-        fecha: document.getElementById('modalFecha'),
-        horaInicio: document.getElementById('modalHoraInicio'),
-        horaFin: document.getElementById('modalHoraFin'),
-        regulares: document.getElementById('modalRegulares'),
-        ninos: document.getElementById('modalNinos'),
-        visitas: document.getElementById('modalVisitas'),
-        comprometidos: document.getElementById('modalComprometidos'),
-        asistencia: document.getElementById('modalAsistencia'),
-        reconciliaciones: document.getElementById('modalReconciliaciones'),
-        confesiones: document.getElementById('modalConfesiones'),
-        ofrendas: document.getElementById('modalOfrendas'),
-        cesta: document.getElementById('modalCesta'),
-        tema: document.getElementById('modalTema'),
-        obs: document.getElementById('modalObs')
-    };
-
-    function calcAsistencia() {
-        const r = parseInt(fields.regulares.value) || 0;
-        const n = parseInt(fields.ninos.value) || 0;
-        const v = parseInt(fields.visitas.value) || 0;
-        const c = parseInt(fields.comprometidos.value) || 0;
-        return r + n + v + c;
-    }
-
-    function openModal(btn, isEdit) {
-        modalAvatar.textContent = btn.dataset.iniciales;
-        fields.lider.value = btn.dataset.lider;
-        fields.casa.value = btn.dataset.casa;
-        fields.fecha.value = btn.dataset.fecha;
-        fields.horaInicio.value = btn.dataset.horaInicio;
-        fields.horaFin.value = btn.dataset.horaFin;
-        fields.regulares.value = btn.dataset.regulares;
-        fields.ninos.value = btn.dataset.ninos;
-        fields.visitas.value = btn.dataset.visitas;
-        fields.comprometidos.value = btn.dataset.comprometidos;
-        fields.reconciliaciones.value = btn.dataset.reconciliaciones;
-        fields.confesiones.value = btn.dataset.confesiones;
-        fields.ofrendas.value = btn.dataset.ofrendas;
-        fields.cesta.value = btn.dataset.cesta;
-        fields.tema.value = btn.dataset.tema;
-        fields.obs.value = btn.dataset.obs;
-
-        fields.asistencia.value = calcAsistencia();
-
-        Object.values(fields).forEach(f => {
-            f.readOnly = !isEdit;
-            f.disabled = false;
-        });
-
-        modalSave.style.display = isEdit ? 'flex' : 'none';
-        modal.classList.add('active');
-    }
-
-    function closeModal() {
-        modal.classList.remove('active');
-    }
-
-    [fields.regulares, fields.ninos, fields.visitas, fields.comprometidos].forEach(f => {
-        f.addEventListener('input', () => {
-            fields.asistencia.value = calcAsistencia();
-        });
-    });
-
-    document.querySelectorAll('.btn-view').forEach(btn => {
-        btn.addEventListener('click', () => openModal(btn, false));
-    });
-
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => openModal(btn, true));
-    });
-
-    modalClose.addEventListener('click', closeModal);
-    modalCancel.addEventListener('click', closeModal);
-    modal.addEventListener('click', e => {
-        if (e.target === modal) closeModal();
-    });
-
-    modalSave.addEventListener('click', () => {
-        closeModal();
-    });
-})();
-</script>
+{% block custom_scripts %}
+<script src="{{ url_for('static', filename='scripts/admin/reportes.js') }}"></script>
 {% endblock %}

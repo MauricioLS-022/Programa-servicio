@@ -17,7 +17,7 @@
             <img class="img_perfil" src="{{ url_for('static', filename='iconos/casa_de_paz.webp') }}" alt="imagen">
         {% endif %}
         <p class="texto2"><b>Usuario:</b> {{ usuario }}</p>
-        <p class="texto2"><b>Rol:</b> {{ rol }}</p>
+        <p class="texto2"><b>Rol:</b> {{ {'admin': 'Administrador', 'supervisor': 'Supervisor', 'lider_cdp': 'Líder Casa de Paz', 'cdp': 'Líder Casa de Paz'}.get(rol, rol|title) }}</p>
     </div>
 </div>
 {% endblock %}

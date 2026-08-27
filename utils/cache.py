@@ -11,6 +11,13 @@ _CACHE_TTL = 300  # 5 minutos
 
 def _get_cache(key):
     """Retorna valor si existe y no expiró, o None."""
+    try:
+        from flask import current_app
+        if current_app and (current_app.config.get('DEBUG') or current_app.config.get('FLASK_ENV') == 'development'):
+            return None
+    except Exception:
+        pass
+
     with _cache_lock:
         entry = _dashboard_cache.get(key)
         if entry and (time.time() - entry['ts']) < _CACHE_TTL:

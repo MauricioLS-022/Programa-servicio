@@ -2,61 +2,61 @@
 
 <nav class="mobile-bottom-nav">
     {% if has_role("supervisor") %}
-    <a href="{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'dashboard' in request.path else '' }}">
+    <a href="{{ url_for('supervisor.dashboard') }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'dashboard' in request.path else '' }}">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dash</span>
     </a>
-    <a href="{{ url_for('supervisor.estructura', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'estructura' in request.path else '' }}">
+    <a href="{{ url_for('supervisor.estructura') }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'estructura' in request.path else '' }}">
         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
         <span>Estructura</span>
     </a>
-    <a href="{{ url_for('supervisor.reportes', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'reportes' in request.path else '' }}">
+    <a href="{{ url_for('supervisor.reportes') }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'reportes' in request.path else '' }}">
         <span class="material-symbols-outlined">analytics</span>
         <span>Reportes</span>
     </a>
-    <a href="{{ url_for('supervisor.lider', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
+    <a href="{{ url_for('supervisor.lider') }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'lider' in request.path else '' }}">
         <span class="material-symbols-outlined">leaderboard</span>
         <span>Líderes</span>
     </a>
-    <a href="{{ url_for('supervisor.perfil', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
+    <a href="{{ url_for('supervisor.perfil') }}" class="mobile-nav-item {{ 'active' if 'supervisor' in request.path and 'perfil' in request.path else '' }}">
         <span class="material-symbols-outlined">person</span>
         <span>Mí</span>
     </a>
-    {% elif has_role("cdp") %}
-    <a href="{{ url_for('cdp.dashboard', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'cdp' in request.path and 'dashboard' in request.path else '' }}">
+    {% elif has_role("lider_cdp") or has_role("cdp") %}
+    <a href="{{ url_for('lider_cdp.dashboard') }}" class="mobile-nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'dashboard' in request.path else '' }}">
         <span class="material-symbols-outlined">home</span>
         <span>Inicio</span>
     </a>
-    <a href="{{ url_for('cdp.generar_reporte', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'cdp' in request.path and 'generar_reporte' in request.path else '' }}">
+    <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="mobile-nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'generar_reporte' in request.path else '' }}">
         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
         <span>Reporte</span>
     </a>
-    <a href="{{ url_for('cdp.perfil', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'cdp' in request.path and 'perfil' in request.path else '' }}">
+    <a href="{{ url_for('lider_cdp.perfil') }}" class="mobile-nav-item {{ 'active' if ('lider_cdp' in request.path or 'cdp' in request.path) and 'perfil' in request.path else '' }}">
         <span class="material-symbols-outlined">person</span>
         <span>Perfil</span>
     </a>
     {% else %}
-    <a href="{{ url_for('admin.dashboard', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'dashboard' in request.path else '' }}">
+    <a href="{{ url_for('admin.dashboard') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'dashboard' in request.path else '' }}">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dash</span>
     </a>
-    <a href="{{ url_for('admin.estructura', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'estructura' in request.path else '' }}">
+    <a href="{{ url_for('admin.estructura') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'estructura' in request.path else '' }}">
         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
         <span>Estructura</span>
     </a>
-    <a href="{{ url_for('admin.usuario', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
+    <a href="{{ url_for('admin.usuario') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'usuario' in request.path else '' }}">
         <span class="material-symbols-outlined">group</span>
         <span>Usuarios</span>
     </a>
-    <a href="{{ url_for('admin.lider', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
+    <a href="{{ url_for('admin.lider') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'lider' in request.path else '' }}">
         <span class="material-symbols-outlined">leaderboard</span>
         <span>Líderes</span>
     </a>
-    <a href="{{ url_for('admin.reportes', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
+    <a href="{{ url_for('admin.reportes') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'reportes' in request.path else '' }}">
         <span class="material-symbols-outlined">analytics</span>
         <span>Reportes</span>
     </a>
-    <a href="{{ url_for('admin.perfil', id=get_usuario_id()) }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'perfil' in request.path else '' }}">
+    <a href="{{ url_for('admin.perfil') }}" class="mobile-nav-item {{ 'active' if 'admin' in request.path and 'perfil' in request.path else '' }}">
         <span class="material-symbols-outlined">person</span>
         <span>Mí</span>
     </a>
