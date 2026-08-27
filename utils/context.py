@@ -6,13 +6,19 @@ from flask import session, url_for
 
 def has_role(role_name):
     """Verifica si el usuario actual tiene el rol especificado."""
-    return session.get("rol") == role_name
+    current_role = session.get("rol")
+    if role_name in ("lider_cdp", "cdp") and current_role in ("lider_cdp", "cdp"):
+        return True
+    return current_role == role_name
 
 
 def has_any_role(*role_names):
     """Verifica si el usuario actual tiene alguno de los roles especificados."""
-    user_role = session.get("rol")
-    return user_role in role_names
+    current_role = session.get("rol")
+    for r in role_names:
+        if has_role(r):
+            return True
+    return False
 
 
 def get_usuario_id():
@@ -36,12 +42,13 @@ def get_home_url():
     role_routes = {
         "admin": "admin.dashboard",
         "supervisor": "supervisor.dashboard",
-        "cdp": "cdp.dashboard",
+        "lider_cdp": "lider_cdp.dashboard",
+        "cdp": "lider_cdp.dashboard",
     }
 
     endpoint = role_routes.get(rol)
     if endpoint:
-        return url_for(endpoint, id=user_id)
+        return url_for(endpoint)
 
     return url_for("auth.login")
 

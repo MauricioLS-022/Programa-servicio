@@ -178,7 +178,7 @@ def get_metricas_generales(conn):
         ORDER BY mes DESC
         LIMIT 8
     """)
-    rows_tendencia = cur.fetchall() or []
+    rows_tendencia = list(cur.fetchall() or [])
     rows_tendencia.reverse()
     max_asistencia = max((r['asistencia'] for r in rows_tendencia), default=1) or 1
     tendencia = [
@@ -200,7 +200,7 @@ def get_metricas_generales(conn):
                 COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END)
                 / GREATEST(COUNT(DISTINCT c.id), 1) * 100
             ) AS cumplimiento,
-            CONCAT(u.nombre, ' ', u.apellido) AS supervisor
+            COALESCE(CONCAT(u.nombre, ' ', u.apellido), 'Sin supervisor') AS supervisor
         FROM red r
         LEFT JOIN cdp c ON c.red_id = r.id
         LEFT JOIN reporte rep ON rep.cdp_id = c.id
@@ -208,37 +208,41 @@ def get_metricas_generales(conn):
         GROUP BY r.id, r.nombre, u.nombre, u.apellido
         ORDER BY asistencia DESC
     """, (inicio_semana,))
-    ranking = cur.fetchall()
+    ranking = cur.fetchall() or []
     color_map = {
         'hebrón': 'hebron', 'cielos abiertos': 'hebron',
         'sur': 'sur',
         'central': 'central',
     }
     for r in ranking:
-        r['color_class'] = color_map.get(r['nombre'].lower().strip(), 'default')
+        r['color_class'] = color_map.get((r['nombre'] or '').lower().strip(), 'default')
 
     # --- Alertas: casas sin reporte en 14+ días ---
-    corte = hoy - timedelta(days=14)
     cur.execute("""
         SELECT
             c.codigo,
-            CONCAT(c.anfitrion, '') AS nombre,
+            c.anfitrion AS nombre,
             r.nombre AS red,
             DATEDIFF(CURDATE(), MAX(rep.fecha)) AS dias_sin_reporte,
-            CONCAT(l.nombre, ' ', l.apellido) AS lider,
-            l.telefono
+            COALESCE(
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
+                CONCAT(u.nombre, ' ', u.apellido),
+                'Sin asignar'
+            ) AS lider,
+            COALESCE(c.telefono, (SELECT l.telefono FROM lider l WHERE l.cdp_id = c.id AND l.telefono IS NOT NULL LIMIT 1), '') AS telefono
         FROM cdp c
         LEFT JOIN reporte rep ON rep.cdp_id = c.id
         LEFT JOIN red r ON c.red_id = r.id
-        LEFT JOIN lider l ON l.cdp_id = c.id AND l.rol = 'Lider'
-        GROUP BY c.id, c.codigo, c.anfitrion, r.nombre, l.nombre, l.apellido, l.telefono
+        LEFT JOIN usuario u ON c.usuario_id = u.id
+        GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, r.nombre, u.nombre, u.apellido
         HAVING dias_sin_reporte > 14 OR dias_sin_reporte IS NULL
         ORDER BY dias_sin_reporte DESC
     """)
-    alertas_raw = cur.fetchall()
+    alertas_raw = cur.fetchall() or []
     alertas = [
         {
-            'nombre': a['nombre'],
+            'nombre': a['nombre'] or a['codigo'],
             'codigo': a['codigo'],
             'red': a['red'] or '',
             'dias_sin_reporte': a['dias_sin_reporte'] if a['dias_sin_reporte'] else 999,
@@ -275,7 +279,7 @@ def get_metricas_red(conn, red_id):
     cur.execute("""
         SELECT
             r.nombre AS nombre_red,
-            CONCAT(u.nombre, ' ', u.apellido) AS supervisor
+            COALESCE(CONCAT(u.nombre, ' ', u.apellido), 'Sin asignar') AS supervisor
         FROM red r
         LEFT JOIN usuario u ON r.supervisor_id = u.id
         WHERE r.id = %s
@@ -300,8 +304,8 @@ def get_metricas_red(conn, red_id):
         WHERE c.red_id = %s
     """, (red_id,))
     kpis = cur.fetchone()
-    casas_activas = int(kpis['casas_activas'])
-    asistencia_total = int(kpis['asistencia_total'])
+    casas_activas = int(kpis['casas_activas']) if kpis else 0
+    asistencia_total = int(kpis['asistencia_total']) if kpis else 0
     promedio_casa = round(asistencia_total / casas_activas) if casas_activas > 0 else 0
 
     # --- Distribución (del último reporte de la red) ---
@@ -321,28 +325,30 @@ def get_metricas_red(conn, red_id):
     }
 
     # --- Lista de casas con estado ---
-    hoy = date.today()
     cur.execute("""
         SELECT
+            c.id,
             c.codigo,
             c.anfitrion,
-            COALESCE(SUM(rep2.nro_regulares + rep2.nro_niños + rep2.nro_visitas + rep2.nro_comprometidos), 0) AS asistencia,
+            c.telefono,
+            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia,
             MAX(rep.fecha) AS ultimo_reporte,
-            COALESCE(SUM(rep2.nro_visitas), 0) AS visitas,
-            CONCAT(l.nombre, ' ', l.apellido) AS lider,
+            COALESCE(SUM(rep.nro_visitas), 0) AS visitas,
+            COALESCE(
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
+                CONCAT(u.nombre, ' ', u.apellido),
+                'Sin asignar'
+            ) AS lider,
             DATEDIFF(CURDATE(), MAX(rep.fecha)) AS dias_desde_reporte
         FROM cdp c
         LEFT JOIN reporte rep ON rep.cdp_id = c.id
-        LEFT JOIN (
-            SELECT cdp_id, nro_regulares, nro_niños, nro_visitas, nro_comprometidos
-            FROM reporte
-        ) rep2 ON rep2.cdp_id = c.id
-        LEFT JOIN lider l ON l.cdp_id = c.id AND l.rol = 'Lider'
+        LEFT JOIN usuario u ON c.usuario_id = u.id
         WHERE c.red_id = %s
-        GROUP BY c.id, c.codigo, c.anfitrion, l.nombre, l.apellido
+        GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, u.nombre, u.apellido
         ORDER BY c.codigo
     """, (red_id,))
-    casas_raw = cur.fetchall()
+    casas_raw = cur.fetchall() or []
 
     casas = []
     for c in casas_raw:
@@ -354,12 +360,13 @@ def get_metricas_red(conn, red_id):
         else:
             estado = 'verde'
         casas.append({
-            'nombre': c['codigo'],  # código como nombre para la vista
+            'nombre': f"{c['codigo']} - {c['anfitrion']}" if c.get('anfitrion') else c['codigo'],
             'codigo': c['codigo'],
             'asistencia': int(c['asistencia']),
             'estado': estado,
             'lider': c['lider'] or 'Sin asignar',
             'visitas': int(c['visitas']),
+            'telefono': c.get('telefono') or '',
         })
 
     # --- Alertas zonal: casas en rojo ---
@@ -370,7 +377,7 @@ def get_metricas_red(conn, red_id):
             'dias_sin_reporte': c['dias_desde_reporte'] if c['dias_desde_reporte'] else 999,
             'motivo': 'Sin reporte reciente' if c['dias_desde_reporte'] is None else f"{c['dias_desde_reporte']} días sin reporte",
             'lider': c['lider'] or 'Sin asignar',
-            'telefono': '',
+            'telefono': c.get('telefono') or '',
         }
         for c in casas_raw
         if c['dias_desde_reporte'] is None or c['dias_desde_reporte'] > 14
@@ -379,7 +386,7 @@ def get_metricas_red(conn, red_id):
     # --- Top crecimiento: casa con mayor asistencia reciente ---
     top_growth = {}
     if casas:
-        best = max(casas, key=lambda x: x['asistencia'])
+        best = max(casas, key=lambda x: (x['asistencia'], x['visitas']))
         top_growth = {
             'nombre': best['nombre'],
             'codigo': best['codigo'],
@@ -393,11 +400,11 @@ def get_metricas_red(conn, red_id):
         SELECT
             CONCAT(u.nombre, ' ', u.apellido) AS nombre,
             u.tipo_usuario AS rol,
-            u.telefono
+            '' AS telefono
         FROM usuario u
         WHERE u.tipo_usuario = 'supervisor' AND u.is_active = 1
     """)
-    supervisores = cur.fetchall()
+    supervisores = cur.fetchall() or []
 
     cur.close()
 
@@ -408,8 +415,8 @@ def get_metricas_red(conn, red_id):
         'casas_activas': casas_activas,
         'asistencia_total': asistencia_total,
         'promedio_casa': promedio_casa,
-        'ninos': int(kpis['ninos']),
-        'ofrendas': float(kpis['ofrendas']),
+        'ninos': int(kpis['ninos']) if kpis else 0,
+        'ofrendas': float(kpis['ofrendas']) if kpis else 0.0,
         'distribucion': distribucion,
         'casas': casas,
         'alertas_zonal': alertas_zonal,
@@ -434,17 +441,35 @@ def get_metricas_cdp(conn, cdp_id):
 
     # --- Líder y sublíder ---
     cur.execute(
-        "SELECT nombre, apellido, rol, telefono FROM lider WHERE cdp_id = %s ORDER BY FIELD(rol, 'Lider', 'Sublider')",
+        "SELECT nombre, apellido, rol, telefono FROM lider WHERE cdp_id = %s ORDER BY FIELD(rol, 'Lider', 'Sublider'), id",
         (cdp_id,),
     )
-    lideres = cur.fetchall()
+    lideres = cur.fetchall() or []
     lider = ''
     sublider = ''
+    telefono_lider = ''
     for l in lideres:
         if l['rol'] == 'Lider':
-            lider = f"{l['nombre']} {l['apellido']}"
+            lider = f"{l['nombre']} {l['apellido']}".strip()
+            if l.get('telefono'):
+                telefono_lider = l['telefono']
         elif l['rol'] == 'Sublider':
-            sublider = f"{l['nombre']} {l['apellido']}"
+            sublider = f"{l['nombre']} {l['apellido']}".strip()
+            if not telefono_lider and l.get('telefono'):
+                telefono_lider = l['telefono']
+
+    if not lider and lideres:
+        lider = f"{lideres[0]['nombre']} {lideres[0]['apellido']}".strip()
+        if lideres[0].get('telefono'):
+            telefono_lider = lideres[0]['telefono']
+
+    if not lider and cdp.get('usuario_id'):
+        cur.execute("SELECT nombre, apellido FROM usuario WHERE id = %s", (cdp['usuario_id'],))
+        u = cur.fetchone()
+        if u:
+            lider = f"{u['nombre']} {u['apellido']}".strip()
+
+    telefono_contacto = cdp.get('telefono') or telefono_lider or ''
 
     # --- Último reporte ---
     cur.execute("""
@@ -459,7 +484,7 @@ def get_metricas_cdp(conn, cdp_id):
 
     asistencia_ultimo = _asistencia_fila(ultimo) if ultimo else 0
     estado_reporte = 'enviado' if ultimo else 'pendiente'
-    ultimo_reporte_por = ultimo['enviado_por_nombre'] if ultimo and ultimo['enviado_por_nombre'] else ''
+    ultimo_reporte_por = (ultimo.get('enviado_por_nombre') if ultimo else None) or lider or 'Líder encargado'
     ultimo_reporte_fecha = ultimo['fecha'].strftime('%d %b %Y') if ultimo and ultimo['fecha'] else ''
     visitas = ultimo['nro_visitas'] if ultimo else 0
     conversiones = ultimo['confesiones'] if ultimo else 0
@@ -493,7 +518,7 @@ def get_metricas_cdp(conn, cdp_id):
         ORDER BY fecha DESC
         LIMIT 8
     """, (cdp_id,))
-    historial_raw = cur.fetchall()
+    historial_raw = cur.fetchall() or []
     historial = [
         {
             'fecha': h['fecha'].strftime('%Y-%m-%d') if h['fecha'] else '',
@@ -516,7 +541,7 @@ def get_metricas_cdp(conn, cdp_id):
         ORDER BY fecha DESC
         LIMIT 4
     """, (cdp_id,))
-    mini_raw = cur.fetchall()
+    mini_raw = list(cur.fetchall() or [])
     mini_raw.reverse()
     max_mini = max((int(m['asistencia']) for m in mini_raw), default=1) or 1
     mini_historico = [
@@ -534,12 +559,12 @@ def get_metricas_cdp(conn, cdp_id):
     cur.close()
 
     return {
-        'nombre_cdp': cdp['codigo'],  # código como nombre principal
+        'nombre_cdp': f"{cdp['codigo']} - {cdp['anfitrion']}" if cdp.get('anfitrion') else cdp['codigo'],
         'codigo': cdp['codigo'],
         'lider': lider,
         'sublider': sublider,
         'anfitrion': cdp['anfitrion'] or '',
-        'telefono_contacto': cdp['telefono'] or '',
+        'telefono_contacto': telefono_contacto,
         'direccion': cdp['direccion'] or '',
         'asistencia_ultimo': asistencia_ultimo,
         'promedio_historico': promedio_historico,
