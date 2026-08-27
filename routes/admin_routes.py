@@ -1,5 +1,5 @@
 """
-Rutas del administrador: /admin/<uuid:id>/...
+Rutas del administrador: /admin/...
 """
 from flask import Blueprint, render_template, request, session
 from utils.auth import login_required, role_required
@@ -11,27 +11,29 @@ from services.report_service import get_reportes_context
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
-@admin_bp.route('/<uuid:id>/dashboard')
+@admin_bp.route('/dashboard')
 @login_required
 @role_required("admin")
-def dashboard(id):
+def dashboard():
     """Dashboard del administrador - acceso completo."""
-    context = get_dashboard_context(str(id), is_supervisor=False, default_nivel='general')
+    usuario_id = session.get("usuario_id")
+    context = get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='general')
     return render_template('dashboard_admin.html', **context)
 
 
-@admin_bp.route('/<uuid:id>/estructura')
+@admin_bp.route('/estructura')
 @login_required
 @role_required("admin")
-def estructura(id):
-    context = get_estructura_context(str(id), is_supervisor=False)
+def estructura():
+    usuario_id = session.get("usuario_id")
+    context = get_estructura_context(usuario_id, is_supervisor=False)
     return render_template('estructura_admin.html', **context)
 
 
-@admin_bp.route('/<uuid:id>/usuario')
+@admin_bp.route('/usuario')
 @login_required
 @role_required("admin")
-def usuario(id):
+def usuario():
     search = request.args.get('q', '').strip()
     rol = request.args.get('rol', '').strip().lower()
     page = max(request.args.get('page', 1, type=int), 1)
@@ -39,17 +41,24 @@ def usuario(id):
     return render_template('usuarios_admin.html', **context)
 
 
-@admin_bp.route('/<uuid:id>/usuario/editar')
+@admin_bp.route('/usuario/crear')
+@login_required
+@role_required("admin")
+def usuario_crear():
+    return render_template('form_usuario.html', title='Usuarios', breadcrumb='Usuario', link='usuario', is_edit=False)
+
+
+@admin_bp.route('/usuario/<id>/editar')
 @login_required
 @role_required("admin")
 def usuario_editar(id):
-    return render_template('form_usuario.html', title='Usuarios', breadcrumb='Usuario', link='usuario')
+    return render_template('form_usuario.html', title='Usuarios', breadcrumb='Usuario', link='usuario', recurso_id=id, is_edit=True)
 
 
-@admin_bp.route('/<uuid:id>/reportes')
+@admin_bp.route('/reportes')
 @login_required
 @role_required("admin")
-def reportes(id):
+def reportes():
     search = request.args.get('q', '').strip()
     red_id = request.args.get('red_id', '').strip()
     cdp_id = request.args.get('cdp_id', '').strip()
@@ -63,10 +72,10 @@ def reportes(id):
     return render_template('reportes_admin.html', **context)
 
 
-@admin_bp.route('/<uuid:id>/lider')
+@admin_bp.route('/lider')
 @login_required
 @role_required("admin")
-def lider(id):
+def lider():
     search = request.args.get('q', '').strip()
     rol = request.args.get('rol', '').strip()
     red_id = request.args.get('red_id', '').strip()
@@ -76,42 +85,64 @@ def lider(id):
     return render_template('lider_admin.html', **context)
 
 
-@admin_bp.route('/<uuid:id>/lider/editar')
+@admin_bp.route('/lider/crear')
+@login_required
+@role_required("admin")
+def lider_crear():
+    return render_template('form_lider.html', title='Líderes', breadcrumb='Lider', link='lider', is_edit=False)
+
+
+@admin_bp.route('/lider/<id>/editar')
 @login_required
 @role_required("admin")
 def lider_editar(id):
-    return render_template('form_lider.html', title='Líderes', breadcrumb='Lider', link='lider')
+    return render_template('form_lider.html', title='Líderes', breadcrumb='Lider', link='lider', recurso_id=id, is_edit=True)
 
 
-@admin_bp.route('/<uuid:id>/casa_de_paz')
+@admin_bp.route('/casa_de_paz/crear')
+@login_required
+@role_required("admin")
+def casa_de_paz_crear():
+    return render_template('form_cdp.html', title='Casas de Paz', breadcrumb='Casa de paz', link='casa_de_paz', is_edit=False)
+
+
+@admin_bp.route('/casa_de_paz/<id>')
 @login_required
 @role_required("admin")
 def casa_de_paz(id):
-    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz')
+    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id)
 
 
-@admin_bp.route('/<uuid:id>/casa_de_paz/editar')
+@admin_bp.route('/casa_de_paz/<id>/editar')
 @login_required
 @role_required("admin")
 def casa_de_paz_editar(id):
-    return render_template('form_cdp.html', title='Casas de Paz', breadcrumb='Casa de paz', link='casa_de_paz')
+    return render_template('form_cdp.html', title='Casas de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id, is_edit=True)
 
 
-@admin_bp.route('/<uuid:id>/red/editar')
+@admin_bp.route('/red/crear')
+@login_required
+@role_required("admin")
+def red_crear():
+    return render_template('form_redes.html', title='Redes', breadcrumb='Red', link='red', is_edit=False)
+
+
+@admin_bp.route('/red/<id>/editar')
 @login_required
 @role_required("admin")
 def red_editar(id):
-    return render_template('form_redes.html', title='Redes', breadcrumb='Red', link='red')
+    return render_template('form_redes.html', title='Redes', breadcrumb='Red', link='red', recurso_id=id, is_edit=True)
 
 
-@admin_bp.route('/<uuid:id>/perfil', methods=['GET', 'POST'])
+@admin_bp.route('/perfil', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
-def perfil(id):
+def perfil():
     """Perfil del administrador."""
     from database import get_db_connection
     
     usuario = session.get("usuario")
+    rol = session.get("rol")
     connect = get_db_connection()
     if connect:
         try:
@@ -121,15 +152,4 @@ def perfil(id):
         finally:
             connect.close()
     
-    return render_template('perfil.html', usuario=usuario)
-
-
-# Legacy route
-@admin_bp.route('/dashboard')
-def dashboard_legacy():
-    """Ruta legacy - redirige a la nueva ruta dinámica."""
-    from flask import redirect, url_for
-    usuario_id = session.get("usuario_id")
-    if not usuario_id:
-        return redirect(url_for("auth.login"))
-    return redirect(url_for('admin.dashboard', id=usuario_id), code=301)
+    return render_template('perfil.html', usuario=usuario, rol=rol)

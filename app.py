@@ -10,7 +10,7 @@ from config import config
 from routes.auth_routes import auth_bp
 from routes.admin_routes import admin_bp
 from routes.supervisor_routes import supervisor_bp
-from routes.cdp_routes import cdp_bp
+from routes.lider_cdp_routes import lider_cdp_bp
 from routes.api_routes import api_bp
 from utils.context import context_functions
 from database import get_db_connection
@@ -28,7 +28,7 @@ app.secret_key = app.config['SECRET_KEY']
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(supervisor_bp)
-app.register_blueprint(cdp_bp)
+app.register_blueprint(lider_cdp_bp)
 app.register_blueprint(api_bp)
 
 # ---------------------------------------------------------------------------
