@@ -22,7 +22,7 @@
 
     <!-- Filter Bar Jerárquica -->
     <section class="filter-bar-card">
-        <form id="filterForm" method="GET" action="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}{% else %}{{ url_for('admin.dashboard', id=get_usuario_id()) }}{% endif %}" class="filter-form">
+        <form id="filterForm" method="GET" action="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="filter-form">
             {% if has_role("supervisor") %}
             <!-- Supervisor: selector simplificado -->
             <input type="hidden" name="nivel" id="selectNivel" value="red">
@@ -31,7 +31,7 @@
             <!-- Admin: selector completo -->
             <div class="filter-group">
                 <label for="selectNivel" class="filter-label">Nivel de Vista</label>
-                <select id="selectNivel" name="nivel" class="filter-select">
+                <select id="selectNivel" name="nivel" class="filter-select" aria-label="Seleccionar nivel de vista del panel">
                     <option value="general" {% if nivel == 'general' %}selected{% endif %}>Vista General (Iglesia)</option>
                     <option value="red" {% if nivel == 'red' %}selected{% endif %}>Por Red / Zonal</option>
                     <option value="cdp" {% if nivel == 'cdp' %}selected{% endif %}>Por Casa de Paz</option>
@@ -40,7 +40,7 @@
             
             <div id="groupRed" class="filter-group {% if nivel == 'general' %}hidden{% endif %}">
                 <label for="selectRed" class="filter-label">Seleccionar Red</label>
-                <select id="selectRed" name="red_id" class="filter-select" data-search-placeholder="Buscar red...">
+                <select id="selectRed" name="red_id" class="filter-select" aria-label="Seleccionar red ministerial" data-search-placeholder="Buscar red...">
                     {% if not redes %}<option value="">No hay redes disponibles</option>{% endif %}
                     {% for red in redes %}
                     <option value="{{ red.id }}" {% if red_id == red.id %}selected{% endif %} data-search="{{ red.nombre|lower }} {{ red.supervisor|lower }}">{{ red.nombre }}</option>
@@ -51,10 +51,10 @@
             
             <div id="groupCdp" class="filter-group {% if nivel != 'cdp' %}hidden{% endif %}">
                 <label for="selectCdp" class="filter-label">Casa de Paz</label>
-                <select id="selectCdp" name="cdp_id" class="filter-select" data-search-placeholder="Buscar por código, nombre o líder...">
+                <select id="selectCdp" name="cdp_id" class="filter-select" aria-label="Seleccionar casa de paz" data-search-placeholder="Buscar por código, nombre o líder...">
                     {% if not casas %}<option value="">No hay Casas de Paz disponibles</option>{% endif %}
                     {% for cdp in casas %}
-                    <option value="{{ cdp.id }}" {% if cdp_id == cdp.id %}selected{% endif %} data-search="{{ cdp.nombre|lower }} {{ cdp.codigo|lower }} {{ cdp.lider|default('')|lower }}">{{ cdp.nombre }} ({{ cdp.codigo }})</option>
+                    <option value="{{ cdp.id }}" {% if cdp_id == cdp.id %}selected{% endif %} data-search="{{ cdp.nombre|lower }} {{ cdp.codigo|lower }} {{ cdp.anfitrion|default('')|lower }} {{ cdp.lider|default('')|lower }}">{{ cdp.codigo }}{% if cdp.anfitrion %} · {{ cdp.anfitrion }}{% endif %} (Líder: {{ cdp.lider|default('Sin líder') }})</option>
                     {% endfor %}
                 </select>
             </div>
@@ -65,15 +65,15 @@
                     Buscar rápido
                 </label>
                 <div class="search-input-wrapper">
-                    <input type="text" id="searchInput" name="q" class="filter-search" placeholder="Buscar por Red, código CDP o líder..." value="{{ request.args.get('q', '') }}">
-                    <button type="button" id="clearSearch" class="clear-search-btn" title="Limpiar búsqueda">
+                    <input type="text" id="searchInput" name="q" class="filter-search" aria-label="Buscar rápido por red, código de casa o líder" placeholder="Buscar por Red, código CDP o líder..." value="{{ request.args.get('q', '') }}">
+                    <button type="button" id="clearSearch" class="clear-search-btn" aria-label="Limpiar campo de búsqueda" title="Limpiar búsqueda">
                         <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
             </div>
             
             <div class="filter-actions">
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard', id=get_usuario_id()) }}{% else %}{{ url_for('admin.dashboard', id=get_usuario_id()) }}{% endif %}" class="btn-reset" title="Restablecer filtros">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="btn-reset" aria-label="Restablecer filtros del dashboard" title="Restablecer filtros">
                     <span class="material-symbols-outlined">restart_alt</span>
                 </a>
             </div>
@@ -92,7 +92,7 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Total Asistencia</h3>
-                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}{{ metricas.total_asistencia|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.total_asistencia|default(0) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
@@ -106,14 +106,14 @@
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
-                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0) %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">trending_up</span>
                     <h3 class="card-title">Conversiones del Mes</h3>
-                    <div class="card-number">{% if metricas.reportes_enviados|default(0) %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">trending_up</span>
                 </article>
             </section>
@@ -204,10 +204,10 @@
                                 <article class="alert-item">
                                     <div class="alert-info-text">
                                         <h4>{{ alerta.nombre }} <span class="badge-code">{{ alerta.codigo }}</span></h4>
-                                        <p class="alert-meta">{{ alerta.red }} · Líder: {{ alerta.lider }}</p>
+                                        <p class="alert-meta">{{ alerta.red }} · Supervisor: {{ alerta.lider }}</p>
                                         <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">schedule</span> {{ alerta.dias_sin_reporte }} días sin reporte</p>
                                     </div>
-                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Contactar por WhatsApp">
+                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Contactar a {{ alerta.lider }} por WhatsApp" title="Contactar por WhatsApp">
                                         <span class="material-symbols-outlined">chat</span>
                                         Contactar
                                     </a>{% endif %}
@@ -283,7 +283,7 @@
                 </div>
                 <div class="header-action-group">
                     <span class="badge-status badge-info">{{ metricas.casas_activas }} Casas Activas</span>
-                    <button class="btn-full-outline btn-export-header" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
+                    <button class="btn-full-outline btn-export-header" aria-label="Exportar resumen de métricas de {{ metricas.nombre_red }}" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
                         <span class="material-symbols-outlined">download</span>
                         Exportar Resumen
                     </button>
@@ -401,7 +401,7 @@
                                     <p class="alert-meta">Líder: {{ alerta.lider }}</p>
                                     <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" title="Atender por WhatsApp">
+                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
                                     <span class="material-symbols-outlined">support_agent</span>
                                     Atender
                                 </a>{% endif %}
@@ -451,9 +451,9 @@
                                     <h4>{{ sup.nombre }}</h4>
                                     <p>{{ sup.rol }}</p>
                                 </div>
-                                <a href="tel:{{ sup.telefono }}" class="btn-icon-call" title="Llamar {{ sup.nombre }}">
+                                {% if sup.telefono %}<a href="tel:{{ sup.telefono }}" class="btn-icon-call" aria-label="Llamar a supervisor {{ sup.nombre }}" title="Llamar {{ sup.nombre }}">
                                     <span class="material-symbols-outlined">call</span>
-                                </a>
+                                </a>{% endif %}
                             </div>
                             {% endfor %}
                             {% else %}
@@ -511,17 +511,21 @@
                 {% endif %}
 
                 <!-- Trazabilidad de Último Reporte -->
-                <div class="trazabilidad-box">
-                    <span class="material-symbols-outlined {% if metricas.estado_reporte == 'enviado' %}text-primary{% else %}text-secondary{% endif %}">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
+                <div class="trazabilidad-box {{ metricas.estado_reporte }}">
+                    <span class="material-symbols-outlined trazabilidad-icon">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
                     <div class="trazabilidad-text">
-                        <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Último Reporte Enviado{% else %}Reporte pendiente{% endif %}</span>
-                        {% if metricas.estado_reporte == 'enviado' %}<span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>{% else %}<span class="trazabilidad-author">Todavía no hay reportes registrados.</span>{% endif %}
+                        <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Último Reporte Enviado{% else %}Reporte Pendiente{% endif %}</span>
+                        {% if metricas.estado_reporte == 'enviado' %}
+                        <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>
+                        {% else %}
+                        <span class="trazabilidad-author">Todavía no hay reportes registrados para esta casa.</span>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="lider-actions">
                     {% if metricas.telefono_contacto %}
-                    <a href="https://wa.me/{{ metricas.telefono_contacto|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline">
+                    <a href="https://wa.me/{{ metricas.telefono_contacto|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
                         <span class="material-symbols-outlined">chat</span>
                         WhatsApp
                     </a>

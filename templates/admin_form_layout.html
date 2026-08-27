@@ -20,7 +20,7 @@
     <main class="main-content">
         <div class="crud-container">
             <nav class="breadcrumb">
-                <a href="/admin/estructura">Estructura</a>
+                <a href="{{ url_for('admin.estructura') }}">Estructura</a>
                 <span class="material-symbols-outlined">chevron_right</span>
 
                 {% if request.path == '/admin/' + link %}
@@ -29,9 +29,12 @@
                 <a href="/admin/{{ link }}" class="current">{{ breadcrumb }}</a>
                 {% endif %}
 
-                {% if request.path == '/admin/' + link + '/editar' %}
+                {% if '/editar' in request.path %}
                 <span class="material-symbols-outlined">chevron_right</span>
                 <span class="current">Editar</span>
+                {% elif '/crear' in request.path %}
+                <span class="material-symbols-outlined">chevron_right</span>
+                <span class="current">Crear</span>
                 {% endif %}
             </nav>
 
