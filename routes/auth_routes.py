@@ -11,7 +11,13 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/iniciar_sesion', methods=['GET', 'POST'])
 def login():
     """Página de inicio de sesión."""
+    from flask import current_app
     p = ""
+    is_dev = bool(
+        current_app.config.get('DEBUG', False)
+        or current_app.config.get('FLASK_ENV') == 'development'
+        or current_app.config.get('MOCK_MODE', False)
+    )
 
     # Helper para redirigir según el rol
     def _redirect_by_role(role):
@@ -23,8 +29,8 @@ def login():
             return redirect(url_for('lider_cdp.dashboard'))
 
     if request.method == 'POST':
-        usuario = request.form['usuario']
-        contrasena = request.form['contrasena']
+        usuario = request.form.get('usuario', '').strip()
+        contrasena = request.form.get('contrasena', '').strip()
 
         conn = get_db_connection()
         if conn:
@@ -38,7 +44,7 @@ def login():
 
                 password_valid = bool(r and _check_password(r['password'], contrasena))
                 if not password_valid:
-                    p = "El usuario no se encuentra registrado"
+                    p = "Usuario o contraseña incorrectos"
                 else:
                     if r['password'] == contrasena:
                         cur.execute(
@@ -55,32 +61,35 @@ def login():
                     session["rol"] = rol_final
                     return _redirect_by_role(rol_final)
             except Exception as e:
-                from flask import current_app
                 current_app.logger.exception("[DB] Error login: %s", e)
                 p = "Error al verificar credenciales"
             finally:
                 conn.close()
         else:
-            # Modo demo sin BD: login simulado
-            if usuario == "admin" and contrasena == "admin":
-                session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
-                session["usuario"] = "admin"
-                session["rol"] = "admin"
-                return _redirect_by_role("admin")
-            elif usuario == "supervisor" and contrasena == "supervisor":
-                session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
-                session["usuario"] = "supervisor"
-                session["rol"] = "supervisor"
-                return _redirect_by_role("supervisor")
-            elif usuario and contrasena:
-                session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
-                session["usuario"] = usuario
-                session["rol"] = "lider_cdp"
-                return _redirect_by_role("lider_cdp")
+            # Modo demo: ESTRICTAMENTE habilitado SOLO en entorno de desarrollo
+            if is_dev:
+                if usuario == "admin" and contrasena == "admin":
+                    session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
+                    session["usuario"] = "admin"
+                    session["rol"] = "admin"
+                    return _redirect_by_role("admin")
+                elif usuario == "supervisor" and contrasena == "supervisor":
+                    session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
+                    session["usuario"] = "supervisor"
+                    session["rol"] = "supervisor"
+                    return _redirect_by_role("supervisor")
+                elif usuario and contrasena:
+                    session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
+                    session["usuario"] = usuario
+                    session["rol"] = "lider_cdp"
+                    return _redirect_by_role("lider_cdp")
+                else:
+                    p = "Modo desarrollo activo: ingresa admin/admin, supervisor/supervisor o un líder"
             else:
-                p = "Modo demo: usa admin/admin, supervisor/supervisor o cualquier usuario/contraseña"
+                current_app.logger.error("[PROD] Conexión a BD no disponible durante inicio de sesión")
+                p = "Servicio no disponible temporalmente. Intente más tarde."
 
-    return render_template('login.html', p=p)
+    return render_template('login.html', p=p, is_dev=is_dev)
 
 
 def _check_password(stored_password, provided_password):
