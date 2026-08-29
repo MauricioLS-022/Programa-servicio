@@ -913,23 +913,23 @@ button.red-card {
     .red-card:not(.active):hover {
         background-color: #faf7f5;
         border-color: rgba(137, 114, 111, 0.5);
-        transform: none !important;
+        transform: none;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     }
 
     .red-card.active {
-        background: var(--primary, #390002) !important;
-        border: 1.5px solid var(--primary, #390002) !important;
-        border-left: 1.5px solid var(--primary, #390002) !important;
+        background: var(--primary, #390002);
+        border: 1.5px solid var(--primary, #390002);
+        border-left: 1.5px solid var(--primary, #390002);
         box-shadow: 0 2px 8px rgba(57, 0, 2, 0.2);
-        transform: none !important;
+        transform: none;
         opacity: 1;
     }
 
     .red-card.active:hover {
-        background: var(--primary, #390002) !important;
-        border-color: var(--primary, #390002) !important;
-        transform: none !important;
+        background: var(--primary, #390002);
+        border-color: var(--primary, #390002);
+        transform: none;
     }
 
     .red-name {
@@ -940,7 +940,7 @@ button.red-card {
     }
 
     .red-card.active .red-name {
-        color: #ffffff !important;
+        color: #ffffff;
     }
 
     .red-count {
@@ -952,7 +952,7 @@ button.red-card {
     }
 
     .red-card.active .red-count {
-        color: #ffdad6 !important;
+        color: #ffdad6;
         font-weight: 500;
     }
 
@@ -965,16 +965,16 @@ button.red-card {
     }
 
     .red-card-all.active {
-        background: var(--primary, #390002) !important;
-        border-color: var(--primary, #390002) !important;
+        background: var(--primary, #390002);
+        border-color: var(--primary, #390002);
     }
 
     .red-card-all.active .red-name {
-        color: #ffffff !important;
+        color: #ffffff;
     }
 
     .red-card-all.active .red-count {
-        color: #ffdad6 !important;
+        color: #ffdad6;
     }
 
     .red-leader,
@@ -1226,261 +1226,271 @@ button.red-card {
    TEMA OSCURO ESTRUCTURA ([data-theme="dark"])
    ========================================================================== */
 [data-theme="dark"] .estructura-main {
-    background-color: transparent !important;
+    background-color: transparent;
 }
 
 /* Page Header */
 [data-theme="dark"] .estructura-main > .page-header {
-    background-color: var(--surface-container-lowest, #1b1416) !important;
-    background: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
-    border-radius: 1rem !important;
-    padding: 1.5rem 2rem !important;
+    background-color: var(--surface-container-lowest, #1b1416);
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
 }
 
 [data-theme="dark"] .estructura-main .title {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .estructura-main .subtitle {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .estructura-main .highlight {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Sidebar de Redes */
 [data-theme="dark"] .redes-sidebar {
-    background-color: var(--surface-container-lowest, #1b1416) !important;
-    background: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+    background-color: var(--surface-container-lowest, #1b1416);
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="dark"] .sidebar-title {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 /* Tarjetas de Red */
 [data-theme="dark"] .red-card {
-    background-color: var(--surface-container-low, #1f1618) !important;
-    background: var(--surface-container-low, #1f1618) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--surface-container-low, #1f1618);
+    background: var(--surface-container-low, #1f1618);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .red-card:not(.active):hover {
-    background-color: var(--surface-container-high, #2f2225) !important;
-    border-color: rgba(248, 222, 218, 0.4) !important;
+    background-color: var(--surface-container-high, #2f2225);
+    border-color: rgba(248, 222, 218, 0.4);
 }
 
 [data-theme="dark"] .red-card.active {
-    background: #38070a !important;
-    background-image: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
-    border: 2px solid rgba(255, 180, 171, 0.5) !important;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
+    background: #38070a;
+    background-image: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+    border: 2px solid rgba(255, 180, 171, 0.5);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] .red-card .red-name,
 [data-theme="dark"] .red-card.active .red-name {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .red-leader {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .red-count,
 [data-theme="dark"] .red-card.active .red-count {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 [data-theme="dark"] .avatar-maroon {
-    background-color: #8b1518 !important;
-    border-color: #1f1618 !important;
-    color: #ffffff !important;
+    background-color: #8b1518;
+    border-color: #1f1618;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .avatar-count {
-    background-color: var(--surface-container-high, #2f2225) !important;
-    color: var(--primary, #f8deda) !important;
-    border-color: #1f1618 !important;
+    background-color: var(--surface-container-high, #2f2225);
+    color: var(--primary, #f8deda);
+    border-color: #1f1618;
 }
 
 [data-theme="dark"] .icon-more {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .red-menu {
-    background: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8) !important;
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
 }
 
 [data-theme="dark"] .red-menu a,
 [data-theme="dark"] .red-menu button {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .red-menu a:hover,
 [data-theme="dark"] .red-menu button:hover {
-    background: var(--surface-container-high, #2f2225) !important;
+    background: var(--surface-container-high, #2f2225);
 }
 
 /* Tarjeta de Impacto / Estado de Salud */
 [data-theme="dark"] .impact-card {
-    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
-    border: 1.5px solid rgba(255, 180, 171, 0.35) !important;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.65) !important;
+    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+    border: 1.5px solid rgba(255, 180, 171, 0.35);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.65);
 }
 
 [data-theme="dark"] .impact-content h3 {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .impact-subtitle {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .impact-number {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .impact-note {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Header de Casas de Paz */
 [data-theme="dark"] .casas-header {
-    background: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="dark"] .casas-header .section-title {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .casas-header .section-subtitle {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .casas-header .section-subtitle strong {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Buscador */
 [data-theme="dark"] .search-bar input {
-    background-color: var(--input-bg, #150f10) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--input-bg, #150f10);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25));
+    border-radius: 999px;
+    outline: none;
+    color: var(--text-main, #f8f2f0);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .search-bar input:focus,
+[data-theme="dark"] .search-bar input:focus-visible {
+    border-color: var(--primary, #f8deda);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(248, 222, 218, 0.18);
 }
 
 [data-theme="dark"] .search-bar input::placeholder {
-    color: var(--text-muted, #d4c2bf) !important;
-    opacity: 0.65;
+    color: var(--text-muted, #d4c2bf);
+    opacity: 0.85;
 }
 
 [data-theme="dark"] .icon-search {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Tarjetas de Casa de Paz */
 [data-theme="dark"] .casa-card {
-    background-color: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .casa-card:hover {
-    border-color: rgba(248, 222, 218, 0.45) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
+    border-color: rgba(248, 222, 218, 0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
 }
 
 [data-theme="dark"] .casa-name {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .casa-zone {
-    color: #fde047 !important;
+    color: #fde047;
 }
 
 /* Icono de Casa */
 [data-theme="dark"] .casa-icon {
-    background-color: #38070a !important;
-    color: var(--primary, #f8deda) !important;
-    border: 1px solid rgba(255, 180, 171, 0.3) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    background-color: #38070a;
+    color: var(--primary, #f8deda);
+    border: 1px solid rgba(255, 180, 171, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Status Badges */
 [data-theme="dark"] .status-activa,
 [data-theme="dark"] .status-active {
-    background: rgba(34, 197, 94, 0.18) !important;
-    color: #4ade80 !important;
-    border: 1px solid rgba(74, 222, 128, 0.35) !important;
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 0.35);
 }
 
 [data-theme="dark"] .status-pausada,
 [data-theme="dark"] .status-paused,
 [data-theme="dark"] .status-pendiente {
-    background: rgba(234, 179, 8, 0.18) !important;
-    color: #fde047 !important;
-    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+    background: rgba(234, 179, 8, 0.18);
+    color: #fde047;
+    border: 1px solid rgba(234, 179, 8, 0.35);
 }
 
 [data-theme="dark"] .detail-row {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .detail-row strong {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .detail-row .material-symbols-outlined {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .casa-footer {
-    border-top: 1px solid var(--border-color, rgba(221, 192, 189, 0.15)) !important;
+    border-top: 1px solid var(--border-color, rgba(221, 192, 189, 0.15));
 }
 
 [data-theme="dark"] .attendance {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .attendance .material-symbols-outlined {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 [data-theme="dark"] .btn-manage {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Tarjeta Agregar Casa */
 [data-theme="dark"] .casa-add-card {
-    background-color: var(--surface-container-low, #1f1618) !important;
-    border: 2px dashed var(--border-color, rgba(221, 192, 189, 0.25)) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--surface-container-low, #1f1618);
+    border: 2px dashed var(--border-color, rgba(221, 192, 189, 0.25));
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .casa-add-card:hover {
-    border-color: var(--primary, #f8deda) !important;
-    background-color: var(--surface-container-high, #2f2225) !important;
+    border-color: var(--primary, #f8deda);
+    background-color: var(--surface-container-high, #2f2225);
 }
 
 [data-theme="dark"] .casa-add-card .add-icon {
-    background-color: #38070a !important;
-    color: var(--primary, #f8deda) !important;
+    background-color: #38070a;
+    color: var(--primary, #f8deda);
 }
 
 [data-theme="dark"] .casa-add-card h4 {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .casa-add-card p {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }

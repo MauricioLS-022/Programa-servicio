@@ -211,17 +211,17 @@
 
             <!-- Paginación -->
             {% if pages > 1 %}
-            <div class="pagination" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border-color, #e0e0e0);">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">
+            <div class="pagination">
+                <span class="pagination-info">
                     Mostrando {{ reportes|length }} de {{ total_reportes }} reporte(s)
                 </span>
-                <div class="pagination-controls" style="display: flex; align-items: center; gap: 0.25rem;">
+                <div class="pagination-controls">
                     {% if page > 1 %}
                     <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=page - 1) }}" aria-label="Página anterior">
-                        <span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_left</span>
+                        <span class="material-symbols-outlined">chevron_left</span>
                     </a>
                     {% else %}
-                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_left</span></span>
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_left</span></span>
                     {% endif %}
 
                     {% set win_start = [1, page - 2]|max %}
@@ -244,16 +244,16 @@
 
                     {% if page < pages %}
                     <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=page + 1) }}" aria-label="Página siguiente">
-                        <span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_right</span>
+                        <span class="material-symbols-outlined">chevron_right</span>
                     </a>
                     {% else %}
-                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_right</span></span>
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined">chevron_right</span></span>
                     {% endif %}
                 </div>
             </div>
             {% else %}
-            <div style="padding: 0.5rem 1rem; text-align: right; font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-color, #e0e0e0);">
-                {{ total_reportes }} reporte(s) en total
+            <div class="pagination">
+                <span class="pagination-info">{{ total_reportes }} reporte(s) en total</span>
             </div>
             {% endif %}
 

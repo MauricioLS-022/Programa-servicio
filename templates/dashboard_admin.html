@@ -126,7 +126,14 @@
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">check_circle</span>
                     <h3 class="card-title">Cumplimiento Semanal</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.cumplimiento|default(0) }}%{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                        {% if metricas.total_casas|default(0) %}
+                            <div>{{ metricas.cumplimiento|default(0) }}%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">{{ metricas.casas_con_reporte|default(metricas.reportes_enviados|default(0)) }} de {{ metricas.total_casas }} CDP</div>
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </div>
                     <span class="material-symbols-outlined watermark-icon">check_circle</span>
                 </article>
 
@@ -146,7 +153,7 @@
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">trending_up</span>
-                    <h3 class="card-title">Conversiones del Mes</h3>
+                    <h3 class="card-title">Confesiones de Fe</h3>
                     <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">trending_up</span>
                 </article>
@@ -164,8 +171,8 @@
                                 <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length }} mediciones</p>
                             </div>
                             {% if metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[0].asistencia > 0 %}
-                            <div class="trend-badge-pill">
-                                {% set variacion = ((metricas.tendencia_semanas[-1].asistencia - metricas.tendencia_semanas[0].asistencia) / metricas.tendencia_semanas[0].asistencia * 100)|round(1) %}
+                            {% set variacion = ((metricas.tendencia_semanas[-1].asistencia - metricas.tendencia_semanas[0].asistencia) / metricas.tendencia_semanas[0].asistencia * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}">
                                 <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
                                 <span>{{ '%+.1f'|format(variacion) }}% vs primera medición</span>
                             </div>
@@ -313,7 +320,7 @@
                                 </div>
                                 <div class="fruto-info">
                                     <span class="fruto-number">{{ metricas.conversiones|default(0) }}</span>
-                                    <span class="fruto-label">Decisiones</span>
+                                    <span class="fruto-label">Confesiones de Fe</span>
                                 </div>
                             </div>
                             <div class="fruto-item">
@@ -403,10 +410,10 @@
                 </article>
 
                 <article class="summary-card fade-in-3">
-                    <span class="material-symbols-outlined card-icon text-primary-container">child_care</span>
-                    <h3 class="card-title">Total Niños</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.ninos }}{% else %}Sin datos{% endif %}</div>
-                    <span class="material-symbols-outlined watermark-icon">child_care</span>
+                    <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
+                    <h3 class="card-title">Confesiones de Fe</h3>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <span class="material-symbols-outlined watermark-icon">person_add</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
@@ -707,10 +714,19 @@
                 </article>
 
                 <article class="summary-card fade-in-3">
-                    <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
-                    <h3 class="card-title">Nuevas Decisiones</h3>
-                    <div class="card-number">{% if metricas.historial %}{{ metricas.conversiones }}{% else %}Sin datos{% endif %}</div>
-                    <span class="material-symbols-outlined watermark-icon">person_add</span>
+                    <span class="material-symbols-outlined card-icon text-secondary">savings</span>
+                    <h3 class="card-title">Ofrendas Último Servicio</h3>
+                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                        {% if metricas.historial %}
+                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(metricas.historial[0].ofrendas_usd|default(metricas.historial[0].ofrenda|default(0)))) }}</div>
+                            {% if metricas.ofrendas_bs|default(metricas.historial[0].ofrendas_bs|default(0)) > 0 %}
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(metricas.historial[0].ofrendas_bs|default(0))) }}</div>
+                            {% endif %}
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </div>
+                    <span class="material-symbols-outlined watermark-icon">savings</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
@@ -781,12 +797,13 @@
 
                         {% if metricas.historial %}<div class="chart-area">
                             <ul class="chart-legend" aria-hidden="true">
-                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
-                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
-                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
+                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares|default(0) }})</li>
+                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos|default(0) }})</li>
+                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas|default(0) }})</li>
+                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos|default(0) }})</li>
                             </ul>
                             <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia del último reporte">
-                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="0"></div>
+                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares|default(0) }}" data-ninos="{{ metricas.distribucion.ninos|default(0) }}" data-visitas="{{ metricas.distribucion.visitas|default(0) }}" data-comprometidos="{{ metricas.distribucion.comprometidos|default(0) }}"></div>
                                 <div class="donut-center">
                                     <span class="donut-label">TOTAL</span>
                                     <span class="donut-number">{{ metricas.asistencia_ultimo|default(0, true) }}</span>

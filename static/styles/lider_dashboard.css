@@ -141,8 +141,8 @@
    Tarjetas de Resumen KPI
    ========================================================================== */
 .action-card {
-    background: linear-gradient(135deg, #ffffff 0%, #fff7f6 100%) !important;
-    border-color: rgba(92, 20, 29, 0.3) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fff7f6 100%);
+    border-color: rgba(92, 20, 29, 0.3);
     text-decoration: none;
     display: flex;
     flex-direction: column;
@@ -150,16 +150,16 @@
 }
 
 .action-card:hover {
-    background: linear-gradient(135deg, #5c0a0a 0%, #390002 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #5c0a0a 0%, #390002 100%);
+    color: white;
     transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(57, 0, 2, 0.2) !important;
+    box-shadow: 0 12px 28px rgba(57, 0, 2, 0.2);
 }
 
 .action-card:hover .card-icon,
 .action-card:hover .card-title,
 .action-card:hover .card-subtitle {
-    color: white !important;
+    color: white;
 }
 
 .action-card .card-subtitle {
@@ -273,15 +273,15 @@
     max-width: 28px;
     max-height: 28px;
     aspect-ratio: 1 / 1;
-    border-radius: 50% !important;
+    border-radius: 50%;
     background: #f7e8e9;
     color: var(--primary);
     font-weight: 700;
     font-size: 0.75rem;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     box-sizing: border-box;
 }
 
