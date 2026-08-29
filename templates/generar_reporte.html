@@ -141,17 +141,27 @@
             </div>
 
             <div class="form-group">
-                <label>Ofrendas</label>
+                <label>Ofrendas en Bolívares (Bs)</label>
                 <div class="input-wrapper icon-left">
-                    <span class="input-icon material-symbols-outlined">attach_money</span>
-                    <input type="number" step="0.01" name="ofrendas" placeholder="0.00 Bs" min="0" value="0.00" required>
+                    <span class="input-icon material-symbols-outlined">payments</span>
+                    <input type="number" step="0.01" name="ofrendas_bs" placeholder="0.00 Bs" min="0" value="0.00" required>
                 </div>
             </div>
             <div class="form-group">
-                <label>Cesta de amor</label>
+                <label>Ofrendas en Dólares ($)</label>
+                <div class="input-wrapper icon-left">
+                    <span class="input-icon material-symbols-outlined">attach_money</span>
+                    <input type="number" step="0.01" name="ofrendas_usd" placeholder="0.00 $" min="0" value="0.00" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>¿Cesta de amor?</label>
                 <div class="input-wrapper icon-left">
                     <span class="input-icon material-symbols-outlined">shopping_basket</span>
-                    <input type="number" step="0.01" name="cesta_amor" placeholder="0.00 Bs" min="0" value="0.00" required>
+                    <select name="cesta_amor" required>
+                        <option value="0" selected>No</option>
+                        <option value="1">Sí</option>
+                    </select>
                 </div>
             </div>
 

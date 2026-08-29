@@ -1,0 +1,422 @@
+/* ==========================================================================
+   VINO NUEVO — ESTILOS DE AUTENTICACIÓN / LOGIN
+   Diseño moderno, accesible, tipografías del sistema y soporte de tema oscuro.
+   ========================================================================== */
+
+:root {
+    --login-bg: #fff8f7;
+    --login-card-bg: #ffffff;
+    --login-card-border: rgba(137, 114, 111, 0.2);
+    --login-text-main: #390002;
+    --login-text-muted: #6b5557;
+    --login-input-bg: #ffffff;
+    --login-input-border: rgba(137, 114, 111, 0.3);
+    --login-input-focus: #700204;
+    --login-primary: #700204;
+    --login-primary-dark: #390002;
+    --login-shadow: 0 20px 60px rgba(57, 0, 2, 0.08);
+    --login-alert-bg: #fef2f2;
+    --login-alert-border: #fecaca;
+    --login-alert-text: #991b1b;
+}
+
+[data-theme="dark"] {
+    --login-bg: #120e0f;
+    --login-card-bg: #1b1416;
+    --login-card-border: rgba(221, 192, 189, 0.2);
+    --login-text-main: #f8f2f0;
+    --login-text-muted: #d4c2bf;
+    --login-input-bg: #150f10;
+    --login-input-border: rgba(221, 192, 189, 0.25);
+    --login-input-focus: #8b1518;
+    --login-primary: #8b1518;
+    --login-primary-dark: #5c0e10;
+    --login-shadow: 0 25px 70px rgba(0, 0, 0, 0.75);
+    --login-alert-bg: rgba(239, 68, 68, 0.15);
+    --login-alert-border: rgba(239, 68, 68, 0.3);
+    --login-alert-text: #fca5a5;
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.login-body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--login-bg);
+    background-image: linear-gradient(rgba(255, 248, 247, 0.94), rgba(255, 248, 247, 0.94)), url("../fondo.webp");
+    background-repeat: repeat;
+    background-size: 160px;
+    background-attachment: fixed;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--login-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
+[data-theme="dark"] body.login-body {
+    background-image: linear-gradient(rgba(18, 14, 15, 0.96), rgba(18, 14, 15, 0.96)), url("../fondo.webp");
+}
+
+/* ==========================================================================
+   BOTÓN FLOTANTE SELECTOR DE TEMA
+   ========================================================================== */
+.theme-toggle-btn {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--login-card-border);
+    background: var(--login-card-bg);
+    color: var(--login-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s ease;
+    z-index: 50;
+}
+
+.theme-toggle-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.theme-toggle-btn .material-symbols-outlined {
+    font-size: 1.35rem;
+    transition: transform 0.3s ease;
+}
+
+/* ==========================================================================
+   TARJETA PRINCIPAL DE LOGIN
+   ========================================================================== */
+.login-card {
+    background-color: var(--login-card-bg);
+    border: 1px solid var(--login-card-border);
+    border-radius: 1.25rem;
+    box-shadow: var(--login-shadow);
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem 2.25rem 2rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+/* ==========================================================================
+   CABECERA DEL LOGIN
+   ========================================================================== */
+.brand-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 1.75rem;
+    width: 100%;
+}
+
+.brand-logo-wrap {
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.brand-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(112, 2, 4, 0.2));
+    transition: transform 0.3s ease;
+}
+
+.brand-logo-wrap:hover .brand-logo-img {
+    transform: scale(1.05);
+}
+
+.brand-title {
+    font-family: 'Noto Serif', serif;
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--login-text-main);
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+}
+
+.brand-subtitle {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--login-text-muted);
+}
+
+/* ==========================================================================
+   ALERTA DE ERROR / MENSAJE
+   ========================================================================== */
+.login-alert {
+    width: 100%;
+    background-color: var(--login-alert-bg);
+    border: 1px solid var(--login-alert-border);
+    color: var(--login-alert-text);
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+    animation: fadeInSlide 0.3s ease-out;
+}
+
+.login-alert .material-symbols-outlined {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   FORMULARIO Y CAMPOS
+   ========================================================================== */
+.login-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.form-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--login-text-muted);
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.input-icon-left {
+    position: absolute;
+    left: 1rem;
+    color: var(--login-text-muted);
+    font-size: 1.25rem;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.form-input {
+    width: 100%;
+    background-color: var(--login-input-bg);
+    border: 1.5px solid var(--login-input-border);
+    border-radius: 0.75rem;
+    padding: 0.8rem 1rem 0.8rem 2.85rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--login-text-main);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-input::placeholder {
+    color: var(--login-text-muted);
+    opacity: 0.65;
+}
+
+.form-input:focus {
+    border-color: var(--login-input-focus);
+    box-shadow: 0 0 0 3.5px rgba(112, 2, 4, 0.12);
+}
+
+[data-theme="dark"] .form-input:focus {
+    box-shadow: 0 0 0 3.5px rgba(139, 21, 24, 0.25);
+}
+
+.input-wrapper:focus-within .input-icon-left {
+    color: var(--login-input-focus);
+}
+
+/* Campo con botón derecho (mostrar contraseña) */
+.form-input-password {
+    padding-right: 3rem;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--login-text-muted);
+    padding: 0.35rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-toggle-password:hover {
+    color: var(--login-text-main);
+    background-color: rgba(137, 114, 111, 0.12);
+}
+
+.btn-toggle-password .material-symbols-outlined {
+    font-size: 1.25rem;
+}
+
+/* ==========================================================================
+   BOTÓN DE ENVIAR
+   ========================================================================== */
+.btn-login {
+    width: 100%;
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-dark) 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.9rem 1.5rem;
+    font-size: 0.98rem;
+    font-weight: 700;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(112, 2, 4, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 24px rgba(112, 2, 4, 0.35);
+    filter: brightness(1.06);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-login .btn-icon {
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-login:hover .btn-icon {
+    transform: translateX(3px);
+}
+
+/* ==========================================================================
+   INDICADOR MODO DESARROLLO (SOLO EN DEV)
+   ========================================================================== */
+.dev-banner {
+    margin-top: 1.5rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba(243, 208, 122, 0.12);
+    border: 1px dashed rgba(243, 208, 122, 0.4);
+    border-radius: 0.65rem;
+    font-size: 0.78rem;
+    color: var(--login-text-muted);
+    text-align: center;
+    width: 100%;
+}
+
+.dev-banner-title {
+    font-weight: 700;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-bottom: 0.25rem;
+}
+
+[data-theme="dark"] .dev-banner-title {
+    color: #fde047;
+}
+
+.dev-banner code {
+    font-size: 0.75rem;
+    background: rgba(137, 114, 111, 0.15);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   PIE DE PÁGINA
+   ========================================================================== */
+.login-footer {
+    margin-top: 1.75rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--login-text-muted);
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 480px) {
+    .login-card {
+        padding: 2rem 1.5rem 1.5rem 1.5rem;
+        border-radius: 1rem;
+    }
+
+    .brand-title {
+        font-size: 1.45rem;
+    }
+
+    .theme-toggle-btn {
+        top: 0.85rem;
+        right: 0.85rem;
+        width: 38px;
+        height: 38px;
+    }
+}
+

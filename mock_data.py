@@ -15,12 +15,56 @@ def get_redes_demo():
 
 
 def get_casas_demo():
-    """Lista de casas de paz para los selectores del filtro."""
+    """Lista de casas de paz para los selectores del filtro y vista de estructura."""
     return [
-        {'id': 1, 'nombre': 'Casa Bethel', 'codigo': 'HEB-001', 'red_id': 1},
-        {'id': 2, 'nombre': 'Casa de Oración Sur', 'codigo': 'SUR-001', 'red_id': 2},
-        {'id': 3, 'nombre': 'Casa Nueva Vida', 'codigo': 'CEN-001', 'red_id': 3},
-        {'id': 4, 'nombre': 'Casa Luz', 'codigo': 'HEB-002', 'red_id': 1},
+        {
+            'id': 1,
+            'nombre': 'Casa Bethel',
+            'codigo': 'HEB-001',
+            'red_id': 1,
+            'anfitrion': 'David Gómez y Elena Ríos',
+            'direccion': 'Calle 12 #18-45, sector El Carmen',
+            'lider': 'Juan Carlos Pérez',
+            'asistencia': 18,
+            'estado': 'activa',
+            'horario': 'Martes · 7:30 PM'
+        },
+        {
+            'id': 2,
+            'nombre': 'Casa de Oración Sur',
+            'codigo': 'SUR-001',
+            'red_id': 2,
+            'anfitrion': 'María López',
+            'direccion': 'Av. Principal #45, sector Sur',
+            'lider': 'Elena Pérez',
+            'asistencia': 14,
+            'estado': 'activa',
+            'horario': 'Miércoles · 7:00 PM'
+        },
+        {
+            'id': 3,
+            'nombre': 'Casa Nueva Vida',
+            'codigo': 'CEN-001',
+            'red_id': 3,
+            'anfitrion': 'Carlos Ramírez',
+            'direccion': 'Carrera 8 #22-10, Centro',
+            'lider': 'Andrés Soler',
+            'asistencia': 22,
+            'estado': 'activa',
+            'horario': 'Jueves · 7:30 PM'
+        },
+        {
+            'id': 4,
+            'nombre': 'Casa Luz',
+            'codigo': 'HEB-002',
+            'red_id': 1,
+            'anfitrion': 'Pedro González',
+            'direccion': 'Calle 5 #9-14, sector Las Flores',
+            'lider': 'Mateo Rodríguez',
+            'asistencia': 12,
+            'estado': 'activa',
+            'horario': 'Viernes · 7:00 PM'
+        },
     ]
 
 
@@ -51,8 +95,13 @@ def get_mock_generales():
     return {
         'total_asistencia': 1248,
         'cumplimiento': 76,
-        'ofrendas': 12450,
+        'ofrendas': 1250.00,
+        'ofrendas_usd': 1250.00,
+        'ofrendas_bs': 12450.00,
         'conversiones': 312,
+        'reconciliaciones': 48,
+        'cestas_amor': 36,
+        'total_visitas': 124,
         'total_casas': 42,
         'reportes_enviados': 32,
         'distribucion': {
@@ -99,7 +148,9 @@ def get_mock_red(red_id):
         'asistencia_total': 486,
         'promedio_casa': 38,
         'ninos': 142,
-        'ofrendas': 4850,
+        'ofrendas': 450.00,
+        'ofrendas_usd': 450.00,
+        'ofrendas_bs': 4850.00,
         'distribucion': {
             'regulares': 266,
             'ninos': 142,
@@ -121,9 +172,13 @@ def get_mock_red(red_id):
             'visitas': 12,
             'lider': 'Juan Pérez',
         },
-        'supervisores': [
-            {'nombre': red['supervisor'], 'rol': 'Supervisor Principal', 'telefono': '+584121234567'},
-            {'nombre': 'Carmen Ruiz', 'rol': 'Asistente Zonal', 'telefono': '+584147654321'},
+        'cumplimiento': 75,
+        'casas_con_reporte': 3,
+        'casas_pendientes': 1,
+        'lideres_red': [
+            {'id': 1, 'nombre': 'Juan Pérez', 'rol': 'Lider', 'telefono': '+584141234567', 'cdp_codigo': 'HEB-001', 'cdp_anfitrion': 'Familia Pérez'},
+            {'id': 2, 'nombre': 'Ana Martínez', 'rol': 'Sublider', 'telefono': '+584127654321', 'cdp_codigo': 'HEB-001', 'cdp_anfitrion': 'Familia Pérez'},
+            {'id': 3, 'nombre': 'Roberto Gómez', 'rol': 'Lider', 'telefono': '+584249988776', 'cdp_codigo': 'HEB-002', 'cdp_anfitrion': 'Familia Gómez'},
         ],
     }
 
@@ -151,6 +206,10 @@ def get_mock_cdp(cdp_id):
         'estado_reporte': 'enviado',
         'ultimo_reporte_por': 'Juan Pérez (Líder)',
         'ultimo_reporte_fecha': '10 Ago 2026',
+        'ultimo_tema': 'El Poder de la Fe (Semana 8)',
+        'hr_inicio': '19:00',
+        'hr_fin': '20:30',
+        'cesta_amor': True,
         'potencial_multiplicacion': True,
         'distribucion': {
             'regulares': 30,
@@ -159,16 +218,16 @@ def get_mock_cdp(cdp_id):
             'comprometidos': 0,
         },
         'historial': [
-            {'fecha': '2026-08-10', 'asistencia': 47, 'ninos': 12, 'visitas': 5, 'ofrenda': 450, 'observaciones': 'Excelente asistencia familiar y comunitaria. Se recibieron 2 nuevas visitas que mostraron gran interés en integrarse al grupo.'},
-            {'fecha': '2026-08-03', 'asistencia': 44, 'ninos': 10, 'visitas': 3, 'ofrenda': 380, 'observaciones': 'Estudio de tema sobre fe y servicio. Ambiente de comunión.'},
-            {'fecha': '2026-07-27', 'asistencia': 41, 'ninos': 9, 'visitas': 4, 'ofrenda': 420, 'observaciones': 'Reunión de oración y testimonios.'},
-            {'fecha': '2026-07-20', 'asistencia': 45, 'ninos': 11, 'visitas': 6, 'ofrenda': 510, 'observaciones': 'Celebración especial con participación de jóvenes.'},
+            {'fecha': '2026-08-10', 'asistencia': 47, 'ninos': 12, 'visitas': 5, 'ofrenda': 45, 'ofrendas_usd': 45.0, 'ofrendas_bs': 350.0, 'observaciones': 'Excelente asistencia familiar y comunitaria. Se recibieron 2 nuevas visitas que mostraron gran interés en integrarse al grupo.'},
+            {'fecha': '2026-08-03', 'asistencia': 44, 'ninos': 10, 'visitas': 3, 'ofrenda': 38, 'ofrendas_usd': 38.0, 'ofrendas_bs': 280.0, 'observaciones': 'Estudio de tema sobre fe y servicio. Ambiente de comunión.'},
+            {'fecha': '2026-07-27', 'asistencia': 41, 'ninos': 9, 'visitas': 4, 'ofrenda': 42, 'ofrendas_usd': 42.0, 'ofrendas_bs': 310.0, 'observaciones': 'Reunión de oración y testimonios.'},
+            {'fecha': '2026-07-20', 'asistencia': 45, 'ninos': 11, 'visitas': 6, 'ofrenda': 51, 'ofrendas_usd': 51.0, 'ofrendas_bs': 400.0, 'observaciones': 'Celebración especial con participación de jóvenes.'},
         ],
         'mini_historico': [
-            {'fecha': '20 Jul', 'asistencia': 45, 'altura': 80},
-            {'fecha': '27 Jul', 'asistencia': 41, 'altura': 72},
-            {'fecha': '03 Ago', 'asistencia': 44, 'altura': 78},
-            {'fecha': '10 Ago', 'asistencia': 47, 'altura': 85},
+            {'fecha': '10 Ago', 'asistencia': 47, 'altura': 94},
+            {'fecha': '03 Ago', 'asistencia': 44, 'altura': 88},
+            {'fecha': '27 Jul', 'asistencia': 41, 'altura': 82},
+            {'fecha': '20 Jul', 'asistencia': 45, 'altura': 90},
         ],
     }
 
@@ -182,6 +241,8 @@ def get_empty_generales():
         'total_asistencia': 0,
         'cumplimiento': 0,
         'ofrendas': 0,
+        'ofrendas_usd': 0,
+        'ofrendas_bs': 0,
         'conversiones': 0,
         'total_casas': 0,
         'reportes_enviados': 0,
@@ -200,14 +261,19 @@ def get_empty_generales():
 def get_empty_red(red_id):
     """Métricas vacías para una red sin datos."""
     return {
-        'nombre_red': 'Red',
+        'nombre_red': 'Red sin datos',
         'red_id': red_id,
-        'supervisor': '',
+        'supervisor': 'Sin asignar',
         'casas_activas': 0,
         'asistencia_total': 0,
         'promedio_casa': 0,
         'ninos': 0,
         'ofrendas': 0,
+        'ofrendas_usd': 0,
+        'ofrendas_bs': 0,
+        'cumplimiento': 0,
+        'casas_con_reporte': 0,
+        'casas_pendientes': 0,
         'distribucion': {
             'regulares': 0,
             'ninos': 0,
@@ -273,9 +339,11 @@ def get_mock_reportes():
             'asistencia': 24,
             'reconciliaciones': 2,
             'confesiones': 1,
-            'ofrendas': 1250.00,
+            'ofrendas': 25.00,
+            'ofrendas_usd': 25.00,
+            'ofrendas_bs': 350.00,
             'cesta_amor': 1,
-            'cesta_amor_desc': 'Canasta básica familiar',
+            'cesta_amor_desc': 'Sí',
             'tema': 'El poder del perdón',
             'observaciones': 'Testimonio de sanidad al finalizar',
         },
@@ -299,9 +367,11 @@ def get_mock_reportes():
             'asistencia': 18,
             'reconciliaciones': 1,
             'confesiones': 0,
-            'ofrendas': 840.50,
+            'ofrendas': 20.00,
+            'ofrendas_usd': 20.00,
+            'ofrendas_bs': 280.00,
             'cesta_amor': 1,
-            'cesta_amor_desc': 'Ropa para niños',
+            'cesta_amor_desc': 'Sí',
             'tema': 'Fe inquebrantable',
             'observaciones': 'Se recibieron 2 nuevos visitantes',
         },
@@ -325,9 +395,11 @@ def get_mock_reportes():
             'asistencia': 31,
             'reconciliaciones': 3,
             'confesiones': 2,
-            'ofrendas': 2100.00,
+            'ofrendas': 35.00,
+            'ofrendas_usd': 35.00,
+            'ofrendas_bs': 490.00,
             'cesta_amor': 1,
-            'cesta_amor_desc': 'Alimentos no perecederos',
+            'cesta_amor_desc': 'Sí',
             'tema': 'Discipulado y comunidad',
             'observaciones': 'Reunión especial de jóvenes',
         },
@@ -351,11 +423,12 @@ def get_mock_reportes():
             'asistencia': 22,
             'reconciliaciones': 1,
             'confesiones': 1,
-            'ofrendas': 1100.00,
+            'ofrendas': 30.00,
+            'ofrendas_usd': 30.00,
+            'ofrendas_bs': 420.00,
             'cesta_amor': 1,
-            'cesta_amor_desc': 'Manteca, arroz, azúcar',
+            'cesta_amor_desc': 'Sí',
             'tema': 'La oración transforma',
             'observaciones': 'Visitas se integraron al grupo',
         },
     ]
-

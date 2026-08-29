@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         asistencia: document.getElementById('modalAsistencia'),
         reconciliaciones: document.getElementById('modalReconciliaciones'),
         confesiones: document.getElementById('modalConfesiones'),
-        ofrendas: document.getElementById('modalOfrendas'),
+        ofrendasBs: document.getElementById('modalOfrendasBs'),
+        ofrendasUsd: document.getElementById('modalOfrendasUsd'),
         cesta: document.getElementById('modalCesta'),
         tema: document.getElementById('modalTema'),
         obs: document.getElementById('modalObs')
@@ -87,7 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fields.comprometidos) fields.comprometidos.value = btn.dataset.comprometidos || 0;
         if (fields.reconciliaciones) fields.reconciliaciones.value = btn.dataset.reconciliaciones || 0;
         if (fields.confesiones) fields.confesiones.value = btn.dataset.confesiones || 0;
-        if (fields.ofrendas) fields.ofrendas.value = btn.dataset.ofrendas || '0.00';
+        if (fields.ofrendasBs) fields.ofrendasBs.value = 'Bs. ' + (parseFloat(btn.dataset.ofrendasBs || 0).toFixed(2));
+        if (fields.ofrendasUsd) fields.ofrendasUsd.value = '$' + (parseFloat(btn.dataset.ofrendasUsd || btn.dataset.ofrendas || 0).toFixed(2));
         if (fields.cesta) fields.cesta.value = btn.dataset.cesta || '';
         if (fields.tema) fields.tema.value = btn.dataset.tema || '';
         if (fields.obs) fields.obs.value = btn.dataset.obs || '';

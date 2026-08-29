@@ -1,16 +1,27 @@
 {% extends 'admin_layout.html' %}
-{% block title %}- Inicio{% endblock %}
+{% block title %}- Panel de Casa de Paz{% endblock %}
+
+{% block custom_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/lider_dashboard.css') }}">
+{% endblock %}
 
 {% block content %}
 <main class="dashboard-main">
-    <header class="page-header">
+    <header class="lider-page-header">
         <div>
             <h1 class="title">Panel de Casa de Paz</h1>
-            <p class="subtitle">Bienvenido, {{ usuario }}. Aquí puedes generar y ver tus reportes.</p>
+            <p class="subtitle">Bienvenido, <strong>{{ usuario }}</strong>. Aquí puedes gestionar y registrar las reuniones semanales.</p>
         </div>
+        {% if cdp %}
+        <div class="cdp-tag">
+            <span class="material-symbols-outlined">home</span>
+            <span>{{ cdp.codigo }}{% if cdp.anfitrion %} · {{ cdp.anfitrion }}{% endif %}</span>
+        </div>
+        {% endif %}
     </header>
 
-    <section class="summary-grid">
+    <!-- Resumen KPI -->
+    <section class="summary-grid" aria-label="Métricas de Casa de Paz">
         <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="summary-card action-card">
             <span class="material-symbols-outlined card-icon text-primary">add_circle</span>
             <h3 class="card-title">Nuevo Reporte</h3>
@@ -20,59 +31,246 @@
         <article class="summary-card">
             <span class="material-symbols-outlined card-icon text-secondary">history</span>
             <h3 class="card-title">Mis Reportes</h3>
-            <div class="card-number">0</div>
-            <span class="material-symbols-outlined watermark-icon">description</span>
+            <div class="card-number">{{ metricas.total_reportes|default(0) }}</div>
+            <span class="material-symbols-outlined watermark-icon" aria-hidden="true">description</span>
         </article>
 
         <article class="summary-card">
             <span class="material-symbols-outlined card-icon text-primary-container">groups</span>
             <h3 class="card-title">Asistencia Promedio</h3>
-            <div class="card-number">—</div>
-            <span class="material-symbols-outlined watermark-icon">people</span>
+            <div class="card-number">{% if metricas.total_reportes > 0 %}{{ metricas.asistencia_promedio }}{% else %}—{% endif %}</div>
+            <span class="material-symbols-outlined watermark-icon" aria-hidden="true">people</span>
         </article>
 
         <article class="summary-card">
             <span class="material-symbols-outlined card-icon text-secondary">attach_money</span>
             <h3 class="card-title">Ofrendas Totales</h3>
-            <div class="card-number">$0.00</div>
-            <span class="material-symbols-outlined watermark-icon">savings</span>
+            <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                <div>${{ "{:,.2f}".format(metricas.ofrendas_usd_totales|default(metricas.ofrendas_totales|default(0.0))) }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ "{:,.2f}".format(metricas.ofrendas_bs_totales|default(0.0)) }}</div>
+            </div>
+            <span class="material-symbols-outlined watermark-icon" aria-hidden="true">savings</span>
         </article>
     </section>
 
+    <!-- Panel Inferior: Tabla de Historial y Columna Lateral -->
     <section class="bottom-dashboard-grid">
         
-        <article class="status-card" role="region" aria-labelledby="mis-reportes-title">
-            <div class="status-card-header">
+        <!-- Tabla / Historial de Reportes -->
+        <article class="table-container-card" role="region" aria-labelledby="mis-reportes-title">
+            <div class="table-top-bar">
                 <div>
                     <h2 id="mis-reportes-title" class="section-title">Últimos Reportes</h2>
-                    <p class="section-subtitle">No hay reportes registrados aún.</p>
+                    <p class="section-subtitle">
+                        {% if reportes %}
+                            Historial de {{ reportes|length }} reunión(es) registrada(s)
+                        {% else %}
+                            No hay reportes registrados aún.
+                        {% endif %}
+                    </p>
                 </div>
-                <a href="#" class="link-olive">Ver Historial</a>
+                {% if reportes %}
+                <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="btn-new" style="padding: 0.5rem 1rem; font-size: 0.8rem; text-decoration: none;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">add</span>
+                    Nuevo Reporte
+                </a>
+                {% endif %}
             </div>
             
+            {% if not reportes %}
             <div class="empty-state">
-                <div class="empty-icon-wrapper">
-                    <span class="material-symbols-outlined">inventory_2</span>
+                <div class="empty-icon-wrapper" style="width: 70px; height: 70px; border-radius: 50%; background: #faf0ef; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <span class="material-symbols-outlined" style="font-size: 2.5rem; color: var(--primary);">inventory_2</span>
                 </div>
-                <p class="empty-text">Parece que aún no has comenzado. Tus reportes semanales aparecerán aquí una vez que los registres.</p>
+                <p class="empty-text" style="color: var(--text-muted); max-width: 420px; line-height: 1.5; margin-bottom: 1.25rem;">
+                    Parece que aún no has comenzado. Tus reportes semanales aparecerán aquí una vez que los registres.
+                </p>
                 
-                <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="btn-maroon">
+                <a href="{{ url_for('lider_cdp.generar_reporte') }}" class="btn-new" style="text-decoration: none;">
                     <span class="material-symbols-outlined" style="font-size: 1.2rem;">add</span> 
                     Crear mi primer reporte
                 </a>
             </div>
+            {% else %}
+            <div class="table-responsive">
+                <table class="lider-table" aria-label="Historial de reportes de Casa de Paz">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fecha y Hora</th>
+                            <th scope="col">Líder Encargado</th>
+                            <th scope="col">Tema de la Clase</th>
+                            <th scope="col" style="text-align: center;">Asistencia</th>
+                            <th scope="col" style="text-align: right;">Ofrendas</th>
+                            <th scope="col" style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rep in reportes %}
+                        <tr>
+                            <td>
+                                <div class="date-badge">
+                                    <span class="date-primary">{{ rep.fecha_formateada }}</span>
+                                    {% if rep.hr_inicio %}
+                                    <span class="time-sub">{{ rep.hr_inicio }}{% if rep.hr_fin %} - {{ rep.hr_fin }}{% endif %}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="leader-pill">
+                                    <div class="avatar-mini" aria-hidden="true">{{ rep.iniciales|default('CDP') }}</div>
+                                    <span style="font-weight: 600;">{{ rep.lider_nombre }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tema-cell" title="{{ rep.tema }}">{{ rep.tema }}</div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge-asistencia" title="Regulares: {{ rep.nro_regulares }}, Niños: {{ rep.nro_niños }}, Visitas: {{ rep.nro_visitas }}, Comprometidos: {{ rep.nro_comprometidos }}">
+                                    {{ rep.asistencia }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                                    <span class="badge-ofrenda">${{ "{:,.2f}".format(rep.ofrendas_usd|default(rep.ofrendas|default(0.0))) }}</span>
+                                    {% if rep.ofrendas_bs and rep.ofrendas_bs > 0 %}
+                                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Bs. {{ "{:,.2f}".format(rep.ofrendas_bs) }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="action-buttons-group">
+                                    <button type="button" class="btn-table-action view btn-action-view"
+                                        data-id="{{ rep.id }}"
+                                        data-fecha="{{ rep.fecha }}"
+                                        data-fecha-formateada="{{ rep.fecha_formateada }}"
+                                        data-hr-inicio="{{ rep.hr_inicio }}"
+                                        data-hr-fin="{{ rep.hr_fin }}"
+                                        data-lider-id="{{ rep.enviado_por_lider_id or '' }}"
+                                        data-lider-nombre="{{ rep.lider_nombre }}"
+                                        data-tema="{{ rep.tema }}"
+                                        data-regulares="{{ rep.nro_regulares }}"
+                                        data-ninos="{{ rep.nro_niños }}"
+                                        data-visitas="{{ rep.nro_visitas }}"
+                                        data-comprometidos="{{ rep.nro_comprometidos }}"
+                                        data-asistencia="{{ rep.asistencia }}"
+                                        data-reconciliaciones="{{ rep.reconciliaciones }}"
+                                        data-confesiones="{{ rep.confesiones }}"
+                                        data-ofrendas="{{ rep.ofrendas }}"
+                                        data-ofrendas-usd="{{ rep.ofrendas_usd|default(rep.ofrendas|default(0.0)) }}"
+                                        data-ofrendas-bs="{{ rep.ofrendas_bs|default(0.0) }}"
+                                        data-cesta="{{ rep.cesta_amor }}"
+                                        data-observaciones="{{ rep.observaciones }}"
+                                        title="Ver detalles completos"
+                                        aria-label="Ver detalles del reporte del {{ rep.fecha_formateada }}">
+                                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                                    </button>
+
+                                    <button type="button" class="btn-table-action edit btn-action-edit"
+                                        data-id="{{ rep.id }}"
+                                        data-fecha="{{ rep.fecha }}"
+                                        data-fecha-formateada="{{ rep.fecha_formateada }}"
+                                        data-hr-inicio="{{ rep.hr_inicio }}"
+                                        data-hr-fin="{{ rep.hr_fin }}"
+                                        data-lider-id="{{ rep.enviado_por_lider_id or '' }}"
+                                        data-lider-nombre="{{ rep.lider_nombre }}"
+                                        data-tema="{{ rep.tema }}"
+                                        data-regulares="{{ rep.nro_regulares }}"
+                                        data-ninos="{{ rep.nro_niños }}"
+                                        data-visitas="{{ rep.nro_visitas }}"
+                                        data-comprometidos="{{ rep.nro_comprometidos }}"
+                                        data-asistencia="{{ rep.asistencia }}"
+                                        data-reconciliaciones="{{ rep.reconciliaciones }}"
+                                        data-confesiones="{{ rep.confesiones }}"
+                                        data-ofrendas="{{ rep.ofrendas }}"
+                                        data-ofrendas-usd="{{ rep.ofrendas_usd|default(rep.ofrendas|default(0.0)) }}"
+                                        data-ofrendas-bs="{{ rep.ofrendas_bs|default(0.0) }}"
+                                        data-cesta="{{ rep.cesta_amor }}"
+                                        data-observaciones="{{ rep.observaciones }}"
+                                        title="Editar este reporte"
+                                        aria-label="Editar reporte del {{ rep.fecha_formateada }}">
+                                        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                                    </button>
+
+                                    <button type="button" class="btn-table-action delete btn-action-delete"
+                                        data-id="{{ rep.id }}"
+                                        data-fecha="{{ rep.fecha }}"
+                                        data-fecha-formateada="{{ rep.fecha_formateada }}"
+                                        data-tema="{{ rep.tema }}"
+                                        data-asistencia="{{ rep.asistencia }}"
+                                        title="Eliminar este reporte"
+                                        aria-label="Eliminar reporte del {{ rep.fecha_formateada }}">
+                                        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if pages > 1 %}
+            <div class="pagination" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border-color, #e0e0e0);">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                    Mostrando {{ reportes|length }} de {{ total_reportes }} reporte(s)
+                </span>
+                <div class="pagination-controls" style="display: flex; align-items: center; gap: 0.25rem;">
+                    {% if page > 1 %}
+                    <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=page - 1) }}" aria-label="Página anterior">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_left</span>
+                    </a>
+                    {% else %}
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_left</span></span>
+                    {% endif %}
+
+                    {% set win_start = [1, page - 2]|max %}
+                    {% set win_end   = [pages, page + 2]|min %}
+                    {% if win_start > 1 %}
+                        <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=1) }}">1</a>
+                        {% if win_start > 2 %}<span class="btn-page disabled">…</span>{% endif %}
+                    {% endif %}
+                    {% for pn in range(win_start, win_end + 1) %}
+                        {% if pn == page %}
+                        <span class="btn-page active" aria-current="page">{{ pn }}</span>
+                        {% else %}
+                        <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=pn) }}">{{ pn }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if win_end < pages %}
+                        {% if win_end < pages - 1 %}<span class="btn-page disabled">…</span>{% endif %}
+                        <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=pages) }}">{{ pages }}</a>
+                    {% endif %}
+
+                    {% if page < pages %}
+                    <a class="btn-page" href="{{ url_for('lider_cdp.dashboard', page=page + 1) }}" aria-label="Página siguiente">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_right</span>
+                    </a>
+                    {% else %}
+                    <span class="btn-page disabled" aria-disabled="true"><span class="material-symbols-outlined" style="font-size: 1.1rem;">chevron_right</span></span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="padding: 0.5rem 1rem; text-align: right; font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-color, #e0e0e0);">
+                {{ total_reportes }} reporte(s) en total
+            </div>
+            {% endif %}
+
+            {% endif %}
         </article>
 
+        <!-- Columna Lateral: Recordatorio y Equipo -->
         <div class="right-sidebar-column">
             
             <aside class="reminder-card">
-                <span class="material-symbols-outlined watermark-warning">error</span>
+                <span class="material-symbols-outlined watermark-warning" aria-hidden="true">error</span>
                 <h3 class="reminder-title">Recordatorio</h3>
                 <p class="reminder-text">Recuerda subir tus reportes antes del domingo a las 6:00 PM para la revisión semanal.</p>
                 
                 <div class="reminder-footer">
                     <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span>
-                    Próximo cierre: 3 días
+                    <span>{{ metricas.dias_cierre_texto|default('Próximo cierre: Domingo') }}</span>
                 </div>
             </aside>
 
@@ -83,24 +281,23 @@
                 </div>
                 
                 <ul class="team-list">
-                    <li class="team-member">
-                        <div class="member-avatar principal">
-                            <span class="material-symbols-outlined">person</span>
-                        </div>
-                        <div class="member-info">
-                            <p class="member-name">Carlos Méndez</p>
-                            <p class="member-role">Líder Principal</p>
-                        </div>
-                    </li>
-                    <li class="team-member">
-                        <div class="member-avatar sublider">
-                            <span class="material-symbols-outlined">person</span>
-                        </div>
-                        <div class="member-info">
-                            <p class="member-name">Ana Gómez</p>
-                            <p class="member-role">Sublíder</p>
-                        </div>
-                    </li>
+                    {% if lideres %}
+                        {% for lider in lideres %}
+                        <li class="team-member">
+                            <div class="member-avatar {% if lider.rol == 'Lider' %}principal{% else %}sublider{% endif %}">
+                                <span class="material-symbols-outlined">person</span>
+                            </div>
+                            <div class="member-info">
+                                <p class="member-name">{{ lider.nombre }} {% if lider.apellido %}{{ lider.apellido }}{% endif %}</p>
+                                <p class="member-role">{{ lider.rol }}</p>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="team-member" style="color: var(--text-muted); font-size: 0.85rem;">
+                            No hay líderes registrados en esta Casa de Paz.
+                        </li>
+                    {% endif %}
                 </ul>
             </aside>
 
@@ -108,5 +305,301 @@
     </section>
 </main>
 
-<script type="module" src="{{ url_for('static', filename='scripts/dashboard.js') }}"></script>
+<!-- ========================================================================= -->
+<!-- 1. MODAL VER DETALLE DEL REPORTE                                          -->
+<!-- ========================================================================= -->
+<div class="lider-modal-overlay" id="modalDetalleReporte" role="dialog" aria-modal="true" aria-labelledby="detModalTitle" aria-hidden="true">
+    <div class="lider-modal">
+        <div class="lider-modal-header">
+            <div class="lider-modal-title-group">
+                <div class="modal-header-icon">
+                    <span class="material-symbols-outlined">visibility</span>
+                </div>
+                <h3 class="lider-modal-title" id="detModalTitle">Detalle de la Reunión</h3>
+            </div>
+            <button type="button" class="lider-modal-close btn-close-detalle" aria-label="Cerrar modal de detalles">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="lider-modal-body">
+            <!-- Sección General -->
+            <div>
+                <h4 class="modal-section-title">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+                    Información General
+                </h4>
+                <div class="modal-form-grid">
+                    <div class="modal-input-group">
+                        <label>Fecha</label>
+                        <input type="text" id="detFecha" readonly>
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Horario</label>
+                        <input type="text" id="detHorario" readonly>
+                    </div>
+                    <div class="modal-input-group modal-full-width">
+                        <label>Líder Encargado</label>
+                        <input type="text" id="detLider" readonly>
+                    </div>
+                    <div class="modal-input-group modal-full-width">
+                        <label>Tema Desarrollado</label>
+                        <input type="text" id="detTema" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Asistencia -->
+            <div>
+                <h4 class="modal-section-title">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">groups</span>
+                    Asistencia
+                </h4>
+                <div class="modal-form-grid grid-4">
+                    <div class="modal-input-group">
+                        <label>Regulares</label>
+                        <input type="text" id="detRegulares" readonly style="text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Niños</label>
+                        <input type="text" id="detNinos" readonly style="text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Visitas</label>
+                        <input type="text" id="detVisitas" readonly style="text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Comprometidos</label>
+                        <input type="text" id="detComprometidos" readonly style="text-align: center;">
+                    </div>
+                </div>
+                <div class="asistencia-total-pill">
+                    <span>Asistencia Total:</span>
+                    <span id="detAsistenciaTotal" style="font-size: 1.1rem;">0</span>
+                </div>
+            </div>
+
+            <!-- Sección Ministerial y Recursos -->
+            <div>
+                <h4 class="modal-section-title">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">volunteer_activism</span>
+                    Resultados y Ofrendas
+                </h4>
+                <div class="modal-form-grid">
+                    <div class="modal-input-group">
+                        <label>Reconciliaciones</label>
+                        <input type="text" id="detReconciliaciones" readonly style="text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Confesiones de Fe</label>
+                        <input type="text" id="detConfesiones" readonly style="text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Ofrendas (Bs)</label>
+                        <input type="text" id="detOfrendasBs" readonly style="font-weight: 700; color: var(--secondary); text-align: center;">
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Ofrendas ($ USD)</label>
+                        <input type="text" id="detOfrendasUsd" readonly style="font-weight: 700; color: var(--secondary); text-align: center;">
+                    </div>
+                    <div class="modal-input-group modal-full-width">
+                        <label>¿Cesta de Amor?</label>
+                        <input type="text" id="detCesta" readonly style="text-align: center; font-weight: 600;">
+                    </div>
+                    <div class="modal-input-group modal-full-width">
+                        <label>Observaciones / Testimonios</label>
+                        <textarea id="detObservaciones" rows="3" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lider-modal-footer">
+            <button type="button" class="btn-modal-cancel btn-close-detalle">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 2. MODAL EDITAR REPORTE                                                   -->
+<!-- ========================================================================= -->
+<div class="lider-modal-overlay" id="modalEditarReporte" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-hidden="true">
+    <div class="lider-modal">
+        <div class="lider-modal-header">
+            <div class="lider-modal-title-group">
+                <div class="modal-header-icon">
+                    <span class="material-symbols-outlined">edit_document</span>
+                </div>
+                <h3 class="lider-modal-title" id="editModalTitle">Editar Reporte Semanal</h3>
+            </div>
+            <button type="button" class="lider-modal-close btn-close-editar" aria-label="Cerrar modal de edición">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form id="formEditarReporte" class="lider-modal-form" method="POST" action="">
+            <div class="lider-modal-body">
+                <!-- Información General -->
+                <div>
+                    <h4 class="modal-section-title">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">calendar_today</span>
+                        Fecha y Encargado
+                    </h4>
+                    <div class="modal-form-grid">
+                        <div class="modal-input-group modal-full-width">
+                            <label for="editLiderId">Líder Encargado</label>
+                            <select id="editLiderId" name="lider_id">
+                                <option value="">Selecciona el líder encargado...</option>
+                                {% for lider in lideres %}
+                                <option value="{{ lider.id }}">{{ lider.nombre }} {% if lider.apellido %}{{ lider.apellido }}{% endif %} ({{ lider.rol }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editFecha">Fecha de Reunión *</label>
+                            <input type="date" id="editFecha" name="fecha" required>
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editTema">Tema Desarrollado *</label>
+                            <input type="text" id="editTema" name="tema" required placeholder="Ej. El Poder de la Fe">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editHrInicio">Hora de Inicio *</label>
+                            <input type="time" id="editHrInicio" name="hr_inicio" required>
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editHrFin">Hora de Fin *</label>
+                            <input type="time" id="editHrFin" name="hr_fin" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asistencia -->
+                <div>
+                    <h4 class="modal-section-title">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">groups</span>
+                        Asistencia y Desglose
+                    </h4>
+                    <div class="modal-form-grid grid-4">
+                        <div class="modal-input-group">
+                            <label for="editRegulares">Regulares</label>
+                            <input type="number" id="editRegulares" name="nro_regulares" min="0" required value="0">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editNinos">Niños</label>
+                            <input type="number" id="editNinos" name="nro_ninos" min="0" required value="0">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editVisitas">Visitas</label>
+                            <input type="number" id="editVisitas" name="nro_visitas" min="0" required value="0">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editComprometidos">Comprometidos</label>
+                            <input type="number" id="editComprometidos" name="nro_comprometidos" min="0" required value="0">
+                        </div>
+                    </div>
+                    <div class="asistencia-total-pill">
+                        <span>Total Calculado:</span>
+                        <span id="editAsistenciaTotal" style="font-size: 1.1rem;">0</span>
+                    </div>
+                </div>
+
+                <!-- Resultados y Finanzas -->
+                <div>
+                    <h4 class="modal-section-title">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">attach_money</span>
+                        Ministerio y Ofrendas
+                    </h4>
+                    <div class="modal-form-grid">
+                        <div class="modal-input-group">
+                            <label for="editReconciliaciones">Reconciliaciones</label>
+                            <input type="number" id="editReconciliaciones" name="reconciliaciones" min="0" value="0">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editConfesiones">Confesiones de Fe</label>
+                            <input type="number" id="editConfesiones" name="confesiones" min="0" value="0">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editOfrendasBs">Ofrendas en Bolívares (Bs) *</label>
+                            <input type="number" step="0.01" id="editOfrendasBs" name="ofrendas_bs" min="0" required value="0.00">
+                        </div>
+                        <div class="modal-input-group">
+                            <label for="editOfrendasUsd">Ofrendas en Dólares ($) *</label>
+                            <input type="number" step="0.01" id="editOfrendasUsd" name="ofrendas_usd" min="0" required value="0.00">
+                        </div>
+                        <div class="modal-input-group modal-full-width">
+                            <label for="editCestaAmor">¿Cesta de Amor? *</label>
+                            <select id="editCestaAmor" name="cesta_amor" required>
+                                <option value="0">No</option>
+                                <option value="1">Sí</option>
+                            </select>
+                        </div>
+                        <div class="modal-input-group modal-full-width">
+                            <label for="editObservaciones">Observaciones</label>
+                            <textarea id="editObservaciones" name="observaciones" rows="3" placeholder="Testimonios o notas relevantes de la reunión..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lider-modal-footer">
+                <button type="button" class="btn-modal-cancel btn-close-editar">Cancelar</button>
+                <button type="submit" class="btn-modal-submit">
+                    <span class="material-symbols-outlined">save</span>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 3. MODAL ELIMINAR REPORTE (CONFIRMACIÓN)                                  -->
+<!-- ========================================================================= -->
+<div class="lider-modal-overlay" id="modalEliminarReporte" role="dialog" aria-modal="true" aria-labelledby="delModalTitle" aria-hidden="true">
+    <div class="lider-modal modal-danger">
+        <div class="lider-modal-header">
+            <div class="lider-modal-title-group">
+                <div class="modal-header-icon danger">
+                    <span class="material-symbols-outlined">warning</span>
+                </div>
+                <h3 class="lider-modal-title danger" id="delModalTitle">Eliminar Reporte</h3>
+            </div>
+            <button type="button" class="lider-modal-close btn-close-eliminar" aria-label="Cerrar modal de eliminación">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form id="formEliminarReporte" class="lider-modal-form" method="POST" action="">
+            <div class="lider-modal-body">
+                <div class="delete-warning-box">
+                    <p class="delete-warning-text">
+                        <strong>¿Estás seguro de que deseas eliminar este reporte semanal?</strong>
+                    </p>
+                    <p style="font-size: 0.85rem; color: #7f1d1d; margin: 0;">
+                        Esta acción eliminará de forma permanente los registros de asistencia y ofrendas asociados a esta reunión. No se puede deshacer.
+                    </p>
+
+                    <div class="delete-reporte-info">
+                        <div><strong>Fecha:</strong> <span id="delFechaPreview">-</span></div>
+                        <div><strong>Tema:</strong> <span id="delTemaPreview">-</span></div>
+                        <div><strong>Asistencia:</strong> <span id="delAsistenciaPreview">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lider-modal-footer">
+                <button type="button" class="btn-modal-cancel btn-close-eliminar">Cancelar</button>
+                <button type="submit" class="btn-modal-delete">
+                    <span class="material-symbols-outlined">delete_forever</span>
+                    Sí, Eliminar Reporte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block custom_scripts %}
+<script src="{{ url_for('static', filename='scripts/lider_dashboard.js') }}"></script>
 {% endblock %}

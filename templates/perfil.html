@@ -1,23 +1,216 @@
 {% extends "admin_layout.html" %}
 
-{% block title %}Perfil{% endblock %}
+{% block title %}Mi Perfil{% endblock %}
 
 {% block custom_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/perfil.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="centro">
-    <div class="perfil">
-        {% if rol == 'admin' %}
-            <img class="img_perfil" src="{{ url_for('static', filename='iconos/administrador.webp') }}" alt="imagen">
-        {% elif rol == 'supervisor' %}
-            <img class="img_perfil" src="{{ url_for('static', filename='iconos/supervisor.webp') }}" alt="imagen">
-        {% else %}
-            <img class="img_perfil" src="{{ url_for('static', filename='iconos/casa_de_paz.webp') }}" alt="imagen">
-        {% endif %}
-        <p class="texto2"><b>Usuario:</b> {{ usuario }}</p>
-        <p class="texto2"><b>Rol:</b> {{ {'admin': 'Administrador', 'supervisor': 'Supervisor', 'lider_cdp': 'Líder Casa de Paz', 'cdp': 'Líder Casa de Paz'}.get(rol, rol|title) }}</p>
+<div class="perfil-page">
+    <!-- Cabecera de la página -->
+    <div class="perfil-page-header">
+        <div class="perfil-page-header-info">
+            <h1 class="perfil-page-title">Mi Perfil</h1>
+            <p class="perfil-page-subtitle">Gestiona tu información personal, credenciales y preferencias</p>
+        </div>
+    </div>
+
+    <div class="perfil-layout">
+        <!-- Columna Izquierda: Información Personal -->
+        <div class="perfil-column perfil-column-left">
+            <section class="perfil-card perfil-identity-card" role="region" aria-label="Información personal">
+                <div class="identity-visual">
+                    <div class="avatar-large" aria-hidden="true">
+                        <span class="avatar-initials">{{ (perfil_data.nombre or usuario or '?')[0]|upper }}{{ (perfil_data.apellido or '')[0]|upper if perfil_data.apellido else '' }}</span>
+                    </div>
+                    <div class="avatar-role-icon">
+                        {% if rol == 'admin' %}
+                            <img src="{{ url_for('static', filename='iconos/administrador.webp') }}" alt="Administrador" class="role-icon-img">
+                        {% elif rol == 'supervisor' %}
+                            <img src="{{ url_for('static', filename='iconos/supervisor.webp') }}" alt="Supervisor" class="role-icon-img">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='iconos/casa_de_paz.webp') }}" alt="Líder Casa de Paz" class="role-icon-img">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h2 class="identity-name">{{ perfil_data.nombre or '' }} {{ perfil_data.apellido or '' }}</h2>
+                <span class="identity-role-badge role-{{ rol }}">
+                    <span class="material-symbols-outlined" style="font-size: 0.85rem;">
+                        {% if rol == 'admin' %}admin_panel_settings
+                        {% elif rol == 'supervisor' %}supervisor_account
+                        {% else %}home{% endif %}
+                    </span>
+                    {{ {'admin': 'Administrador', 'supervisor': 'Supervisor', 'lider_cdp': 'Líder Casa de Paz', 'cdp': 'Líder Casa de Paz'}.get(rol, rol|title) }}
+                </span>
+
+                <div class="identity-fields">
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">person</span>
+                        <div>
+                            <span class="field-label">Nombre completo</span>
+                            <span class="field-value">{{ perfil_data.nombre or '-' }} {{ perfil_data.apellido or '' }}</span>
+                        </div>
+                    </div>
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">badge</span>
+                        <div>
+                            <span class="field-label">Nombre de usuario</span>
+                            <span class="field-value">{{ perfil_data.username or usuario }}</span>
+                        </div>
+                    </div>
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">shield_person</span>
+                        <div>
+                            <span class="field-label">Tipo de cuenta</span>
+                            <span class="field-value">{{ perfil_data.tipo_usuario|default(rol)|replace('_', ' ')|title }}</span>
+                        </div>
+                    </div>
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">verified_user</span>
+                        <div>
+                            <span class="field-label">Estado</span>
+                            <span class="field-value status-active-text">
+                                <span class="status-dot active"></span> Activo
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Columna Derecha: Seguridad + Preferencias -->
+        <div class="perfil-column perfil-column-right">
+            <!-- Tarjeta de Seguridad: Cambiar Usuario -->
+            <section class="perfil-card" role="region" aria-label="Cambiar usuario">
+                <div class="perfil-card-header">
+                    <div class="perfil-card-header-icon">
+                        <span class="material-symbols-outlined">manage_accounts</span>
+                    </div>
+                    <div>
+                        <h3 class="perfil-card-title">Cambiar Usuario</h3>
+                        <p class="perfil-card-subtitle">Actualiza tu nombre de acceso al sistema</p>
+                    </div>
+                </div>
+                <form method="POST" class="perfil-form">
+                    <input type="hidden" name="action" value="cambiar_username">
+                    <div class="perfil-input-group">
+                        <label for="nuevo_username">Nuevo nombre de usuario</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-outlined input-icon">person</span>
+                            <input type="text" id="nuevo_username" name="nuevo_username"
+                                   value="{{ perfil_data.username or usuario }}"
+                                   minlength="3" maxlength="30" required
+                                   placeholder="Escribe tu nuevo usuario...">
+                        </div>
+                        <span class="input-hint">Mínimo 3 caracteres, máximo 30. Debe ser único.</span>
+                    </div>
+                    <div class="perfil-form-actions">
+                        <button type="submit" class="btn-perfil-primary">
+                            <span class="material-symbols-outlined">save</span>
+                            Actualizar Usuario
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Tarjeta de Seguridad: Cambiar Contraseña -->
+            <section class="perfil-card" role="region" aria-label="Cambiar contraseña">
+                <div class="perfil-card-header">
+                    <div class="perfil-card-header-icon danger">
+                        <span class="material-symbols-outlined">lock</span>
+                    </div>
+                    <div>
+                        <h3 class="perfil-card-title">Cambiar Contraseña</h3>
+                        <p class="perfil-card-subtitle">Asegura tu cuenta con una nueva contraseña</p>
+                    </div>
+                </div>
+                <form method="POST" class="perfil-form" id="formCambiarPassword">
+                    <input type="hidden" name="action" value="cambiar_password">
+                    <div class="perfil-input-group">
+                        <label for="password_actual">Contraseña actual</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-outlined input-icon">lock</span>
+                            <input type="password" id="password_actual" name="password_actual" required
+                                   placeholder="Tu contraseña actual">
+                            <button type="button" class="btn-toggle-password" data-target="password_actual" aria-label="Mostrar contraseña">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="perfil-input-group">
+                        <label for="password_nueva">Nueva contraseña</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-outlined input-icon">key</span>
+                            <input type="password" id="password_nueva" name="password_nueva" required
+                                   minlength="6" placeholder="Mínimo 6 caracteres">
+                            <button type="button" class="btn-toggle-password" data-target="password_nueva" aria-label="Mostrar contraseña">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                        <!-- Barra de fortaleza -->
+                        <div class="strength-bar-container" id="strengthContainer" style="display: none;">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <span class="strength-text" id="strengthText"></span>
+                        </div>
+                    </div>
+                    <div class="perfil-input-group">
+                        <label for="password_confirmar">Confirmar nueva contraseña</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-outlined input-icon">lock_reset</span>
+                            <input type="password" id="password_confirmar" name="password_confirmar" required
+                                   minlength="6" placeholder="Repite la nueva contraseña">
+                            <button type="button" class="btn-toggle-password" data-target="password_confirmar" aria-label="Mostrar contraseña">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                        <span class="match-indicator" id="matchIndicator" style="display: none;"></span>
+                    </div>
+                    <div class="perfil-form-actions">
+                        <button type="submit" class="btn-perfil-danger" id="btnCambiarPassword" disabled>
+                            <span class="material-symbols-outlined">lock_reset</span>
+                            Cambiar Contraseña
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Tarjeta de Preferencias: Tema -->
+            <section class="perfil-card" role="region" aria-label="Preferencias de tema">
+                <div class="perfil-card-header">
+                    <div class="perfil-card-header-icon accent">
+                        <span class="material-symbols-outlined">palette</span>
+                    </div>
+                    <div>
+                        <h3 class="perfil-card-title">Apariencia</h3>
+                        <p class="perfil-card-subtitle">Personaliza el aspecto visual de la aplicación</p>
+                    </div>
+                </div>
+                <div class="theme-toggle-section">
+                    <div class="theme-toggle-info">
+                        <span class="material-symbols-outlined theme-mode-icon" id="themeModeIcon">light_mode</span>
+                        <div>
+                            <span class="theme-label" id="themeLabel">Tema Claro</span>
+                            <span class="theme-description">Fondo claro con acentos cálidos</span>
+                        </div>
+                    </div>
+                    <label class="theme-switch" aria-label="Cambiar tema visual">
+                        <input type="checkbox" id="themeToggle">
+                        <span class="theme-slider">
+                            <span class="slider-icon sun">☀️</span>
+                            <span class="slider-icon moon">🌙</span>
+                        </span>
+                    </label>
+                </div>
+            </section>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block custom_scripts %}
+<script src="{{ url_for('static', filename='scripts/perfil.js') }}"></script>
 {% endblock %}

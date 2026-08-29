@@ -130,13 +130,23 @@
                     </span>
                 {% endif %}
 
-                {% for page_number in range(1, pages + 1) %}
-                    {% if page_number == page %}
-                        <span class="page-btn active" aria-current="page">{{ page_number }}</span>
+                {% set win_start = [1, page - 2]|max %}
+                {% set win_end   = [pages, page + 2]|min %}
+                {% if win_start > 1 %}
+                    <a class="page-btn" href="{{ url_for(lider_route, q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=1) }}">1</a>
+                    {% if win_start > 2 %}<span class="page-btn disabled">…</span>{% endif %}
+                {% endif %}
+                {% for pn in range(win_start, win_end + 1) %}
+                    {% if pn == page %}
+                        <span class="page-btn active" aria-current="page">{{ pn }}</span>
                     {% else %}
-                        <a class="page-btn" href="{{ url_for(lider_route, q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                        <a class="page-btn" href="{{ url_for(lider_route, q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=pn) }}">{{ pn }}</a>
                     {% endif %}
                 {% endfor %}
+                {% if win_end < pages %}
+                    {% if win_end < pages - 1 %}<span class="page-btn disabled">…</span>{% endif %}
+                    <a class="page-btn" href="{{ url_for(lider_route, q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=pages) }}">{{ pages }}</a>
+                {% endif %}
 
                 {% if page < pages %}
                     <a class="page-btn" href="{{ url_for(lider_route, q=search or none, rol=rol or none, red_id=red_id or none, cdp_id=cdp_id or none, page=page + 1) }}" aria-label="Página siguiente">

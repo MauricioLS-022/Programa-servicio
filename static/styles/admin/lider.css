@@ -174,7 +174,7 @@
 }
 
 .btn-filter {
-    background: linear-gradient(to right, var(--primary-container), var(--primary));
+    background: linear-gradient(135deg, #700204 0%, #390002 100%);
     color: white;
     padding: 0.9rem 1.4rem;
     border-radius: 999px;
@@ -206,7 +206,7 @@
 }
 
 .table-header {
-    background: linear-gradient(to right, var(--primary-container), var(--primary));
+    background: linear-gradient(135deg, #5c0a0a 0%, #390002 100%);
     padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
@@ -221,10 +221,15 @@
     font-weight: 600;
 }
 
-.table-actions span {
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-actions > span {
     color: rgba(255, 255, 255, 0.85);
     cursor: pointer;
-    margin-left: 1rem;
 }
 
 .table-responsive {
@@ -268,12 +273,19 @@ tbody tr:hover {
 .avatar {
     width: 34px;
     height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-width: 34px;
+    min-height: 34px;
+    max-width: 34px;
+    max-height: 34px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-weight: 700;
     font-size: 0.8rem;
+    flex-shrink: 0 !important;
+    box-sizing: border-box;
 }
 
 .bg-primary-light { background-color: var(--primary-fixed); color: var(--primary); }
@@ -390,9 +402,10 @@ tbody tr:hover {
 }
 
 .page-btn.active {
-    background-color: var(--primary);
-    color: white;
+    background: #780204;
+    color: #ffffff;
     font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .page-btn.disabled {
@@ -644,3 +657,134 @@ tbody tr:hover {
 
     thead th, tbody td { padding: 1rem 0.9rem; }
 }
+
+/* ==========================================================================
+   TEMA OSCURO LÍDERES ([data-theme="dark"])
+   ========================================================================== */
+[data-theme="dark"] .leadership-page {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] .page-header,
+[data-theme="dark"] .filter-section,
+[data-theme="dark"] .table-wrapper,
+[data-theme="dark"] .table-section {
+    background-color: var(--surface-container-lowest, #1b1416) !important;
+    background: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] #leader-search {
+    border: none !important;
+}
+
+[data-theme="dark"] #leader-search:focus {
+    outline: none;
+}
+
+[data-theme="dark"] .title,
+[data-theme="dark"] .leader-details strong {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] .description,
+[data-theme="dark"] .leader-details span,
+[data-theme="dark"] .leader-table td {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+/* Encabezado de la tabla */
+[data-theme="dark"] .table-header,
+[data-theme="dark"] .table-wrapper .table-header {
+    background: #2b0407 !important;
+    background-image: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
+    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+}
+
+[data-theme="dark"] .table-header h2 {
+    color: #ffffff !important;
+}
+
+/* Cabeceras de columna */
+[data-theme="dark"] thead th,
+[data-theme="dark"] .leader-table th {
+    background-color: var(--surface-container-low, #1f1618) !important;
+    color: var(--primary, #f8deda) !important;
+    border-bottom: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+}
+
+[data-theme="dark"] tbody td,
+[data-theme="dark"] .leader-table td {
+    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .leader-table tbody tr:hover {
+    background-color: var(--surface-container-high, #2f2225) !important;
+}
+
+/* Inputs y Filtros */
+[data-theme="dark"] .search-box {
+    background-color: var(--input-bg, #150f10) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
+}
+
+[data-theme="dark"] .search-box input {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .filter-group select {
+    background-color: var(--input-bg, #150f10) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .filter-group label {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Botones */
+[data-theme="dark"] .btn-filter,
+[data-theme="dark"] .btn-primary {
+    background: #8b1518 !important;
+    background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .btn-filter:hover,
+[data-theme="dark"] .btn-primary:hover {
+    background: #a31c20 !important;
+    background-image: linear-gradient(135deg, #be2227 0%, #8b0306 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .btn-outline {
+    background: #1f1618 !important;
+    color: #f8f2f0 !important;
+    border: 1.5px solid rgba(221, 192, 189, 0.25) !important;
+}
+
+[data-theme="dark"] .avatar-icon {
+    background-color: var(--surface-container-high, #2f2225) !important;
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Badges */
+[data-theme="dark"] .badge-role {
+    background: var(--warning-bg, rgba(234, 179, 8, 0.2)) !important;
+    color: var(--warning-color, #fde047) !important;
+    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+}
+
+[data-theme="dark"] .badge-cohost {
+    background: var(--info-bg, rgba(14, 165, 233, 0.2)) !important;
+    color: var(--info-color, #93c5fd) !important;
+    border: 1px solid rgba(14, 165, 233, 0.35) !important;
+}
+

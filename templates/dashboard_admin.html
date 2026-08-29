@@ -24,9 +24,16 @@
     <section class="filter-bar-card">
         <form id="filterForm" method="GET" action="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="filter-form">
             {% if has_role("supervisor") %}
-            <!-- Supervisor: selector simplificado -->
-            <input type="hidden" name="nivel" id="selectNivel" value="red">
+            <!-- Supervisor: selector de nivel (Mi Red o Por Casa de Paz) -->
+            <div class="filter-group">
+                <label for="selectNivel" class="filter-label">Nivel de Vista</label>
+                <select id="selectNivel" name="nivel" class="filter-select" aria-label="Seleccionar nivel de vista del panel">
+                    <option value="red" {% if nivel == 'red' %}selected{% endif %}>Mi Red (Zonal)</option>
+                    <option value="cdp" {% if nivel == 'cdp' %}selected{% endif %}>Por Casa de Paz</option>
+                </select>
+            </div>
             <input type="hidden" name="red_id" id="selectRed" value="{{ red_id }}">
+            <div id="groupRed" class="hidden"></div>
             {% else %}
             <!-- Admin: selector completo -->
             <div class="filter-group">
@@ -87,6 +94,26 @@
              =================================================================== -->
         {% if nivel == 'general' %}
         <section class="view-panel view-general active">
+            <!-- Barra de Accesos Rápidos y Acciones Globales (Opción C) -->
+            <div class="quick-actions-bar fade-in-1">
+                <a href="{{ url_for('admin.reportes') }}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Ver Reportes</span>
+                </a>
+                <a href="{{ url_for('admin.estructura') }}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    <span>Estructura y Redes</span>
+                </a>
+                <a href="{{ url_for('admin.lider') }}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Directorio de Líderes</span>
+                </a>
+                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando resumen general consolidado en Excel/PDF...')">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Exportar Resumen</span>
+                </button>
+            </div>
+
             <!-- Summary Cards (KPIs Top) -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
@@ -106,7 +133,14 @@
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0) %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                        {% if metricas.total_casas|default(0) %}
+                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(metricas.ofrendas|default(0))) }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(0)) }}</div>
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
 
@@ -145,7 +179,7 @@
                                 {% for item in metricas.tendencia_semanas %}
                                 <div class="trend-bar-col">
                                     <div class="trend-bar-track">
-                                        <div class="trend-bar-fill" style="height: {{ item.porcentaje }}%;" title="{{ item.semana }}: {{ item.asistencia }} asistentes">
+                                        <div class="trend-bar-fill" style="--bar-height: {{ item.porcentaje }}%;" title="{{ item.semana }}: {{ item.asistencia }} asistentes">
                                             <span class="trend-bar-val">{{ item.asistencia }}</span>
                                         </div>
                                     </div>
@@ -253,7 +287,7 @@
                                     </div>
                                 </div>
                                 <div class="progress-bar">
-                                    <div class="progress-fill fill-{{ red_item.color_class }}" style="width: {{ red_item.cumplimiento }}%;"></div>
+                                    <div class="progress-fill fill-{{ red_item.color_class }}" style="--bar-width: {{ red_item.cumplimiento }}%;"></div>
                                 </div>
                             </div>
                             {% endfor %}
@@ -263,6 +297,52 @@
                                 <p class="empty-message">Aún no hay redes con reportes para comparar.</p>
                             </div>
                             {% endif %}
+                        </div>
+                    </article>
+
+                    <!-- Bloque 3: Fruto y Transformación Espiritual Global (Opción A) -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Fruto y Transformación</h2>
+                            <p class="section-subtitle">Impacto espiritual consolidado</p>
+                        </div>
+                        <div class="fruto-grid">
+                            <div class="fruto-item">
+                                <div class="fruto-icon bg-success-light">
+                                    <span class="material-symbols-outlined text-success">person_add</span>
+                                </div>
+                                <div class="fruto-info">
+                                    <span class="fruto-number">{{ metricas.conversiones|default(0) }}</span>
+                                    <span class="fruto-label">Decisiones</span>
+                                </div>
+                            </div>
+                            <div class="fruto-item">
+                                <div class="fruto-icon bg-primary-light">
+                                    <span class="material-symbols-outlined text-primary">handshake</span>
+                                </div>
+                                <div class="fruto-info">
+                                    <span class="fruto-number">{{ metricas.reconciliaciones|default(0) }}</span>
+                                    <span class="fruto-label">Reconciliaciones</span>
+                                </div>
+                            </div>
+                            <div class="fruto-item">
+                                <div class="fruto-icon bg-accent-light">
+                                    <span class="material-symbols-outlined text-primary-container">favorite</span>
+                                </div>
+                                <div class="fruto-info">
+                                    <span class="fruto-number">{{ metricas.cestas_amor|default(0) }}</span>
+                                    <span class="fruto-label">Cestas de Amor</span>
+                                </div>
+                            </div>
+                            <div class="fruto-item">
+                                <div class="fruto-icon bg-secondary-light">
+                                    <span class="material-symbols-outlined text-secondary">visibility</span>
+                                </div>
+                                <div class="fruto-info">
+                                    <span class="fruto-number">{{ metricas.total_visitas|default(0) }}</span>
+                                    <span class="fruto-label">Visitas</span>
+                                </div>
+                            </div>
                         </div>
                     </article>
                 </aside>
@@ -283,11 +363,27 @@
                 </div>
                 <div class="header-action-group">
                     <span class="badge-status badge-info">{{ metricas.casas_activas }} Casas Activas</span>
-                    <button class="btn-full-outline btn-export-header" aria-label="Exportar resumen de métricas de {{ metricas.nombre_red }}" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
-                        <span class="material-symbols-outlined">download</span>
-                        Exportar Resumen
-                    </button>
                 </div>
+            </div>
+
+            <!-- Barra de Accesos Rápidos para Nivel Red -->
+            <div class="quick-actions-bar fade-in-1">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.reportes') }}{% else %}{{ url_for('admin.reportes', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Ver Reportes</span>
+                </a>
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    <span>Estructura y Redes</span>
+                </a>
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.lider') }}{% else %}{{ url_for('admin.lider', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Directorio de Líderes</span>
+                </a>
+                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Exportar Resumen</span>
+                </button>
             </div>
 
             <!-- KPIs Top de Red -->
@@ -316,7 +412,14 @@
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas de Red</h3>
-                    <div class="card-number">{% if metricas.casas %}${{ '{:,.2f}'.format(metricas.ofrendas|default(0)) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                        {% if metricas.casas %}
+                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(metricas.ofrendas|default(0))) }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(0)) }}</div>
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </div>
                     <span class="material-symbols-outlined watermark-icon">volunteer_activism</span>
                 </article>
             </section>
@@ -434,32 +537,66 @@
                         </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">workspace_premium</span><p class="empty-message">Aún no hay datos de crecimiento para destacar.</p></div>{% endif %}
                     </article>
 
-                    <!-- Bloque 3: Equipo de Supervisores a Cargo -->
+                    <!-- Bloque 3: Cumplimiento Semanal de la Red -->
                     <article class="participation-card">
                         <div class="status-card-header">
-                            <h2 class="section-title">Supervisores a Cargo</h2>
-                            <p class="section-subtitle">Liderazgo y supervisión de red</p>
+                            <h2 class="section-title">Cumplimiento Semanal</h2>
+                            <p class="section-subtitle">Casas con reporte enviado esta semana</p>
                         </div>
-                        <div class="supervisores-list">
-                            {% if metricas.supervisores %}
-                            {% for sup in metricas.supervisores %}
-                            <div class="supervisor-card-item">
-                                <div class="supervisor-avatar">
-                                    <span class="material-symbols-outlined">badge</span>
+                        <div class="cumplimiento-zonal-box">
+                            <div class="cumplimiento-header-row">
+                                <span class="cumplimiento-percentage">{{ metricas.cumplimiento }}%</span>
+                                <span class="cumplimiento-fraction">{{ metricas.casas_con_reporte }} de {{ metricas.casas_activas }} casas</span>
+                            </div>
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" style="--bar-width: {{ metricas.cumplimiento }}%;"></div>
+                            </div>
+                            <div class="cumplimiento-pills">
+                                <span class="cumplimiento-pill al-dia">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    {{ metricas.casas_con_reporte }} Al día
+                                </span>
+                                <span class="cumplimiento-pill pendientes">
+                                    <span class="material-symbols-outlined">schedule</span>
+                                    {{ metricas.casas_pendientes }} Pendientes
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Bloque 4: Directorio de Líderes de la Red -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Líderes de la Red</h2>
+                            <p class="section-subtitle">Equipo asignado a {{ metricas.nombre_red|default('esta red') }}</p>
+                        </div>
+                        <div class="lideres-red-list">
+                            {% if metricas.lideres_red %}
+                            {% for lid in metricas.lideres_red %}
+                            <div class="leader-card-item">
+                                <div class="leader-avatar">
+                                    <span class="material-symbols-outlined">person</span>
                                 </div>
-                                <div class="supervisor-info">
-                                    <h4>{{ sup.nombre }}</h4>
-                                    <p>{{ sup.rol }}</p>
+                                <div class="leader-info">
+                                    <h4>{{ lid.nombre }} <span class="badge-role">{{ lid.rol }}</span></h4>
+                                    <p><span class="badge-code">{{ lid.cdp_codigo }}</span>{% if lid.cdp_anfitrion %} · {{ lid.cdp_anfitrion }}{% endif %}</p>
                                 </div>
-                                {% if sup.telefono %}<a href="tel:{{ sup.telefono }}" class="btn-icon-call" aria-label="Llamar a supervisor {{ sup.nombre }}" title="Llamar {{ sup.nombre }}">
-                                    <span class="material-symbols-outlined">call</span>
-                                </a>{% endif %}
+                                <div class="leader-actions">
+                                    {% if lid.telefono %}
+                                    <a href="https://wa.me/{{ lid.telefono|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="btn-icon-wa" aria-label="WhatsApp a {{ lid.nombre }}" title="Contactar por WhatsApp">
+                                        <span class="material-symbols-outlined">chat</span>
+                                    </a>
+                                    <a href="tel:{{ lid.telefono }}" class="btn-icon-call" aria-label="Llamar a {{ lid.nombre }}" title="Llamar {{ lid.nombre }}">
+                                        <span class="material-symbols-outlined">call</span>
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </div>
                             {% endfor %}
                             {% else %}
                             <div class="empty-state">
-                                <span class="material-symbols-outlined empty-icon">badge</span>
-                                <p class="empty-message">No hay supervisores asignados a esta red.</p>
+                                <span class="material-symbols-outlined empty-icon">group</span>
+                                <p class="empty-message">No hay líderes asignados en las casas de esta red.</p>
                             </div>
                             {% endif %}
                         </div>
@@ -485,6 +622,26 @@
                     <span class="badge-status badge-warning"><span class="material-symbols-outlined">rocket_launch</span> Potencial de Multiplicación</span>
                     {% endif %}
                 </div>
+            </div>
+
+            <!-- Barra de Accesos Rápidos para Nivel Casa de Paz -->
+            <div class="quick-actions-bar fade-in-1">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.reportes', cdp_id=cdp_id) }}{% else %}{{ url_for('admin.reportes', red_id=red_id, cdp_id=cdp_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>Ver Reportes</span>
+                </a>
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    <span>Estructura y Redes</span>
+                </a>
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.lider', cdp_id=cdp_id) }}{% else %}{{ url_for('admin.lider', red_id=red_id, cdp_id=cdp_id) }}{% endif %}" class="quick-action-btn">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Directorio de Líderes</span>
+                </a>
+                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando historial y métricas de {{ metricas.nombre_cdp }} en Excel/PDF...')">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Exportar Resumen</span>
+                </button>
             </div>
 
             <!-- Ficha del Líder & Trazabilidad -->
@@ -597,7 +754,12 @@
                                         <td data-label="Asistencia"><span class="asist-pill">{{ reporte.asistencia }}</span></td>
                                         <td data-label="Niños">{{ reporte.ninos }}</td>
                                         <td data-label="Visitas">{{ reporte.visitas }}</td>
-                                        <td data-label="Ofrenda">${{ reporte.ofrenda }}</td>
+                                        <td data-label="Ofrenda">
+                                            <div><strong>${{ '{:,.2f}'.format(reporte.ofrendas_usd|default(reporte.ofrenda|default(0))) }}</strong></div>
+                                            {% if reporte.ofrendas_bs|default(0) > 0 %}
+                                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(reporte.ofrendas_bs) }}</div>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                     {% else %}
@@ -645,7 +807,42 @@
                         <div class="observacion-box">
                             <div class="observacion-quote">
                                 <span class="material-symbols-outlined quote-icon">format_quote</span>
-                                <p>{% if metricas.historial and metricas.historial[0].observaciones %}{{ metricas.historial[0].observaciones }}{% else %}No hay observaciones{% endif %}</p>
+                                <p>{% if metricas.historial and metricas.historial[0].observaciones %}{{ metricas.historial[0].observaciones }}{% else %}No hay observaciones registradas en el último reporte.{% endif %}</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Bloque 2: Dinámica de la Última Reunión (Opción D) -->
+                    <article class="participation-card">
+                        <div class="status-card-header">
+                            <h2 class="section-title">Dinámica de la Reunión</h2>
+                            <p class="section-subtitle">Tema y horario del último servicio</p>
+                        </div>
+                        <div class="reunion-details-box">
+                            <div class="reunion-topic">
+                                <span class="material-symbols-outlined topic-icon">menu_book</span>
+                                <div>
+                                    <span class="reunion-topic-label">Tema Ministrado</span>
+                                    <h4>{{ metricas.ultimo_tema|default('Sin tema registrado') }}</h4>
+                                </div>
+                            </div>
+                            <div class="reunion-meta-row">
+                                <div class="reunion-meta-item">
+                                    <span class="material-symbols-outlined">schedule</span>
+                                    <div>
+                                        <span class="meta-label">Horario</span>
+                                        <strong>{% if metricas.hr_inicio and metricas.hr_fin %}{{ metricas.hr_inicio }} - {{ metricas.hr_fin }}{% else %}No registrado{% endif %}</strong>
+                                    </div>
+                                </div>
+                                <div class="reunion-meta-item">
+                                    <span class="material-symbols-outlined">volunteer_activism</span>
+                                    <div>
+                                        <span class="meta-label">Cesta de Amor</span>
+                                        <strong class="{% if metricas.cesta_amor %}text-success{% else %}text-muted{% endif %}">
+                                            {% if metricas.cesta_amor %}Entregada / Sí{% else %}No requerida{% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -661,7 +858,7 @@
                                 {% for bar in metricas.mini_historico %}
                                 <div class="mini-bar-col">
                                     <div class="mini-bar-track">
-                                        <div class="mini-bar-fill" style="height: {{ bar.altura }}%;">
+                                        <div class="mini-bar-fill" style="--bar-height: {{ bar.altura }}%;">
                                             <span class="mini-bar-value">{{ bar.asistencia }}</span>
                                         </div>
                                     </div>

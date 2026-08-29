@@ -46,32 +46,35 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     flex-shrink: 0;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin-bottom: 0;
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid rgba(221, 192, 189, 0.35);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
     animation: slideInRight 0.5s ease-out;
 }
 
 .estructura-main .header-text {
-    max-width: 60%;
+    max-width: 65%;
 }
 
 .estructura-main .title {
-    font-family: var(--font-headline, \'Noto Serif\', serif);
-    font-size: 2rem;
+    font-family: var(--font-headline, 'Noto Serif', serif);
+    font-size: clamp(1.5rem, 2.5vw, 2.1rem);
     font-weight: 700;
     color: var(--primary, #390002);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.025em;
 }
 
 .estructura-main .subtitle {
     color: var(--on-surface-variant, #4a3433);
     font-size: 0.88rem;
     line-height: 1.55;
+    margin: 0;
 }
 
 .estructura-main .highlight {
@@ -83,6 +86,7 @@
 .estructura-main .header-actions {
     display: flex;
     gap: 0.75rem;
+    align-items: center;
 }
 
 .estructura-main .btn {
@@ -709,6 +713,7 @@ button.red-card {
     justify-content: center;
     padding: 1.5rem;
     text-align: center;
+    text-decoration: none;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -1048,7 +1053,8 @@ button.red-card {
         display: flex !important;
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.6rem;
+        gap: 0.85rem;
+        padding: 1.25rem 1.25rem !important;
     }
 
     .estructura-main > .page-header .header-text {
@@ -1214,4 +1220,267 @@ button.red-card {
     .casa-add-card p {
         font-size: 0.65rem;
     }
+}
+
+/* ==========================================================================
+   TEMA OSCURO ESTRUCTURA ([data-theme="dark"])
+   ========================================================================== */
+[data-theme="dark"] .estructura-main {
+    background-color: transparent !important;
+}
+
+/* Page Header */
+[data-theme="dark"] .estructura-main > .page-header {
+    background-color: var(--surface-container-lowest, #1b1416) !important;
+    background: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem 2rem !important;
+}
+
+[data-theme="dark"] .estructura-main .title {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .estructura-main .subtitle {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .estructura-main .highlight {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Sidebar de Redes */
+[data-theme="dark"] .redes-sidebar {
+    background-color: var(--surface-container-lowest, #1b1416) !important;
+    background: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .sidebar-title {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+/* Tarjetas de Red */
+[data-theme="dark"] .red-card {
+    background-color: var(--surface-container-low, #1f1618) !important;
+    background: var(--surface-container-low, #1f1618) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .red-card:not(.active):hover {
+    background-color: var(--surface-container-high, #2f2225) !important;
+    border-color: rgba(248, 222, 218, 0.4) !important;
+}
+
+[data-theme="dark"] .red-card.active {
+    background: #38070a !important;
+    background-image: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
+    border: 2px solid rgba(255, 180, 171, 0.5) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .red-card .red-name,
+[data-theme="dark"] .red-card.active .red-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .red-leader {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .red-count,
+[data-theme="dark"] .red-card.active .red-count {
+    color: var(--primary, #f8deda) !important;
+}
+
+[data-theme="dark"] .avatar-maroon {
+    background-color: #8b1518 !important;
+    border-color: #1f1618 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .avatar-count {
+    background-color: var(--surface-container-high, #2f2225) !important;
+    color: var(--primary, #f8deda) !important;
+    border-color: #1f1618 !important;
+}
+
+[data-theme="dark"] .icon-more {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .red-menu {
+    background: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-theme="dark"] .red-menu a,
+[data-theme="dark"] .red-menu button {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .red-menu a:hover,
+[data-theme="dark"] .red-menu button:hover {
+    background: var(--surface-container-high, #2f2225) !important;
+}
+
+/* Tarjeta de Impacto / Estado de Salud */
+[data-theme="dark"] .impact-card {
+    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
+    border: 1.5px solid rgba(255, 180, 171, 0.35) !important;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.65) !important;
+}
+
+[data-theme="dark"] .impact-content h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .impact-subtitle {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .impact-number {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .impact-note {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Header de Casas de Paz */
+[data-theme="dark"] .casas-header {
+    background: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .casas-header .section-title {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .casas-header .section-subtitle {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .casas-header .section-subtitle strong {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Buscador */
+[data-theme="dark"] .search-bar input {
+    background-color: var(--input-bg, #150f10) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .search-bar input::placeholder {
+    color: var(--text-muted, #d4c2bf) !important;
+    opacity: 0.65;
+}
+
+[data-theme="dark"] .icon-search {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Tarjetas de Casa de Paz */
+[data-theme="dark"] .casa-card {
+    background-color: var(--surface-container-lowest, #1b1416) !important;
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .casa-card:hover {
+    border-color: rgba(248, 222, 218, 0.45) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
+}
+
+[data-theme="dark"] .casa-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .casa-zone {
+    color: #fde047 !important;
+}
+
+/* Icono de Casa */
+[data-theme="dark"] .casa-icon {
+    background-color: #38070a !important;
+    color: var(--primary, #f8deda) !important;
+    border: 1px solid rgba(255, 180, 171, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Status Badges */
+[data-theme="dark"] .status-activa,
+[data-theme="dark"] .status-active {
+    background: rgba(34, 197, 94, 0.18) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(74, 222, 128, 0.35) !important;
+}
+
+[data-theme="dark"] .status-pausada,
+[data-theme="dark"] .status-paused,
+[data-theme="dark"] .status-pendiente {
+    background: rgba(234, 179, 8, 0.18) !important;
+    color: #fde047 !important;
+    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+}
+
+[data-theme="dark"] .detail-row {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .detail-row strong {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .detail-row .material-symbols-outlined {
+    color: var(--text-muted, #d4c2bf) !important;
+}
+
+[data-theme="dark"] .casa-footer {
+    border-top: 1px solid var(--border-color, rgba(221, 192, 189, 0.15)) !important;
+}
+
+[data-theme="dark"] .attendance {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .attendance .material-symbols-outlined {
+    color: var(--primary, #f8deda) !important;
+}
+
+[data-theme="dark"] .btn-manage {
+    color: var(--primary, #f8deda) !important;
+}
+
+/* Tarjeta Agregar Casa */
+[data-theme="dark"] .casa-add-card {
+    background-color: var(--surface-container-low, #1f1618) !important;
+    border: 2px dashed var(--border-color, rgba(221, 192, 189, 0.25)) !important;
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .casa-add-card:hover {
+    border-color: var(--primary, #f8deda) !important;
+    background-color: var(--surface-container-high, #2f2225) !important;
+}
+
+[data-theme="dark"] .casa-add-card .add-icon {
+    background-color: #38070a !important;
+    color: var(--primary, #f8deda) !important;
+}
+
+[data-theme="dark"] .casa-add-card h4 {
+    color: var(--text-main, #f8f2f0) !important;
+}
+
+[data-theme="dark"] .casa-add-card p {
+    color: var(--text-muted, #d4c2bf) !important;
 }

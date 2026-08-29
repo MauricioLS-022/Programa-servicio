@@ -1,7 +1,7 @@
 """
 Rutas del administrador: /admin/...
 """
-from flask import Blueprint, render_template, request, session
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 from utils.auth import login_required, role_required
 from services.dashboard_service import get_dashboard_context, get_estructura_context
 from services.user_service import get_usuarios_context
@@ -73,6 +73,7 @@ def reportes():
 
 
 @admin_bp.route('/lider')
+@admin_bp.route('/lideres')
 @login_required
 @role_required("admin")
 def lider():
@@ -110,7 +111,9 @@ def casa_de_paz_crear():
 @login_required
 @role_required("admin")
 def casa_de_paz(id):
-    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id)
+    from services.cdp_service import get_cdp_detalle
+    cdp = get_cdp_detalle(id)
+    return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id, cdp=cdp)
 
 
 @admin_bp.route('/casa_de_paz/<id>/editar')
@@ -138,18 +141,38 @@ def red_editar(id):
 @login_required
 @role_required("admin")
 def perfil():
-    """Perfil del administrador."""
-    from database import get_db_connection
+    """Perfil del administrador con cambio de usuario y contraseña."""
+    from services.cdp_service import get_perfil_data, cambiar_username, cambiar_password
     
     usuario = session.get("usuario")
+    usuario_id = session.get("usuario_id")
     rol = session.get("rol")
-    connect = get_db_connection()
-    if connect:
-        try:
-            C = connect.cursor()
-        except Exception as e:
-            print(f"[DB] Error perfil: {e}")
-        finally:
-            connect.close()
-    
-    return render_template('perfil.html', usuario=usuario, rol=rol)
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+        
+        if action == 'cambiar_username':
+            nuevo_username = request.form.get('nuevo_username', '').strip()
+            exito, mensaje = cambiar_username(usuario_id, nuevo_username)
+            if exito:
+                session['usuario'] = nuevo_username
+                flash(mensaje, 'success')
+            else:
+                flash(mensaje, 'danger')
+        
+        elif action == 'cambiar_password':
+            password_actual = request.form.get('password_actual', '')
+            password_nueva = request.form.get('password_nueva', '')
+            password_confirmar = request.form.get('password_confirmar', '')
+            
+            if password_nueva != password_confirmar:
+                flash('Las contraseñas nuevas no coinciden', 'danger')
+            else:
+                exito, mensaje = cambiar_password(usuario_id, password_actual, password_nueva)
+                flash(mensaje, 'success' if exito else 'danger')
+        
+        return redirect(url_for('admin.perfil'))
+
+    perfil_data = get_perfil_data(str(usuario_id)) if usuario_id else {}
+    return render_template('perfil.html', usuario=usuario, rol=rol, perfil_data=perfil_data)
+

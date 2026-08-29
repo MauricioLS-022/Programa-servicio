@@ -1,42 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <title>Iniciar Sesión — Vino Nuevo</title>
+    
+    <!-- Fuentes y Tipografía del Sistema -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Estilos de Login -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
-</head>
-<body class="centro">
-    <dialog class="login">
-        <img src="{{ url_for('static', filename='logo3.webp') }}" alt="logo" style="width: 80px; margin: 0px;">
-        <h1>Iniciar sesión</h1>
-        <form class="form" method="post">
-            <input type="text" name="usuario" placeholder="Usuario" required>
-            <div class="password-container">
-                <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" required>
-                <button type="button" class="toggle-password" onclick="togglePassword()">
-                    <span class="material-symbols-outlined" id="eye-icon">visibility_off</span>
-                </button>
-            </div>
-            <button type="submit">Iniciar sesión</button>
-        </form>
-        <p class="p">{{ p }}</p>
-    </dialog>
+    
+    <!-- Script de detección temprana de tema oscuro (anti-FOUC) -->
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('contrasena');
-            const eyeIcon = document.getElementById('eye-icon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.textContent = 'visibility';
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.textContent = 'visibility_off';
+        (function() {
+            try {
+                var t = localStorage.getItem('theme');
+                if (t === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body class="login-body">
+
+    <!-- Botón Flotante para Alternar Modo Oscuro / Claro -->
+    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema de color" title="Alternar tema oscuro / claro">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+    </button>
+
+    <!-- Tarjeta Principal de Autenticación -->
+    <main class="login-card">
+        <div class="brand-header">
+            <div class="brand-logo-wrap">
+                <img src="{{ url_for('static', filename='logo3.webp') }}" alt="Logotipo Vino Nuevo" class="brand-logo-img">
+            </div>
+            <h1 class="brand-title">Vino Nuevo</h1>
+            <p class="brand-subtitle">Ministerio Comunitario · Iniciar Sesión</p>
+        </div>
+
+        <!-- Mensajes de Alerta / Error -->
+        {% if p %}
+        <div class="login-alert" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">error</span>
+            <span>{{ p }}</span>
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="login-alert" role="alert">
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                        {% if category == 'success' %}check_circle{% else %}info{% endif %}
+                    </span>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario de Acceso -->
+        <form class="login-form" method="POST" id="loginForm">
+            <div class="form-group">
+                <label for="usuario" class="form-label">Usuario</label>
+                <div class="input-wrapper">
+                    <span class="material-symbols-outlined input-icon-left" aria-hidden="true">person</span>
+                    <input 
+                        type="text" 
+                        name="usuario" 
+                        id="usuario" 
+                        class="form-input" 
+                        placeholder="Ingresa tu usuario" 
+                        required 
+                        autocomplete="username" 
+                        autofocus
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="contrasena" class="form-label">Contraseña</label>
+                <div class="input-wrapper">
+                    <span class="material-symbols-outlined input-icon-left" aria-hidden="true">lock</span>
+                    <input 
+                        type="password" 
+                        name="contrasena" 
+                        id="contrasena" 
+                        class="form-input form-input-password" 
+                        placeholder="••••••••" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                    <button 
+                        type="button" 
+                        class="btn-toggle-password" 
+                        id="togglePasswordBtn" 
+                        aria-label="Mostrar contraseña"
+                    >
+                        <span class="material-symbols-outlined" id="eyeIcon">visibility_off</span>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="btnLogin">
+                <span class="btn-text">Ingresar al Sistema</span>
+                <span class="material-symbols-outlined btn-icon" aria-hidden="true">arrow_forward</span>
+            </button>
+        </form>
+
+        <!-- Indicador de Entorno (ESTRICTAMENTE visible SOLO en desarrollo) -->
+        {% if is_dev %}
+        <div class="dev-banner" role="note">
+            <div class="dev-banner-title">
+                <span class="material-symbols-outlined" style="font-size: 1rem;">code</span> Entorno de Desarrollo
+            </div>
+            <span>Usuarios de prueba: <code>admin</code> / <code>supervisor</code> / <code>lider</code></span>
+        </div>
+        {% endif %}
+
+        <footer class="login-footer">
+            <p>&copy; Vino Nuevo · Gestión de Casas de Paz</p>
+        </footer>
+    </main>
+
+    <!-- Scripts de Interacción -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Alternar Contraseña
+            const passInput = document.getElementById('contrasena');
+            const togglePassBtn = document.getElementById('togglePasswordBtn');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (togglePassBtn && passInput) {
+                togglePassBtn.addEventListener('click', () => {
+                    const isPassword = passInput.type === 'password';
+                    passInput.type = isPassword ? 'text' : 'password';
+                    eyeIcon.textContent = isPassword ? 'visibility' : 'visibility_off';
+                    togglePassBtn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+                });
             }
-        }
+
+            // 2. Control de Tema Oscuro / Claro
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const themeIcon = document.getElementById('themeIcon');
+
+            function updateThemeIcon() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                if (themeIcon) {
+                    themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+                }
+            }
+
+            updateThemeIcon();
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    if (isDark) {
+                        document.documentElement.removeAttribute('data-theme');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                    updateThemeIcon();
+                });
+            }
+
+            // 3. Estado de envío en botón
+            const form = document.getElementById('loginForm');
+            const btn = document.getElementById('btnLogin');
+            if (form && btn) {
+                form.addEventListener('submit', () => {
+                    btn.disabled = true;
+                    btn.querySelector('.btn-text').textContent = 'Ingresando...';
+                });
+            }
+        });
     </script>
 </body>
 </html>

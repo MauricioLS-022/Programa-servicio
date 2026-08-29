@@ -57,6 +57,22 @@ def poblar_datos():
                 'apellido': 'Mendoza'
             },
             {
+                'id': 'da59cfc6-8337-11f1-8217-2016d8516279',
+                'username': 'super2',
+                'password': generate_password_hash('supervisor'),
+                'tipo_usuario': 'supervisor',
+                'nombre': 'Patricia',
+                'apellido': 'Morales'
+            },
+            {
+                'id': 'ea59cfc6-8337-11f1-8217-2016d8516279',
+                'username': 'super3',
+                'password': generate_password_hash('supervisor'),
+                'tipo_usuario': 'supervisor',
+                'nombre': 'Roberto',
+                'apellido': 'Navas'
+            },
+            {
                 'id': '1d4f7c99-7d51-11f1-bf9e-2016d8516279',
                 'username': 'lider',
                 'password': generate_password_hash('lider'),
@@ -101,16 +117,15 @@ def poblar_datos():
                     apellido = VALUES(apellido),
                     is_active = 1
             """, (u['id'], u['username'], u['password'], u['tipo_usuario'], u['nombre'], u['apellido']))
-        print("[OK] Usuarios asegurados (admin, super, lider, lider2, lider3, lider4)")
+        print("[OK] Usuarios asegurados (admin, super, super2, super3, lider, lider2, lider3, lider4)")
 
         # -------------------------------------------------------------
-        # 2. REDES
+        # 2. REDES (Cada red con supervisor único - Relación 1 a 1)
         # -------------------------------------------------------------
-        supervisor_id = 'ca58cfc6-8337-11f1-8217-2016d8516279'
         redes_data = [
-            (1, 'Cielos Abiertos', supervisor_id),
-            (2, 'Red Sur', supervisor_id),
-            (3, 'Red Central', supervisor_id),
+            (1, 'Cielos Abiertos', 'ca58cfc6-8337-11f1-8217-2016d8516279'),
+            (2, 'Red Sur', 'da59cfc6-8337-11f1-8217-2016d8516279'),
+            (3, 'Red Central', 'ea59cfc6-8337-11f1-8217-2016d8516279'),
         ]
 
         for red_id, nombre, sup_id in redes_data:
@@ -190,6 +205,17 @@ def poblar_datos():
         ]
 
         hoy = date.today()
+        # Asegurar columnas bimoneda en tabla reporte
+        try:
+            cur.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_usd'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE reporte ADD COLUMN ofrendas_usd DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER ofrendas")
+            cur.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_bs'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE reporte ADD COLUMN ofrendas_bs DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER ofrendas_usd")
+        except Exception as e:
+            print(f"[!] Aviso al verificar/crear columnas de ofrendas: {e}")
+
         # Generar reportes para las últimas 8 semanas en varias CDPs
         reportes_creados = 0
         for semana_idx in range(8):
@@ -197,13 +223,15 @@ def poblar_datos():
             
             # Insertar para CDP 1 (Líder 1)
             tema_1 = temas[semana_idx % len(temas)]
+            usd_1 = round(20.0 + (semana_idx * 5.0), 2)
+            bs_1 = round(280.0 + (semana_idx * 50.0), 2)
             cur.execute("""
                 INSERT INTO reporte (
                     id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                     reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                    tema, observaciones, ofrendas, cdp_id, enviado_por_lider_id
+                    tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """, (
                 str(uuid.uuid4()),
@@ -219,7 +247,9 @@ def poblar_datos():
                 '20:30:00',
                 f'{tema_1} (Semana {8 - semana_idx})',
                 'Reunión llena de bendición y comunión.',
-                120.00 + (semana_idx * 15.5),
+                usd_1,
+                usd_1,
+                bs_1,
                 1,
                 1
             ))
@@ -228,13 +258,15 @@ def poblar_datos():
             # Insertar para CDP 2 (Líder 3)
             if semana_idx < 6:
                 tema_2 = temas[(semana_idx + 2) % len(temas)]
+                usd_2 = round(15.0 + (semana_idx * 4.0), 2)
+                bs_2 = round(210.0 + (semana_idx * 40.0), 2)
                 cur.execute("""
                     INSERT INTO reporte (
                         id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                         reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                        tema, observaciones, ofrendas, cdp_id, enviado_por_lider_id
+                        tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, (
                     str(uuid.uuid4()),
@@ -250,7 +282,9 @@ def poblar_datos():
                     '20:00:00',
                     f'{tema_2} (Grupo Sur)',
                     'Buena participación de los asistentes.',
-                    95.00 + (semana_idx * 10.0),
+                    usd_2,
+                    usd_2,
+                    bs_2,
                     2,
                     3
                 ))
@@ -259,13 +293,15 @@ def poblar_datos():
             # Insertar para CDP 3 (Líder 5)
             if semana_idx < 4:
                 tema_3 = temas[(semana_idx + 4) % len(temas)]
+                usd_3 = round(25.0 + (semana_idx * 6.0), 2)
+                bs_3 = round(350.0 + (semana_idx * 60.0), 2)
                 cur.execute("""
                     INSERT INTO reporte (
                         id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                         reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                        tema, observaciones, ofrendas, cdp_id, enviado_por_lider_id
+                        tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, (
                     str(uuid.uuid4()),
@@ -281,7 +317,9 @@ def poblar_datos():
                     '20:30:00',
                     f'{tema_3} (Red Sur)',
                     'Gran tiempo de ministración.',
-                    150.00 + (semana_idx * 20.0),
+                    usd_3,
+                    usd_3,
+                    bs_3,
                     3,
                     5
                 ))

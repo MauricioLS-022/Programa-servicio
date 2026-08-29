@@ -12,7 +12,7 @@
             <h1 class="title">Estructura de mi Red</h1>
             <p class="subtitle">
                 Supervisa el estado de tus <span class="highlight">Casas de Paz</span> y monitorea el crecimiento espiritual de cada grupo bajo tu responsabilidad.
-                            <span class="material-symbols-outlined">apps</span>
+            </p>
             {% else %}
             <h1 class="title">Estructura Organizacional</h1>
             <p class="subtitle">
@@ -111,7 +111,7 @@
                         <h3>{% if has_role("supervisor") %}Estado de Salud de mi Red{% else %}Resumen de Impacto{% endif %}</h3>
                         <p class="impact-subtitle">{% if has_role("supervisor") %}Casas de Paz activas y reportando{% else %}Total alcance de redes{% endif %}</p>
                         <div class="impact-number">{{ total_casas_estructura }}</div>
-                        <p class="impact-note">{% if has_role("supervisor") %}Casas de Paz registradas{% else %}Miembros activos este mes{% endif %}</p>
+                        <p class="impact-note">Casas de Paz registradas</p>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">{% if has_role("supervisor") %}health_and_safety{% else %}diversity_3{% endif %}</span>
                 </div>
@@ -149,7 +149,7 @@
                     </div>
                     <div class="casa-footer">
                         <div class="attendance"><span class="material-symbols-outlined">groups</span><span>{{ casa.asistencia }} Asistentes promedio</span></div>
-                        {% if not has_role("supervisor") %}<a href="#" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>{% endif %}
+                        <a href="{{ url_for('admin.casa_de_paz', id=casa.id) if has_role('admin') else url_for('supervisor.casa_de_paz', id=casa.id) }}" class="btn-manage">Gestionar <span class="material-symbols-outlined">arrow_forward</span></a>
                     </div>
                 </article>
                 {% else %}
@@ -160,13 +160,13 @@
                 </div>
                 {% endfor %}
                 {% if not has_role("supervisor") %}
-                <div class="casa-add-card" data-filtered-add-card>
+                <a href="{{ url_for('admin.casa_de_paz_crear') }}" class="casa-add-card" data-filtered-add-card>
                     <div class="add-icon">
                         <span class="material-symbols-outlined">add</span>
                     </div>
                     <h4>Registrar Nueva Casa</h4>
                     <p>Asigna un nuevo anfitrión y vincula la ubicación a esta red.</p>
-                </div>
+                </a>
                 {% endif %}
             </div>
         </section>

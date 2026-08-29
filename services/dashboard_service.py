@@ -62,7 +62,17 @@ def sanitize_metricas(metricas):
         
         # Métricas adicionales
         'conversiones': 0,
+        'reconciliaciones': 0,
+        'cestas_amor': 0,
+        'total_visitas': 0,
         'ofrendas': 0,
+        'casas_con_reporte': 0,
+        'casas_pendientes': 0,
+        'lideres_red': [],
+        'ultimo_tema': 'Sin tema registrado',
+        'hr_inicio': '',
+        'hr_fin': '',
+        'cesta_amor': False,
     }
     
     # Merge con valores por defecto
@@ -73,7 +83,7 @@ def sanitize_metricas(metricas):
         result['distribucion'] = default_metricas['distribucion']
     
     # Asegurar listas
-    for key in ['historial', 'tendencia', 'ranking_redes', 'ranking_cdp']:
+    for key in ['historial', 'tendencia', 'ranking_redes', 'ranking_cdp', 'lideres_red']:
         if key not in result or not isinstance(result.get(key), list):
             result[key] = []
     
@@ -140,7 +150,17 @@ def get_selectores():
                        (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
                        CONCAT(u.nombre, ' ', u.apellido),
                        'Sin líder'
-                   ) AS lider
+                   ) AS lider,
+                   COALESCE(
+                       (SELECT ROUND(AVG(nro_regulares + nro_niños + nro_visitas + nro_comprometidos)) 
+                        FROM reporte WHERE cdp_id = c.id),
+                       0
+                   ) AS asistencia,
+                   CASE 
+                       WHEN EXISTS(SELECT 1 FROM reporte WHERE cdp_id = c.id AND fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) THEN 'activa'
+                       ELSE 'pendiente'
+                   END AS estado,
+                   'Martes · 7:30 PM' AS horario
             FROM cdp c
             LEFT JOIN usuario u ON c.usuario_id = u.id
             ORDER BY c.codigo
@@ -211,10 +231,17 @@ def get_estructura_context(usuario_id, is_supervisor=False):
             'asistencia': casa.get('asistencia') or 0,
         })
 
+    total_asistencia = sum(c.get('asistencia', 0) for c in casas_context)
+    casas_activas = sum(1 for c in casas_context if c.get('estado') in ('activa', 'active'))
+    casas_pendientes = len(casas_context) - casas_activas
+
     return {
         'redes_estructura': redes_context,
         'casas_estructura': casas_context,
         'total_casas_estructura': len(casas_context),
+        'total_asistencia_estructura': total_asistencia,
+        'casas_activas_estructura': casas_activas,
+        'casas_pendientes_estructura': casas_pendientes,
         'estructura_mock': not db_connected,
         'estructura_vacia': not redes_context,
     }
@@ -325,8 +352,8 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     supervisor_red_id = None
     if is_supervisor:
         supervisor_red_id = get_supervisor_red_id(usuario_id)
-        # Forzar nivel a 'red' para supervisores
-        if nivel == 'general':
+        # Para supervisores, solo permitir niveles 'red' y 'cdp'
+        if nivel not in ('red', 'cdp'):
             nivel = 'red'
         red_id = supervisor_red_id
 
@@ -337,6 +364,14 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     if is_supervisor:
         redes = [r for r in redes if r['id'] == supervisor_red_id] if supervisor_red_id else redes[:1]
         casas = [c for c in casas if c['red_id'] == supervisor_red_id] if supervisor_red_id else casas
+
+        # Seguridad: asegurar que el cdp_id pertenezca a la red del supervisor
+        if nivel == 'cdp':
+            casas_ids = [c['id'] for c in casas]
+            if cdp_id and cdp_id not in casas_ids and casas_ids:
+                cdp_id = casas_ids[0]
+            elif not cdp_id and casas_ids:
+                cdp_id = casas_ids[0]
 
     # Si se seleccionó nivel red o cdp sin ID específico, usar el primero disponible
     if nivel == 'red' and not red_id and redes:
