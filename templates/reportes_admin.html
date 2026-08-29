@@ -95,7 +95,14 @@
                         </td>
                         <td data-label="Casa de Paz" class="font-italic text-variant">{{ reporte.cdp_nombre }}</td>
                         <td data-label="Asistencia" class="text-center"><span class="badge">{{ reporte.asistencia }}</span></td>
-                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">${{ "{:,.2f}".format(reporte.ofrendas) }}</td>
+                        <td data-label="Ofrendas" class="text-right font-bold text-secondary">
+                            <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                                <span>${{ "{:,.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}</span>
+                                {% if reporte.ofrendas_bs and reporte.ofrendas_bs > 0 %}
+                                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Bs. {{ "{:,.2f}".format(reporte.ofrendas_bs) }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td data-label="Acciones" class="text-center">
                             <div class="action-buttons">
                                 <button class="btn-icon btn-view"
@@ -112,6 +119,8 @@
                                     data-reconciliaciones="{{ reporte.reconciliaciones }}"
                                     data-confesiones="{{ reporte.confesiones }}"
                                     data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
+                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}"
+                                    data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
@@ -133,6 +142,8 @@
                                     data-reconciliaciones="{{ reporte.reconciliaciones }}"
                                     data-confesiones="{{ reporte.confesiones }}"
                                     data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
+                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}"
+                                    data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
@@ -156,17 +167,29 @@
             <div class="pagination-controls">
                 {% set endpoint = 'supervisor.reportes' if has_role('supervisor') else 'admin.reportes' %}
                 {% if page > 1 %}
-                <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page - 1 if page > 2 else none) }}" aria-label="Página anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></a>
+                <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page - 1) }}" aria-label="Página anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></a>
                 {% else %}
                 <span class="page-btn disabled" aria-disabled="true"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></span>
                 {% endif %}
-                {% for page_number in range(1, pages + 1) %}
-                    {% if page_number == page %}
-                    <span class="page-btn active" aria-current="page">{{ page_number }}</span>
+
+                {% set win_start = [1, page - 2]|max %}
+                {% set win_end   = [pages, page + 2]|min %}
+                {% if win_start > 1 %}
+                    <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=1) }}">1</a>
+                    {% if win_start > 2 %}<span class="page-btn disabled">…</span>{% endif %}
+                {% endif %}
+                {% for pn in range(win_start, win_end + 1) %}
+                    {% if pn == page %}
+                    <span class="page-btn active" aria-current="page">{{ pn }}</span>
                     {% else %}
-                    <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page_number if page_number > 1 else none) }}">{{ page_number }}</a>
+                    <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=pn) }}">{{ pn }}</a>
                     {% endif %}
                 {% endfor %}
+                {% if win_end < pages %}
+                    {% if win_end < pages - 1 %}<span class="page-btn disabled">…</span>{% endif %}
+                    <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=pages) }}">{{ pages }}</a>
+                {% endif %}
+
                 {% if page < pages %}
                 <a class="page-btn" href="{{ url_for(endpoint, q=search or none, red_id=red_id or none, cdp_id=cdp_id or none, fecha_desde=fecha_desde or none, fecha_hasta=fecha_hasta or none, page=page + 1) }}" aria-label="Página siguiente"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
                 {% else %}
@@ -192,7 +215,7 @@
 
                 <div class="modal-section">
                     <h4 class="modal-section-title">Información General</h4>
-                    <div class="modal-grid">
+                    <div class="modal-grid modal-grid-2">
                         <div class="modal-field">
                             <label>Líder</label>
                             <input type="text" id="modalLider" readonly />
@@ -220,26 +243,22 @@
 
                 <div class="modal-section">
                     <h4 class="modal-section-title">Asistencia</h4>
-                    <div class="modal-grid">
-                        <div class="modal-field-group">
-                            <div class="modal-field">
-                                <label>Regulares</label>
-                                <input type="number" id="modalRegulares" readonly />
-                            </div>
-                            <div class="modal-field">
-                                <label>Niños</label>
-                                <input type="number" id="modalNinos" readonly />
-                            </div>
+                    <div class="modal-grid modal-grid-asistencia">
+                        <div class="modal-field">
+                            <label>Regulares</label>
+                            <input type="number" id="modalRegulares" readonly />
                         </div>
-                        <div class="modal-field-group">
-                            <div class="modal-field">
-                                <label>Visitas</label>
-                                <input type="number" id="modalVisitas" readonly />
-                            </div>
-                            <div class="modal-field">
-                                <label>Comprometidos</label>
-                                <input type="number" id="modalComprometidos" readonly />
-                            </div>
+                        <div class="modal-field">
+                            <label>Niños</label>
+                            <input type="number" id="modalNinos" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Visitas</label>
+                            <input type="number" id="modalVisitas" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Comprometidos</label>
+                            <input type="number" id="modalComprometidos" readonly />
                         </div>
                         <div class="modal-field modal-field-total">
                             <label>Asistencia Total</label>
@@ -250,20 +269,22 @@
 
                 <div class="modal-section">
                     <h4 class="modal-section-title">Actividad Ministerial</h4>
-                    <div class="modal-grid">
-                        <div class="modal-field-group">
-                            <div class="modal-field">
-                                <label>Reconciliaciones</label>
-                                <input type="number" id="modalReconciliaciones" readonly />
-                            </div>
-                            <div class="modal-field">
-                                <label>Confesiones de Fe</label>
-                                <input type="number" id="modalConfesiones" readonly />
-                            </div>
+                    <div class="modal-grid modal-grid-2">
+                        <div class="modal-field">
+                            <label>Reconciliaciones</label>
+                            <input type="number" id="modalReconciliaciones" readonly />
                         </div>
                         <div class="modal-field">
-                            <label>Ofrendas</label>
-                            <input type="text" id="modalOfrendas" readonly />
+                            <label>Confesiones de Fe</label>
+                            <input type="number" id="modalConfesiones" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Ofrendas en Bs</label>
+                            <input type="text" id="modalOfrendasBs" readonly />
+                        </div>
+                        <div class="modal-field">
+                            <label>Ofrendas en $ (USD)</label>
+                            <input type="text" id="modalOfrendasUsd" readonly />
                         </div>
                         <div class="modal-field">
                             <label>Cesta de Amor</label>
