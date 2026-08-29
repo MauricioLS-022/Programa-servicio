@@ -11,7 +11,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/layout_form.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/form.css')}}">
     {% block custom_styles %}{% endblock %}
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/dark_theme.css') }}">
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem('theme');
+                if (t === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
     

@@ -13,19 +13,62 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/mobile-header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/footbar.css') }}">
     {% block custom_styles %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/dark_theme.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
-
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem('theme');
+                if (t === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
     {% include 'sidebar_mobile.html' %}
 
     {% include 'header_admin.html' %}
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="toast-container" id="toastContainer" role="alert" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="toast-alert toast-{{ category }}">
+              <span class="material-symbols-outlined toast-icon">
+                {% if category == 'success' %}check_circle
+                {% elif category in ['danger', 'error'] %}error
+                {% elif category == 'warning' %}warning
+                {% else %}info{% endif %}
+              </span>
+              <span class="toast-message">{{ message }}</span>
+              <button type="button" class="toast-close" onclick="this.closest('.toast-alert').remove()" aria-label="Cerrar notificación">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     {% block content %}
     {% endblock %}
     
     {% include 'footbar_mobile.html' %}
 
+    <script>
+      // Auto-dismiss toasts after 5 seconds
+      document.addEventListener('DOMContentLoaded', () => {
+        const toasts = document.querySelectorAll('.toast-alert');
+        toasts.forEach(toast => {
+          setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+          }, 5000);
+        });
+      });
+    </script>
     {% block custom_scripts %}{% endblock %}
 </body>
 </html>

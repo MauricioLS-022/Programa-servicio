@@ -12,13 +12,14 @@
     </div>
     <div>
       <p class="detail-eyebrow">Detalle de Casa de Paz</p>
-      <h2 class="detail-title">Casa de Paz “CA-5”</h2>
-      <p class="detail-subtitle">Red Hebrón · Sector 4 · Zona Norte</p>
+      <h2 class="detail-title">Casa "{{ cdp.codigo or cdp.nombre if cdp else 'HEB-001' }}"</h2>
+      <p class="detail-subtitle">{{ cdp.red_nombre if cdp else 'Red Hebrón' }} · {{ cdp.direccion if cdp else 'Sector 4 · Zona Norte' }}</p>
     </div>
   </div>
 
   <div class="detail-actions">
-    <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or 1) }}" class="btn-secondary">
+    {% if has_role("admin") %}
+    <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or (cdp.id if cdp else 1)) }}" class="btn-secondary">
       <span class="material-symbols-outlined">edit</span>
       Editar
     </a>
@@ -26,6 +27,12 @@
       <span class="material-symbols-outlined">person_add</span>
       Añadir líder
     </a>
+    {% else %}
+    <a href="{{ url_for('supervisor.estructura') }}" class="btn-secondary">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Volver a Estructura
+    </a>
+    {% endif %}
   </div>
 </header>
 
@@ -34,9 +41,9 @@
     <div class="card-header">
       <div>
         <p class="card-kicker">Resumen general</p>
-        <h3>Casa de Paz Central</h3>
+        <h3>{{ cdp.nombre if cdp else 'Casa de Paz Central' }}</h3>
       </div>
-      <span class="status-pill active">Activa</span>
+      <span class="status-pill {{ 'active' if not cdp or cdp.estado in ['activa', 'active'] else 'pendiente' }}">{{ cdp.estado|replace('_', ' ')|capitalize if cdp else 'Activa' }}</span>
     </div>
 
     <p class="summary-text">
@@ -47,22 +54,22 @@
       <div class="metric-item">
         <span class="material-symbols-outlined">groups</span>
         <div>
-          <strong>18</strong>
-          <span>Asistentes</span>
+          <strong>{{ cdp.asistencia_promedio if cdp else 18 }}</strong>
+          <span>Asistentes prom.</span>
         </div>
       </div>
       <div class="metric-item">
         <span class="material-symbols-outlined">calendar_month</span>
         <div>
-          <strong>Martes</strong>
-          <span>7:30 PM</span>
+          <strong>{{ (cdp.horario.split('·')[0]|trim) if cdp and '·' in cdp.horario else (cdp.horario if cdp else 'Martes') }}</strong>
+          <span>{{ (cdp.horario.split('·')[1]|trim) if cdp and '·' in cdp.horario else '7:30 PM' }}</span>
         </div>
       </div>
       <div class="metric-item">
         <span class="material-symbols-outlined">volunteer_activism</span>
         <div>
-          <strong>4</strong>
-          <span>Voluntarios</span>
+          <strong>{{ cdp.lideres|length if cdp and cdp.lideres else 3 }}</strong>
+          <span>Líderes</span>
         </div>
       </div>
     </div>
@@ -79,19 +86,19 @@
     <div class="info-list">
       <div class="info-item">
         <span class="info-label">Dirección</span>
-        <span class="info-value">Calle 12 #18-45, sector El Carmen</span>
+        <span class="info-value">{{ cdp.direccion if cdp else 'Calle 12 #18-45, sector El Carmen' }}</span>
       </div>
       <div class="info-item">
         <span class="info-label">Anfitrión</span>
-        <span class="info-value">David Gómez y Elena Ríos</span>
+        <span class="info-value">{{ cdp.anfitrion if cdp else 'David Gómez y Elena Ríos' }}</span>
       </div>
       <div class="info-item">
         <span class="info-label">Líder asignado</span>
-        <span class="info-value">Juan Carlos Pérez</span>
+        <span class="info-value">{{ cdp.lider_nombre if cdp else 'Juan Carlos Pérez' }}</span>
       </div>
       <div class="info-item">
         <span class="info-label">Teléfono</span>
-        <span class="info-value">+57 300 123 4567</span>
+        <span class="info-value">{{ cdp.telefono if cdp else '+57 300 123 4567' }}</span>
       </div>
     </div>
   </section>
@@ -105,6 +112,17 @@
     </div>
 
     <ul class="timeline-list">
+      {% if cdp and cdp.actividad_reciente %}
+        {% for act in cdp.actividad_reciente %}
+        <li>
+          <span class="timeline-dot"></span>
+          <div>
+            <strong>{{ act.titulo }}</strong>
+            <p>{{ act.detalle }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      {% else %}
       <li>
         <span class="timeline-dot"></span>
         <div>
@@ -126,6 +144,7 @@
           <p>Se repartieron recursos y orientación para la próxima semana.</p>
         </div>
       </li>
+      {% endif %}
     </ul>
   </section>
 
@@ -138,6 +157,17 @@
     </div>
 
     <div class="team-list">
+      {% if cdp and cdp.lideres %}
+        {% for miembro in cdp.lideres %}
+        <div class="team-member">
+          <div class="avatar">{{ miembro.iniciales }}</div>
+          <div>
+            <strong>{{ miembro.nombre_completo }}</strong>
+            <p>{{ miembro.rol }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
       <div class="team-member">
         <div class="avatar">JP</div>
         <div>
@@ -159,6 +189,7 @@
           <p>Apoyo comunitario</p>
         </div>
       </div>
+      {% endif %}
     </div>
   </section>
 </div>
