@@ -7,7 +7,7 @@ from mock_data import get_mock_lideres, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
 
 
-def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_page=10, supervisor_red_id=None):
+def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_page=5, supervisor_red_id=None):
     """Retorna líderes reales o mock junto con filtros y paginación."""
     conn = get_db_connection()
     if conn:

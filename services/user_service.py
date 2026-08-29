@@ -7,7 +7,7 @@ from mock_data import get_mock_usuarios
 from services.dashboard_service import mock_mode_enabled
 
 
-def get_usuarios_context(search='', rol='', page=1, per_page=10):
+def get_usuarios_context(search='', rol='', page=1, per_page=5):
     """Retorna usuarios reales o demo junto con la metadata de paginación."""
     conn = get_db_connection()
     if conn:

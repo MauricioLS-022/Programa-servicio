@@ -127,20 +127,41 @@ def _semana_label(fecha):
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
+def _ensure_currency_columns(cursor):
+    """Asegura que las columnas ofrendas_bs y ofrendas_usd existan en la tabla reporte si la BD está disponible."""
+    try:
+        cursor.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_bs'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE reporte ADD COLUMN ofrendas_bs DECIMAL(10,2) NOT NULL DEFAULT 0.00")
+        cursor.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_usd'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE reporte ADD COLUMN ofrendas_usd DECIMAL(10,2) NOT NULL DEFAULT 0.00")
+    except Exception:
+        pass
+
+
 def get_metricas_generales(conn):
     """Query real de métricas generales de toda la iglesia."""
     cur = conn.cursor()
+    _ensure_currency_columns(cur)
 
     # --- KPIs principales ---
-    cur.execute("""
-        SELECT
-            COALESCE(SUM(nro_regulares + nro_niños + nro_visitas + nro_comprometidos), 0) AS total_asistencia,
-            COALESCE(SUM(ofrendas), 0) AS ofrendas,
-            COALESCE(SUM(confesiones), 0) AS conversiones,
-            COUNT(DISTINCT cdp_id) AS reportes_enviados
-        FROM reporte
-    """)
-    kpis = cur.fetchone()
+    try:
+        cur.execute("""
+            SELECT
+                COALESCE(SUM(nro_regulares + nro_niños + nro_visitas + nro_comprometidos), 0) AS total_asistencia,
+                COALESCE(SUM(ofrendas_usd), 0) AS ofrendas_usd,
+                COALESCE(SUM(ofrendas_bs), 0) AS ofrendas_bs,
+                COALESCE(SUM(confesiones), 0) AS conversiones,
+                COALESCE(SUM(reconciliaciones), 0) AS reconciliaciones,
+                COALESCE(SUM(cesta_amor), 0) AS cestas_amor,
+                COALESCE(SUM(nro_visitas), 0) AS total_visitas,
+                COUNT(DISTINCT cdp_id) AS reportes_enviados
+            FROM reporte
+        """)
+        kpis = cur.fetchone() or {}
+    except Exception:
+        kpis = {}
 
     cur.execute("SELECT COUNT(*) AS total FROM cdp")
     total_casas = cur.fetchone()['total']
@@ -246,6 +267,7 @@ def get_metricas_generales(conn):
             'codigo': a['codigo'],
             'red': a['red'] or '',
             'dias_sin_reporte': a['dias_sin_reporte'] if a['dias_sin_reporte'] else 999,
+            'motivo': 'Sin reporte reciente' if a['dias_sin_reporte'] is None else f"{a['dias_sin_reporte']} días sin reporte",
             'lider': a['lider'] or 'Sin asignar',
             'telefono': a['telefono'] or '',
         }
@@ -255,12 +277,17 @@ def get_metricas_generales(conn):
     cur.close()
 
     return {
-        'total_asistencia': int(kpis['total_asistencia']),
+        'total_asistencia': int(kpis.get('total_asistencia', 0) or 0),
         'cumplimiento': cumplimiento,
-        'ofrendas': float(kpis['ofrendas']),
-        'conversiones': int(kpis['conversiones']),
+        'ofrendas': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0)) or 0.0),
+        'ofrendas_usd': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0)) or 0.0),
+        'ofrendas_bs': float(kpis.get('ofrendas_bs', 0.0) or 0.0),
+        'conversiones': int(kpis.get('conversiones', 0) or 0),
+        'reconciliaciones': int(kpis.get('reconciliaciones', 0) or 0),
+        'cestas_amor': int(kpis.get('cestas_amor', 0) or 0),
+        'total_visitas': int(kpis.get('total_visitas', 0) or 0),
         'total_casas': total_casas,
-        'reportes_enviados': int(kpis['reportes_enviados']),
+        'reportes_enviados': int(kpis.get('reportes_enviados', 0) or 0),
         'distribucion': distribucion,
         'tendencia_semanas': tendencia,
         'ranking_redes': ranking,
@@ -292,18 +319,22 @@ def get_metricas_red(conn, red_id):
     supervisor = red_info['supervisor'] or ''
 
     # --- KPIs de la red ---
-    cur.execute("""
-        SELECT
-            COUNT(DISTINCT c.id) AS casas_activas,
-            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
-            COALESCE(SUM(rep.nro_niños), 0) AS ninos,
-            COALESCE(SUM(rep.ofrendas), 0) AS ofrendas,
-            COUNT(DISTINCT CASE WHEN rep.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN rep.cdp_id END) AS casas_con_reporte
-        FROM cdp c
-        LEFT JOIN reporte rep ON rep.cdp_id = c.id
-        WHERE c.red_id = %s
-    """, (red_id,))
-    kpis = cur.fetchone()
+    try:
+        cur.execute("""
+            SELECT
+                COUNT(DISTINCT c.id) AS casas_activas,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
+                COALESCE(SUM(rep.nro_niños), 0) AS ninos,
+                COALESCE(SUM(rep.ofrendas_usd), 0) AS ofrendas_usd,
+                COALESCE(SUM(rep.ofrendas_bs), 0) AS ofrendas_bs,
+                COUNT(DISTINCT CASE WHEN rep.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN rep.cdp_id END) AS casas_con_reporte
+            FROM cdp c
+            LEFT JOIN reporte rep ON rep.cdp_id = c.id
+            WHERE c.red_id = %s
+        """, (red_id,))
+        kpis = cur.fetchone()
+    except Exception:
+        kpis = {}
     casas_activas = int(kpis['casas_activas']) if kpis else 0
     asistencia_total = int(kpis['asistencia_total']) if kpis else 0
     promedio_casa = round(asistencia_total / casas_activas) if casas_activas > 0 else 0
@@ -395,16 +426,35 @@ def get_metricas_red(conn, red_id):
             'lider': best['lider'],
         }
 
-    # --- Supervisores de la red ---
+    # --- Cumplimiento semanal de la red ---
+    hoy = date.today()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    cur.execute("""
+        SELECT COUNT(DISTINCT rep.cdp_id) AS con_reporte
+        FROM reporte rep
+        JOIN cdp c ON rep.cdp_id = c.id
+        WHERE c.red_id = %s AND rep.fecha >= %s
+    """, (red_id, inicio_semana))
+    con_reporte_row = cur.fetchone()
+    con_reporte = int(con_reporte_row['con_reporte']) if con_reporte_row else 0
+    cumplimiento = round((con_reporte / casas_activas * 100) if casas_activas > 0 else 0)
+    casas_pendientes = max(casas_activas - con_reporte, 0)
+
+    # --- Directorio de líderes de las Casas de Paz de esta red ---
     cur.execute("""
         SELECT
-            CONCAT(u.nombre, ' ', u.apellido) AS nombre,
-            u.tipo_usuario AS rol,
-            '' AS telefono
-        FROM usuario u
-        WHERE u.tipo_usuario = 'supervisor' AND u.is_active = 1
-    """)
-    supervisores = cur.fetchall() or []
+            l.id,
+            CONCAT(l.nombre, ' ', l.apellido) AS nombre,
+            l.rol,
+            COALESCE(l.telefono, c.telefono, '') AS telefono,
+            c.codigo AS cdp_codigo,
+            c.anfitrion AS cdp_anfitrion
+        FROM lider l
+        JOIN cdp c ON l.cdp_id = c.id
+        WHERE c.red_id = %s AND l.is_active = 1
+        ORDER BY c.codigo, FIELD(l.rol, 'Lider', 'Sublider'), l.nombre
+    """, (red_id,))
+    lideres_red = cur.fetchall() or []
 
     cur.close()
 
@@ -416,12 +466,17 @@ def get_metricas_red(conn, red_id):
         'asistencia_total': asistencia_total,
         'promedio_casa': promedio_casa,
         'ninos': int(kpis['ninos']) if kpis else 0,
-        'ofrendas': float(kpis['ofrendas']) if kpis else 0.0,
+        'ofrendas': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0))) if kpis else 0.0,
+        'ofrendas_usd': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0))) if kpis else 0.0,
+        'ofrendas_bs': float(kpis.get('ofrendas_bs', 0.0)) if kpis else 0.0,
+        'cumplimiento': cumplimiento,
+        'casas_con_reporte': con_reporte,
+        'casas_pendientes': casas_pendientes,
         'distribucion': distribucion,
         'casas': casas,
         'alertas_zonal': alertas_zonal,
         'top_crecimiento': top_growth,
-        'supervisores': supervisores,
+        'lideres_red': lideres_red,
     }
 
 
@@ -511,7 +566,9 @@ def get_metricas_cdp(conn, cdp_id):
             (nro_regulares + nro_niños + nro_visitas + nro_comprometidos) AS asistencia,
             nro_niños AS ninos,
             nro_visitas AS visitas,
-            ofrendas AS ofrenda,
+            COALESCE(ofrendas_usd, 0) AS ofrenda,
+            COALESCE(ofrendas_usd, 0) AS ofrendas_usd,
+            COALESCE(ofrendas_bs, 0) AS ofrendas_bs,
             observaciones
         FROM reporte
         WHERE cdp_id = %s
@@ -525,7 +582,9 @@ def get_metricas_cdp(conn, cdp_id):
             'asistencia': int(h['asistencia']),
             'ninos': int(h['ninos']),
             'visitas': int(h['visitas']),
-            'ofrenda': float(h['ofrenda']),
+            'ofrenda': float(h.get('ofrendas_usd') or h.get('ofrenda') or 0.0),
+            'ofrendas_usd': float(h.get('ofrendas_usd') or h.get('ofrenda') or 0.0),
+            'ofrendas_bs': float(h.get('ofrendas_bs') or 0.0),
             'observaciones': h['observaciones'] or '',
         }
         for h in historial_raw
@@ -553,7 +612,10 @@ def get_metricas_cdp(conn, cdp_id):
         for m in mini_raw
     ]
 
-    # --- Potencial de multiplicación: si hay más de 1 líder registrado ---
+    ultimo_tema = (ultimo.get('tema') if ultimo else None) or 'Sin tema registrado'
+    hr_inicio = str(ultimo.get('hr_inicio'))[:5] if ultimo and ultimo.get('hr_inicio') else ''
+    hr_fin = str(ultimo.get('hr_fin'))[:5] if ultimo and ultimo.get('hr_fin') else ''
+    cesta_amor = bool(ultimo.get('cesta_amor')) if ultimo else False
     potencial = len(lideres) > 1
 
     cur.close()
@@ -573,6 +635,10 @@ def get_metricas_cdp(conn, cdp_id):
         'estado_reporte': estado_reporte,
         'ultimo_reporte_por': ultimo_reporte_por,
         'ultimo_reporte_fecha': ultimo_reporte_fecha,
+        'ultimo_tema': ultimo_tema,
+        'hr_inicio': hr_inicio,
+        'hr_fin': hr_fin,
+        'cesta_amor': cesta_amor,
         'potencial_multiplicacion': potencial,
         'distribucion': distribucion,
         'historial': historial,
@@ -634,7 +700,9 @@ def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_ha
             rep.cesta_amor,
             rep.tema,
             rep.observaciones,
-            rep.ofrendas,
+            COALESCE(rep.ofrendas_usd, 0) AS ofrendas,
+            COALESCE(rep.ofrendas_usd, 0) AS ofrendas_usd,
+            COALESCE(rep.ofrendas_bs, 0) AS ofrendas_bs,
             rep.cdp_id,
             c.codigo AS cdp_codigo,
             c.anfitrion AS cdp_anfitrion,
@@ -707,7 +775,9 @@ def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_ha
             'asistencia': int(r['asistencia'] or 0),
             'reconciliaciones': int(r['reconciliaciones'] or 0),
             'confesiones': int(r['confesiones'] or 0),
-            'ofrendas': float(r['ofrendas'] or 0.0),
+            'ofrendas': float(r.get('ofrendas_usd') or r.get('ofrendas') or 0.0),
+            'ofrendas_usd': float(r.get('ofrendas_usd') or r.get('ofrendas') or 0.0),
+            'ofrendas_bs': float(r.get('ofrendas_bs') or 0.0),
             'cesta_amor': r['cesta_amor'],
             'cesta_amor_desc': cesta_desc,
             'tema': r['tema'] or '',
@@ -735,14 +805,14 @@ def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_ha
 
 def obtener_cdp_por_usuario(cursor, usuario_id):
     """Obtiene la Casa de Paz asignada a un usuario específico."""
-    query = "SELECT id, codigo, red_id FROM cdp WHERE usuario_id = %s"
+    query = "SELECT id, codigo, anfitrion, telefono, direccion, red_id FROM cdp WHERE usuario_id = %s"
     cursor.execute(query, (usuario_id,))
     return cursor.fetchone()
 
 
 def obtener_lideres_por_cdp(cursor, cdp_id):
     """Obtiene todos los líderes asociados a una Casa de Paz."""
-    query = "SELECT id, nombre, apellido, rol FROM lider WHERE cdp_id = %s ORDER BY nombre ASC"
+    query = "SELECT id, nombre, apellido, rol, telefono FROM lider WHERE cdp_id = %s ORDER BY FIELD(rol, 'Lider', 'Sublider'), nombre ASC"
     cursor.execute(query, (cdp_id,))
     return cursor.fetchall() or []
 
@@ -752,30 +822,318 @@ def insertar_reporte(cursor, datos_reporte):
     Inserta un nuevo registro en la tabla 'reporte'.
     Alineado con los nombres de campos enviados por generar_reporte.html.
     """
-    query = """
-        INSERT INTO reporte (
-            id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
-            tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
-            reconciliaciones, confesiones, ofrendas, cesta_amor, observaciones
-        ) VALUES (
-            UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    _ensure_currency_columns(cursor)
+    ofrendas_usd = float(datos_reporte.get('ofrendas_usd', datos_reporte.get('ofrendas', 0.0)) or 0.0)
+    ofrendas_bs = float(datos_reporte.get('ofrendas_bs', 0.0) or 0.0)
+    try:
+        query = """
+            INSERT INTO reporte (
+                id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
+                tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
+                reconciliaciones, confesiones, ofrendas, ofrendas_usd, ofrendas_bs, cesta_amor, observaciones
+            ) VALUES (
+                UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+        params = (
+            datos_reporte['cdp_id'],
+            datos_reporte.get('lider_id') or None,
+            datos_reporte['fecha'],
+            datos_reporte['hr_inicio'],
+            datos_reporte['hr_fin'],
+            datos_reporte['tema'],
+            datos_reporte.get('nro_ninos', 0),
+            datos_reporte.get('nro_regulares', 0),
+            datos_reporte.get('nro_visitas', 0),
+            datos_reporte.get('nro_comprometidos', 0),
+            datos_reporte.get('reconciliaciones', 0),
+            datos_reporte.get('confesiones', 0),
+            ofrendas_usd,
+            ofrendas_usd,
+            ofrendas_bs,
+            1 if datos_reporte.get('cesta_amor') else 0,
+            datos_reporte.get('observaciones', '')
         )
+        cursor.execute(query, params)
+    except Exception:
+        query = """
+            INSERT INTO reporte (
+                id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
+                tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
+                reconciliaciones, confesiones, ofrendas, cesta_amor, observaciones
+            ) VALUES (
+                UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+        params = (
+            datos_reporte['cdp_id'],
+            datos_reporte.get('lider_id') or None,
+            datos_reporte['fecha'],
+            datos_reporte['hr_inicio'],
+            datos_reporte['hr_fin'],
+            datos_reporte['tema'],
+            datos_reporte.get('nro_ninos', 0),
+            datos_reporte.get('nro_regulares', 0),
+            datos_reporte.get('nro_visitas', 0),
+            datos_reporte.get('nro_comprometidos', 0),
+            datos_reporte.get('reconciliaciones', 0),
+            datos_reporte.get('confesiones', 0),
+            ofrendas_usd,
+            1 if datos_reporte.get('cesta_amor') else 0,
+            datos_reporte.get('observaciones', '')
+        )
+        cursor.execute(query, params)
+
+
+def obtener_reportes_por_cdp(cursor, cdp_id):
     """
-    params = (
-        datos_reporte['cdp_id'],
-        datos_reporte.get('lider_id') or None,  # Permite NULL si no se selecciona líder
-        datos_reporte['fecha'],
-        datos_reporte['hr_inicio'],
-        datos_reporte['hr_fin'],
-        datos_reporte['tema'],
-        datos_reporte.get('nro_ninos', 0),
-        datos_reporte.get('nro_regulares', 0),
-        datos_reporte.get('nro_visitas', 0),
-        datos_reporte.get('nro_comprometidos', 0),
-        datos_reporte.get('reconciliaciones', 0),
-        datos_reporte.get('confesiones', 0),
-        datos_reporte.get('ofrendas', 0.00),
-        datos_reporte.get('cesta_amor', 0.00),
-        datos_reporte.get('observaciones', '')
+    Obtiene todos los reportes registrados para una Casa de Paz específica,
+    ordenados de forma descendente por fecha.
+    """
+    query = """
+        SELECT
+            r.id,
+            r.fecha,
+            r.hr_inicio,
+            r.hr_fin,
+            r.tema,
+            r.nro_regulares,
+            r.nro_niños,
+            r.nro_visitas,
+            r.nro_comprometidos,
+            (r.nro_regulares + r.nro_niños + r.nro_visitas + r.nro_comprometidos) AS asistencia,
+            r.reconciliaciones,
+            r.confesiones,
+            COALESCE(r.ofrendas_usd, 0) AS ofrendas_usd,
+            COALESCE(r.ofrendas_bs, 0) AS ofrendas_bs,
+            r.cesta_amor,
+            r.observaciones,
+            r.cdp_id,
+            r.enviado_por_lider_id,
+            CONCAT(COALESCE(l.nombre, ''), ' ', COALESCE(l.apellido, '')) AS lider_nombre,
+            l.rol AS lider_rol
+        FROM reporte r
+        LEFT JOIN lider l ON r.enviado_por_lider_id = l.id
+        WHERE r.cdp_id = %s
+        ORDER BY r.fecha DESC, r.id DESC
+    """
+    cursor.execute(query, (cdp_id,))
+    reportes_raw = cursor.fetchall() or []
+
+    meses_abr = {1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'}
+    reportes = []
+    for r in reportes_raw:
+        fecha_obj = r['fecha']
+        if hasattr(fecha_obj, 'strftime'):
+            fecha_iso = fecha_obj.strftime('%Y-%m-%d')
+            fecha_formateada = f"{fecha_obj.day} {meses_abr.get(fecha_obj.month, '')} {fecha_obj.year}"
+        else:
+            fecha_iso = str(fecha_obj or '')
+            fecha_formateada = fecha_iso
+
+        nombre_lider = (r['lider_nombre'] or '').strip() or 'Líder Encargado'
+        partes = nombre_lider.split()
+        if len(partes) >= 2:
+            iniciales = (partes[0][0] + partes[1][0]).upper()
+        elif len(partes) == 1 and partes[0]:
+            iniciales = partes[0][:2].upper()
+        else:
+            iniciales = 'CDP'
+
+        hr_ini = str(r['hr_inicio'] or '')[:5] if r['hr_inicio'] else ''
+        hr_fin = str(r['hr_fin'] or '')[:5] if r['hr_fin'] else ''
+
+        ofrendas_usd = float(r.get('ofrendas_usd') or 0.0)
+        ofrendas_bs = float(r.get('ofrendas_bs') or 0.0)
+
+        reportes.append({
+            'id': str(r['id']),
+            'fecha': fecha_iso,
+            'fecha_formateada': fecha_formateada,
+            'hr_inicio': hr_ini,
+            'hr_fin': hr_fin,
+            'tema': r['tema'] or 'Sin tema registrado',
+            'nro_regulares': int(r['nro_regulares'] or 0),
+            'nro_niños': int(r['nro_niños'] or 0),
+            'nro_visitas': int(r['nro_visitas'] or 0),
+            'nro_comprometidos': int(r['nro_comprometidos'] or 0),
+            'asistencia': int(r['asistencia'] or 0),
+            'reconciliaciones': int(r['reconciliaciones'] or 0),
+            'confesiones': int(r['confesiones'] or 0),
+            'ofrendas': ofrendas_usd,
+            'ofrendas_usd': ofrendas_usd,
+            'ofrendas_bs': ofrendas_bs,
+            'cesta_amor': 1 if r['cesta_amor'] else 0,
+            'cesta_amor_desc': 'Sí' if r['cesta_amor'] else 'No',
+            'observaciones': r['observaciones'] or '',
+            'cdp_id': r['cdp_id'],
+            'enviado_por_lider_id': r['enviado_por_lider_id'],
+            'lider_nombre': nombre_lider,
+            'iniciales': iniciales,
+        })
+    return reportes
+
+
+def obtener_metricas_lider_cdp(cursor, cdp_id):
+    """
+    Obtiene las estadísticas consolidadas para el dashboard de una Casa de Paz.
+    """
+    try:
+        query = """
+            SELECT
+                COUNT(*) AS total_reportes,
+                COALESCE(AVG(nro_regulares + nro_niños + nro_visitas + nro_comprometidos), 0) AS asistencia_promedio,
+                COALESCE(SUM(ofrendas_usd), 0) AS ofrendas_usd_totales,
+                COALESCE(SUM(ofrendas_bs), 0) AS ofrendas_bs_totales,
+                COALESCE(SUM(nro_visitas), 0) AS visitas_totales,
+                COALESCE(SUM(confesiones), 0) AS conversiones_totales,
+                COALESCE(SUM(reconciliaciones), 0) AS reconciliaciones_totales,
+                MAX(fecha) AS ultimo_reporte_fecha
+            FROM reporte
+            WHERE cdp_id = %s
+        """
+        cursor.execute(query, (cdp_id,))
+        row = cursor.fetchone() or {}
+    except Exception:
+        row = {}
+
+    total_reportes = int(row.get('total_reportes', 0) or 0)
+    asistencia_promedio = round(float(row.get('asistencia_promedio', 0) or 0))
+    ofrendas_usd_totales = float(row.get('ofrendas_usd_totales', 0.0) or 0.0)
+    ofrendas_bs_totales = float(row.get('ofrendas_bs_totales', 0.0) or 0.0)
+    ofrendas_totales = ofrendas_usd_totales
+    visitas_totales = int(row.get('visitas_totales', 0) or 0)
+    conversiones_totales = int(row.get('conversiones_totales', 0) or 0)
+    reconciliaciones_totales = int(row.get('reconciliaciones_totales', 0) or 0)
+
+    # Verificar si ya se envió el reporte de la semana actual (desde lunes)
+    hoy = date.today()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    cursor.execute(
+        "SELECT COUNT(*) AS count_semana FROM reporte WHERE cdp_id = %s AND fecha >= %s",
+        (cdp_id, inicio_semana)
     )
-    cursor.execute(query, params)
+    res_semana = cursor.fetchone() or {}
+    reporte_esta_semana = int(res_semana.get('count_semana', 0) or 0) > 0
+
+    # Días hasta el próximo domingo de cierre
+    dias_hasta_domingo = (6 - hoy.weekday()) % 7
+    if dias_hasta_domingo == 0:
+        dias_cierre_texto = "Cierra hoy a las 6:00 PM"
+    elif dias_hasta_domingo == 1:
+        dias_cierre_texto = "Próximo cierre: Mañana"
+    else:
+        dias_cierre_texto = f"Próximo cierre: {dias_hasta_domingo} días"
+
+    return {
+        'total_reportes': total_reportes,
+        'asistencia_promedio': asistencia_promedio,
+        'ofrendas_totales': ofrendas_totales,
+        'ofrendas_usd_totales': ofrendas_usd_totales,
+        'ofrendas_bs_totales': ofrendas_bs_totales,
+        'visitas_totales': visitas_totales,
+        'conversiones_totales': conversiones_totales,
+        'reconciliaciones_totales': reconciliaciones_totales,
+        'reporte_esta_semana': reporte_esta_semana,
+        'dias_cierre_texto': dias_cierre_texto,
+    }
+
+
+def actualizar_reporte_cdp(cursor, reporte_id, cdp_id, datos_reporte):
+    """
+    Actualiza un registro de reporte existente perteneciente a la cdp_id dada.
+    """
+    _ensure_currency_columns(cursor)
+    ofrendas_usd = float(datos_reporte.get('ofrendas_usd', datos_reporte.get('ofrendas', 0.0)) or 0.0)
+    ofrendas_bs = float(datos_reporte.get('ofrendas_bs', 0.0) or 0.0)
+    try:
+        query = """
+            UPDATE reporte SET
+                enviado_por_lider_id = %s,
+                fecha = %s,
+                hr_inicio = %s,
+                hr_fin = %s,
+                tema = %s,
+                nro_niños = %s,
+                nro_regulares = %s,
+                nro_visitas = %s,
+                nro_comprometidos = %s,
+                reconciliaciones = %s,
+                confesiones = %s,
+                ofrendas = %s,
+                ofrendas_usd = %s,
+                ofrendas_bs = %s,
+                cesta_amor = %s,
+                observaciones = %s
+            WHERE id = %s AND cdp_id = %s
+        """
+        params = (
+            datos_reporte.get('lider_id') or None,
+            datos_reporte['fecha'],
+            datos_reporte['hr_inicio'],
+            datos_reporte['hr_fin'],
+            datos_reporte['tema'],
+            datos_reporte.get('nro_ninos', 0),
+            datos_reporte.get('nro_regulares', 0),
+            datos_reporte.get('nro_visitas', 0),
+            datos_reporte.get('nro_comprometidos', 0),
+            datos_reporte.get('reconciliaciones', 0),
+            datos_reporte.get('confesiones', 0),
+            ofrendas_usd,
+            ofrendas_usd,
+            ofrendas_bs,
+            1 if datos_reporte.get('cesta_amor') else 0,
+            datos_reporte.get('observaciones', ''),
+            str(reporte_id),
+            cdp_id
+        )
+        cursor.execute(query, params)
+        return cursor.rowcount > 0
+    except Exception:
+        query = """
+            UPDATE reporte SET
+                enviado_por_lider_id = %s,
+                fecha = %s,
+                hr_inicio = %s,
+                hr_fin = %s,
+                tema = %s,
+                nro_niños = %s,
+                nro_regulares = %s,
+                nro_visitas = %s,
+                nro_comprometidos = %s,
+                reconciliaciones = %s,
+                confesiones = %s,
+                ofrendas = %s,
+                cesta_amor = %s,
+                observaciones = %s
+            WHERE id = %s AND cdp_id = %s
+        """
+        params = (
+            datos_reporte.get('lider_id') or None,
+            datos_reporte['fecha'],
+            datos_reporte['hr_inicio'],
+            datos_reporte['hr_fin'],
+            datos_reporte['tema'],
+            datos_reporte.get('nro_ninos', 0),
+            datos_reporte.get('nro_regulares', 0),
+            datos_reporte.get('nro_visitas', 0),
+            datos_reporte.get('nro_comprometidos', 0),
+            datos_reporte.get('reconciliaciones', 0),
+            datos_reporte.get('confesiones', 0),
+            ofrendas_usd,
+            1 if datos_reporte.get('cesta_amor') else 0,
+            datos_reporte.get('observaciones', ''),
+            str(reporte_id),
+            cdp_id
+        )
+        cursor.execute(query, params)
+        return cursor.rowcount > 0
+
+
+def eliminar_reporte_cdp(cursor, reporte_id, cdp_id):
+    """
+    Elimina un reporte verificando que pertenezca a la CDP especificada.
+    """
+    query = "DELETE FROM reporte WHERE id = %s AND cdp_id = %s"
+    cursor.execute(query, (str(reporte_id), cdp_id))
+    return cursor.rowcount > 0
