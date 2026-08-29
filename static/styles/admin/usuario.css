@@ -152,16 +152,38 @@ body {
     border-radius: 999px;
     border: 1px solid rgba(137, 114, 111, 0.35);
     background-color: var(--surface-container-lowest);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-box:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(57, 0, 2, 0.08);
+}
+
+.search-box:focus-within {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.08), 0 2px 8px rgba(57, 0, 2, 0.06);
 }
 
 .search-box input {
     border: 0;
+    border: none;
     outline: none;
+    box-shadow: none;
     width: 100%;
     font-family: var(--font-body);
     font-size: 0.95rem;
     color: var(--on-surface);
     background: transparent;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-box input:focus,
+.search-box input:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .filter-group select {
@@ -174,6 +196,18 @@ body {
     color: var(--on-surface);
     outline: none;
     font-family: var(--font-body);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-group select:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(57, 0, 2, 0.08);
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.08), 0 2px 8px rgba(57, 0, 2, 0.06);
 }
 
 .btn-filter {
@@ -331,11 +365,12 @@ body {
     border: 1px solid rgba(137, 114, 111, 0.2);
     box-shadow: 0 4px 15px rgba(57, 0, 2, 0.05);
 }
+.stat-card .watermark-icon,
 .watermark-icon {
     position: absolute;
     bottom: -1rem;
     right: -1rem;
-    font-size: 5rem !important;
+    font-size: 5rem;
     color: rgba(57, 0, 2, 0.03);
     z-index: 0;
 }
@@ -580,20 +615,20 @@ body {
     justify-content: center;
     text-decoration: none;
     flex: 0 0 36px;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0;
+    margin: 0;
     box-sizing: border-box;
 }
 
 .btn-icon .material-symbols-outlined,
 .btn-icon span {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1.25rem !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
 }
 
 .btn-icon:hover { background-color: var(--surface-container-high); color: var(--primary); }
@@ -640,7 +675,7 @@ body {
 }
 .btn-page.disabled {
     opacity: 0.35;
-    cursor: default;
+    cursor: not-allowed;
     pointer-events: none;
 }
 
@@ -661,7 +696,7 @@ body {
 
 @media (max-width: 900px) {
     .main-content {
-        padding-top: 4.5rem !important;
+        padding-top: 4.5rem;
     }
 
     .filter-section {
@@ -697,8 +732,8 @@ body {
     }
 
     .table-header {
-        position: static !important;
-        top: auto !important;
+        position: static;
+        top: auto;
     }
 
     .table-responsive {
@@ -745,7 +780,7 @@ body {
         min-height: 2rem;
         gap: 1rem;
         min-width: 0;
-        width: 100% !important;
+        width: 100%;
     }
 
     .user-table tbody td.empty-state {
@@ -887,7 +922,7 @@ body {
 
 .modal-icon {
     color: var(--error);
-    font-size: 2rem !important;
+    font-size: 2rem;
 }
 
 .modal-header h3 {
@@ -925,11 +960,18 @@ body {
     font-size: 0.95rem;
     outline: none;
     margin-bottom: 1.25rem;
-    transition: border-color 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-input:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(57, 0, 2, 0.08);
 }
 
 .modal-input:focus {
+    outline: none;
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.08), 0 2px 8px rgba(57, 0, 2, 0.06);
 }
 
 .modal-actions {
@@ -977,7 +1019,7 @@ body {
 
 @media (max-width: 640px) {
     .main-content {
-        padding: 4.5rem 0.85rem 80px 0.85rem !important;
+        padding: 4.5rem 0.85rem 80px 0.85rem;
         margin: 8px auto;
     }
 
@@ -1039,8 +1081,8 @@ body {
    TEMA OSCURO USUARIOS ([data-theme="dark"])
    ========================================================================== */
 [data-theme="dark"] .main-content {
-    background-color: transparent !important;
-    box-shadow: none !important;
+    background-color: transparent;
+    box-shadow: none;
 }
 
 [data-theme="dark"] .page-header,
@@ -1048,18 +1090,18 @@ body {
 [data-theme="dark"] .stat-primary,
 [data-theme="dark"] .stat-info,
 [data-theme="dark"] .table-section {
-    background-color: var(--surface-container-lowest, #1b1416) !important;
-    background: var(--surface-container-lowest, #1b1416) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--surface-container-lowest, #1b1416);
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .title,
 [data-theme="dark"] .stat-primary h3,
 [data-theme="dark"] .info-title,
 [data-theme="dark"] .user-details strong {
-    color: var(--text-main, #f8f2f0) !important;
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .subtitle,
@@ -1068,132 +1110,186 @@ body {
 [data-theme="dark"] .info-desc,
 [data-theme="dark"] .user-details span,
 [data-theme="dark"] .user-table td {
-    color: var(--text-muted, #d4c2bf) !important;
+    color: var(--text-muted, #d4c2bf);
 }
 
 /* Encabezado de la tabla */
 [data-theme="dark"] .table-header {
-    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%) !important;
-    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2));
 }
 
 [data-theme="dark"] .table-header h2 {
-    color: #ffffff !important;
+    color: #ffffff;
 }
 
 /* Cabeceras de columna */
 [data-theme="dark"] .user-table th {
-    background-color: var(--surface-container-low, #1f1618) !important;
-    color: var(--primary, #f8deda) !important;
-    border-bottom: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
+    background-color: var(--surface-container-low, #1f1618);
+    color: var(--primary, #f8deda);
+    border-bottom: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
 }
 
 [data-theme="dark"] .user-table td {
-    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    color: var(--text-main, #f8f2f0);
 }
 
 [data-theme="dark"] .user-table tbody tr:hover {
-    background-color: var(--surface-container-high, #2f2225) !important;
+    background-color: var(--surface-container-high, #2f2225);
 }
 
 /* Inputs y Filtros */
 [data-theme="dark"] .search-box {
-    background-color: var(--input-bg, #150f10) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
+    background-color: var(--input-bg, #150f10);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25));
+    border-radius: 999px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .search-box:focus-within {
+    outline: none;
+    border-color: var(--primary, #f8deda);
+    box-shadow: 0 0 0 3px rgba(248, 222, 218, 0.18);
 }
 
 [data-theme="dark"] .search-box input {
-    color: var(--text-main, #f8f2f0) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: var(--text-main, #f8f2f0);
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .search-box input::placeholder {
+    color: var(--text-muted, #d4c2bf);
+    opacity: 0.85;
+}
+
+[data-theme="dark"] .search-box input:focus,
+[data-theme="dark"] .search-box input:focus-visible {
+    outline: none;
+    border: none;
+    box-shadow: none;
 }
 
 [data-theme="dark"] .filter-group select {
-    background-color: var(--input-bg, #150f10) !important;
-    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25)) !important;
-    color: var(--text-main, #f8f2f0) !important;
+    background-color: var(--input-bg, #150f10);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25));
+    border-radius: 0.5rem;
+    color: var(--text-main, #f8f2f0);
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .filter-group select:focus {
+    outline: none;
+    border-color: var(--primary, #f8deda);
+    box-shadow: 0 0 0 3px rgba(248, 222, 218, 0.18);
+}
+
+[data-theme="dark"] .modal-input {
+    background-color: var(--input-bg, #150f10);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.25));
+    border-radius: 0.5rem;
+    color: var(--text-main, #f8f2f0);
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .modal-input:focus {
+    outline: none;
+    border-color: var(--primary, #f8deda);
+    box-shadow: 0 0 0 3px rgba(248, 222, 218, 0.18);
+}
+
+[data-theme="dark"] .modal-input::placeholder {
+    color: var(--text-muted, #d4c2bf);
+    opacity: 0.85;
 }
 
 [data-theme="dark"] .filter-group label {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Botones */
 [data-theme="dark"] .btn-filter,
 [data-theme="dark"] .btn-primary {
-    background: #8b1518 !important;
-    background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+    background: #8b1518;
+    background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme="dark"] .btn-filter:hover,
 [data-theme="dark"] .btn-primary:hover {
-    background: #a31c20 !important;
-    background-image: linear-gradient(135deg, #be2227 0%, #8b0306 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6) !important;
+    background: #a31c20;
+    background-image: linear-gradient(135deg, #be2227 0%, #8b0306 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] .btn-outline {
-    background: #1f1618 !important;
-    color: #f8f2f0 !important;
-    border: 1.5px solid rgba(221, 192, 189, 0.25) !important;
+    background: #1f1618;
+    color: #f8f2f0;
+    border: 1.5px solid rgba(221, 192, 189, 0.25);
 }
 
 [data-theme="dark"] .icon-box {
-    background-color: var(--surface-container-high, #2f2225) !important;
+    background-color: var(--surface-container-high, #2f2225);
 }
 
 [data-theme="dark"] .icon-box span {
-    color: var(--primary, #f8deda) !important;
+    color: var(--primary, #f8deda);
 }
 
 /* Badges de Rol y Estado */
 [data-theme="dark"] .badge-admin {
-    background: var(--danger-bg, rgba(239, 68, 68, 0.2)) !important;
-    color: var(--danger-color, #ff7b7b) !important;
-    border: 1px solid rgba(248, 113, 113, 0.35) !important;
+    background: var(--danger-bg, rgba(239, 68, 68, 0.2));
+    color: var(--danger-color, #ff7b7b);
+    border: 1px solid rgba(248, 113, 113, 0.35);
 }
 
 [data-theme="dark"] .badge-supervisor {
-    background: var(--info-bg, rgba(14, 165, 233, 0.2)) !important;
-    color: var(--info-color, #93c5fd) !important;
-    border: 1px solid rgba(14, 165, 233, 0.35) !important;
+    background: var(--info-bg, rgba(14, 165, 233, 0.2));
+    color: var(--info-color, #93c5fd);
+    border: 1px solid rgba(14, 165, 233, 0.35);
 }
 
 [data-theme="dark"] .badge-lider {
-    background: var(--warning-bg, rgba(234, 179, 8, 0.2)) !important;
-    color: var(--warning-color, #fde047) !important;
-    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+    background: var(--warning-bg, rgba(234, 179, 8, 0.2));
+    color: var(--warning-color, #fde047);
+    border: 1px solid rgba(234, 179, 8, 0.35);
 }
 
 [data-theme="dark"] .badge-success {
-    background: var(--success-bg, rgba(34, 197, 94, 0.2)) !important;
-    color: var(--success-color, #6ee7b7) !important;
-    border: 1px solid rgba(74, 222, 128, 0.35) !important;
+    background: var(--success-bg, rgba(34, 197, 94, 0.2));
+    color: var(--success-color, #6ee7b7);
+    border: 1px solid rgba(74, 222, 128, 0.35);
 }
 
 [data-theme="dark"] .badge-danger {
-    background: var(--danger-bg, rgba(239, 68, 68, 0.2)) !important;
-    color: var(--danger-color, #ff7b7b) !important;
-    border: 1px solid rgba(248, 113, 113, 0.35) !important;
+    background: var(--danger-bg, rgba(239, 68, 68, 0.2));
+    color: var(--danger-color, #ff7b7b);
+    border: 1px solid rgba(248, 113, 113, 0.35);
 }
 
 /* Botones de acción en tabla */
 [data-theme="dark"] .action-btn {
-    background-color: var(--surface-container-low, #1f1618) !important;
-    border: 1px solid var(--border-color, rgba(221, 192, 189, 0.2)) !important;
-    color: var(--text-muted, #d4c2bf) !important;
+    background-color: var(--surface-container-low, #1f1618);
+    border: 1px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    color: var(--text-muted, #d4c2bf);
 }
 
 [data-theme="dark"] .action-btn:hover {
-    background-color: var(--surface-container-high, #2f2225) !important;
-    color: #ffffff !important;
+    background-color: var(--surface-container-high, #2f2225);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .action-btn.btn-delete:hover {
-    background-color: var(--danger-bg, rgba(239, 68, 68, 0.2)) !important;
-    color: var(--danger-color, #ff7b7b) !important;
-    border-color: rgba(248, 113, 113, 0.35) !important;
+    background-color: var(--danger-bg, rgba(239, 68, 68, 0.2));
+    color: var(--danger-color, #ff7b7b);
+    border-color: rgba(248, 113, 113, 0.35);
 }

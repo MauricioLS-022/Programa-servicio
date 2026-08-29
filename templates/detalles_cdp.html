@@ -5,192 +5,293 @@
 {% endblock %}
 
 {% block content %}
-<header class="detail-header">
-  <div class="detail-title-group">
-    <div class="detail-icon-badge">
-      <span class="material-symbols-outlined">home_work</span>
-    </div>
-    <div>
-      <p class="detail-eyebrow">Detalle de Casa de Paz</p>
-      <h2 class="detail-title">Casa "{{ cdp.codigo or cdp.nombre if cdp else 'HEB-001' }}"</h2>
-      <p class="detail-subtitle">{{ cdp.red_nombre if cdp else 'Red Hebrón' }} · {{ cdp.direccion if cdp else 'Sector 4 · Zona Norte' }}</p>
-    </div>
-  </div>
-
-  <div class="detail-actions">
-    {% if has_role("admin") %}
-    <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or (cdp.id if cdp else 1)) }}" class="btn-secondary">
-      <span class="material-symbols-outlined">edit</span>
-      Editar
-    </a>
-    <a href="{{ url_for('admin.lider_crear') }}" class="btn-primary-detail">
-      <span class="material-symbols-outlined">person_add</span>
-      Añadir líder
-    </a>
-    {% else %}
-    <a href="{{ url_for('supervisor.estructura') }}" class="btn-secondary">
-      <span class="material-symbols-outlined">arrow_back</span>
-      Volver a Estructura
-    </a>
-    {% endif %}
-  </div>
-</header>
-
-<div class="detail-grid">
-  <section class="detail-card summary-card">
-    <div class="card-header">
-      <div>
-        <p class="card-kicker">Resumen general</p>
-        <h3>{{ cdp.nombre if cdp else 'Casa de Paz Central' }}</h3>
+<div class="cdp-detail-wrapper">
+  <!-- Encabezado de Ficha -->
+  <header class="detail-header">
+    <div class="detail-title-group">
+      <div class="detail-icon-badge" aria-hidden="true">
+        <span class="material-symbols-outlined">home_work</span>
       </div>
-      <span class="status-pill {{ 'active' if not cdp or cdp.estado in ['activa', 'active'] else 'pendiente' }}">{{ cdp.estado|replace('_', ' ')|capitalize if cdp else 'Activa' }}</span>
+      <div>
+        <p class="detail-eyebrow">Ficha Informativa · Casa de Paz</p>
+        <h1 class="detail-title">Casa "{{ cdp.codigo or cdp.nombre if cdp else 'HEB-001' }}"</h1>
+        <p class="detail-subtitle">
+          <span class="badge-network">{{ cdp.red_nombre if cdp else 'Red Hebrón' }}</span>
+          <span class="sep-dot">·</span>
+          <span>Supervisor: <strong>{{ cdp.supervisor_nombre if cdp else 'Sin asignar' }}</strong></span>
+        </p>
+      </div>
     </div>
 
-    <p class="summary-text">
-      Espacio de encuentro comunitario con seguimiento semanal, liderazgo activo y participación estable de la red.
-    </p>
+    <div class="detail-actions">
+      <button type="button" onclick="window.print()" class="btn-secondary" aria-label="Imprimir ficha de Casa de Paz">
+        <span class="material-symbols-outlined" aria-hidden="true">print</span>
+        <span>Imprimir</span>
+      </button>
 
-    <div class="summary-metrics">
-      <div class="metric-item">
+      {% if has_role("admin") %}
+      <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or (cdp.id if cdp else 1)) }}" class="btn-secondary" aria-label="Editar datos de Casa de Paz">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        <span>Editar</span>
+      </a>
+      <a href="{{ url_for('admin.lider_crear') }}" class="btn-primary-detail" aria-label="Añadir nuevo líder">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        <span>Añadir líder</span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('supervisor.estructura') }}" class="btn-secondary" aria-label="Volver a la estructura de supervisión">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        <span>Volver</span>
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Métricas Clave (KPIs) -->
+  <section class="metrics-grid" aria-label="Métricas clave de la Casa de Paz">
+    <div class="metric-card">
+      <div class="metric-icon-wrap" aria-hidden="true">
         <span class="material-symbols-outlined">groups</span>
-        <div>
-          <strong>{{ cdp.asistencia_promedio if cdp else 18 }}</strong>
-          <span>Asistentes prom.</span>
-        </div>
       </div>
-      <div class="metric-item">
-        <span class="material-symbols-outlined">calendar_month</span>
-        <div>
-          <strong>{{ (cdp.horario.split('·')[0]|trim) if cdp and '·' in cdp.horario else (cdp.horario if cdp else 'Martes') }}</strong>
-          <span>{{ (cdp.horario.split('·')[1]|trim) if cdp and '·' in cdp.horario else '7:30 PM' }}</span>
-        </div>
+      <div class="metric-data">
+        <span class="metric-label">Asistencia Prom.</span>
+        <strong class="metric-value">{{ cdp.asistencia_promedio if cdp else 18 }}</strong>
+        <span class="metric-subtext">Personas / reunión</span>
       </div>
-      <div class="metric-item">
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-wrap" aria-hidden="true">
+        <span class="material-symbols-outlined">assignment</span>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Reportes Totales</span>
+        <strong class="metric-value">{{ cdp.total_reportes if cdp else 0 }}</strong>
+        <span class="metric-subtext">Semanas reportadas</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-wrap" aria-hidden="true">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Ofrendas Totales</span>
+        <strong class="metric-value">${{ "%.2f"|format(cdp.ofrendas_usd_totales|float) if cdp and cdp.ofrendas_usd_totales is not none else '0.00' }}</strong>
+        <span class="metric-subtext">Bs. {{ "%.2f"|format(cdp.ofrendas_bs_totales|float) if cdp and cdp.ofrendas_bs_totales is not none else '0.00' }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-wrap" aria-hidden="true">
         <span class="material-symbols-outlined">volunteer_activism</span>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Visitas & Crecimiento</span>
+        <strong class="metric-value">{{ cdp.visitas_totales if cdp else 0 }}</strong>
+        <span class="metric-subtext">{{ cdp.conversiones_totales if cdp else 0 }} conversiones</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grilla principal de información -->
+  <div class="detail-grid">
+    <!-- Tarjeta: Datos Principales & Contacto Rápido -->
+    <section class="detail-card info-card" aria-labelledby="info-heading">
+      <div class="card-header">
         <div>
-          <strong>{{ cdp.lideres|length if cdp and cdp.lideres else 3 }}</strong>
-          <span>Líderes</span>
+          <p class="card-kicker">Datos Principales</p>
+          <h2 id="info-heading">Información del Centro</h2>
         </div>
+        <span class="status-pill {{ 'active' if not cdp or cdp.estado in ['activa', 'active'] else 'pendiente' }}">
+          {{ cdp.estado|replace('_', ' ')|capitalize if cdp else 'Activa' }}
+        </span>
       </div>
-    </div>
-  </section>
 
-  <section class="detail-card info-card">
-    <div class="card-header">
-      <div>
-        <p class="card-kicker">Datos principales</p>
-        <h3>Información del centro</h3>
-      </div>
-    </div>
-
-    <div class="info-list">
-      <div class="info-item">
-        <span class="info-label">Dirección</span>
-        <span class="info-value">{{ cdp.direccion if cdp else 'Calle 12 #18-45, sector El Carmen' }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Anfitrión</span>
-        <span class="info-value">{{ cdp.anfitrion if cdp else 'David Gómez y Elena Ríos' }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Líder asignado</span>
-        <span class="info-value">{{ cdp.lider_nombre if cdp else 'Juan Carlos Pérez' }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Teléfono</span>
-        <span class="info-value">{{ cdp.telefono if cdp else '+57 300 123 4567' }}</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="detail-card timeline-card">
-    <div class="card-header">
-      <div>
-        <p class="card-kicker">Seguimiento</p>
-        <h3>Actividad reciente</h3>
-      </div>
-    </div>
-
-    <ul class="timeline-list">
-      {% if cdp and cdp.actividad_reciente %}
-        {% for act in cdp.actividad_reciente %}
-        <li>
-          <span class="timeline-dot"></span>
-          <div>
-            <strong>{{ act.titulo }}</strong>
-            <p>{{ act.detalle }}</p>
+      <div class="info-list">
+        <div class="info-item">
+          <div class="info-meta">
+            <span class="info-label">Dirección</span>
+            <span class="info-value">{{ cdp.direccion if cdp else 'Calle 12 #18-45, sector El Carmen' }}</span>
           </div>
-        </li>
-        {% endfor %}
-      {% else %}
-      <li>
-        <span class="timeline-dot"></span>
-        <div>
-          <strong>Registro de asistencia</strong>
-          <p>Se actualizaron 18 participantes en la última reunión.</p>
+          {% if cdp and cdp.maps_url %}
+          <a href="{{ cdp.maps_url }}" target="_blank" rel="noopener noreferrer" class="btn-action-sm btn-maps" aria-label="Abrir dirección en Google Maps">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <span>Ver mapa</span>
+          </a>
+          {% endif %}
         </div>
-      </li>
-      <li>
-        <span class="timeline-dot"></span>
-        <div>
-          <strong>Visita de acompañamiento</strong>
-          <p>El equipo de liderazgo visitó el centro el pasado viernes.</p>
-        </div>
-      </li>
-      <li>
-        <span class="timeline-dot"></span>
-        <div>
-          <strong>Material entregado</strong>
-          <p>Se repartieron recursos y orientación para la próxima semana.</p>
-        </div>
-      </li>
-      {% endif %}
-    </ul>
-  </section>
 
-  <section class="detail-card team-card">
-    <div class="card-header">
-      <div>
-        <p class="card-kicker">Equipo</p>
-        <h3>Responsables activos</h3>
-      </div>
-    </div>
-
-    <div class="team-list">
-      {% if cdp and cdp.lideres %}
-        {% for miembro in cdp.lideres %}
-        <div class="team-member">
-          <div class="avatar">{{ miembro.iniciales }}</div>
-          <div>
-            <strong>{{ miembro.nombre_completo }}</strong>
-            <p>{{ miembro.rol }}</p>
+        <div class="info-item">
+          <div class="info-meta">
+            <span class="info-label">Anfitrión</span>
+            <span class="info-value">{{ cdp.anfitrion if cdp else 'David Gómez y Elena Ríos' }}</span>
           </div>
         </div>
-        {% endfor %}
+
+        <div class="info-item">
+          <div class="info-meta">
+            <span class="info-label">Líder Asignado</span>
+            <span class="info-value">{{ cdp.lider_nombre if cdp else 'Juan Carlos Pérez' }}</span>
+          </div>
+          {% if cdp and cdp.telefono_wa %}
+          <a href="https://wa.me/{{ cdp.telefono_wa }}" target="_blank" rel="noopener noreferrer" class="btn-action-sm btn-whatsapp" aria-label="Contactar al líder por WhatsApp">
+            <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+            <span>WhatsApp</span>
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="info-item">
+          <div class="info-meta">
+            <span class="info-label">Teléfono de Contacto</span>
+            <span class="info-value">{{ cdp.telefono if cdp else '+58 412 123 4567' }}</span>
+          </div>
+          {% if cdp and cdp.telefono and cdp.telefono != 'No registrado' %}
+          <a href="tel:{{ cdp.telefono }}" class="btn-action-sm btn-call" aria-label="Llamar al teléfono de contacto">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <span>Llamar</span>
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="info-item">
+          <div class="info-meta">
+            <span class="info-label">Horario de Reunión</span>
+            <span class="info-value">{{ cdp.horario if cdp else 'Martes · 7:30 PM' }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tarjeta: Equipo de Liderazgo Responsable -->
+    <section class="detail-card team-card" aria-labelledby="team-heading">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Equipo</p>
+          <h2 id="team-heading">Responsables Asignados</h2>
+        </div>
+        <span class="team-count-badge">{{ cdp.lideres|length if cdp and cdp.lideres else 0 }} líderes</span>
+      </div>
+
+      <div class="team-list">
+        {% if cdp and cdp.lideres %}
+          {% for miembro in cdp.lideres %}
+          <div class="team-member">
+            <div class="avatar" aria-hidden="true">{{ miembro.iniciales }}</div>
+            <div class="team-member-info">
+              <strong>{{ miembro.nombre_completo }}</strong>
+              <p>{{ miembro.rol }}</p>
+              {% if miembro.telefono %}
+              <span class="member-phone">{{ miembro.telefono }}</span>
+              {% endif %}
+            </div>
+            <div class="team-member-actions">
+              {% if miembro.telefono_wa %}
+              <a href="https://wa.me/{{ miembro.telefono_wa }}" target="_blank" rel="noopener noreferrer" class="btn-icon-wa" aria-label="Enviar WhatsApp a {{ miembro.nombre_completo }}" title="WhatsApp">
+                <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+              </a>
+              {% endif %}
+              {% if miembro.telefono %}
+              <a href="tel:{{ miembro.telefono }}" class="btn-icon-call" aria-label="Llamar a {{ miembro.nombre_completo }}" title="Llamar">
+                <span class="material-symbols-outlined" aria-hidden="true">call</span>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state-card">
+            <span class="material-symbols-outlined" aria-hidden="true">person_off</span>
+            <p>No hay líderes asignados a esta Casa de Paz.</p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Tarjeta Ancha: Historial de Reportes y Reuniones Recientes -->
+    <section class="detail-card reports-card" aria-labelledby="reports-heading">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Historial Reciente</p>
+          <h2 id="reports-heading">Últimos Reportes Semanales</h2>
+        </div>
+      </div>
+
+      {% if cdp and cdp.reportes and cdp.reportes|length > 0 %}
+      <div class="reports-table-responsive">
+        <table class="reports-table" aria-label="Tabla de reportes semanales registrados">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Tema de la Reunión</th>
+              <th scope="col">Asistencia</th>
+              <th scope="col">Desglose</th>
+              <th scope="col">Ofrenda</th>
+              <th scope="col">Cesta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rep in cdp.reportes %}
+            <tr>
+              <td class="td-date">
+                <div class="report-date-badge">
+                  <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+                  <strong>{{ rep.fecha_formateada or rep.fecha }}</strong>
+                </div>
+              </td>
+              <td class="td-theme">
+                <strong>{{ rep.tema or 'Sin tema registrado' }}</strong>
+                {% if rep.observaciones %}
+                <p class="report-note" title="{{ rep.observaciones }}">{{ rep.observaciones|truncate(60) }}</p>
+                {% endif %}
+              </td>
+              <td class="td-attendance">
+                <span class="total-attendance-pill">{{ rep.asistencia or 0 }} pers.</span>
+              </td>
+              <td class="td-breakdown">
+                <div class="breakdown-tags">
+                  <span class="tag-regulares" title="Regulares">Reg: {{ rep.nro_regulares or 0 }}</span>
+                  <span class="tag-ninos" title="Niños">Niñ: {{ rep.nro_niños or rep.nro_ninos or 0 }}</span>
+                  <span class="tag-visitas" title="Visitas">Vis: {{ rep.nro_visitas or 0 }}</span>
+                </div>
+              </td>
+              <td class="td-offering">
+                {% if rep.ofrendas_usd and rep.ofrendas_usd > 0 %}
+                <span class="offering-usd">${{ "%.2f"|format(rep.ofrendas_usd|float) }}</span>
+                {% endif %}
+                {% if rep.ofrendas_bs and rep.ofrendas_bs > 0 %}
+                <span class="offering-bs">Bs. {{ "%.2f"|format(rep.ofrendas_bs|float) }}</span>
+                {% endif %}
+                {% if (not rep.ofrendas_usd or rep.ofrendas_usd == 0) and (not rep.ofrendas_bs or rep.ofrendas_bs == 0) %}
+                <span class="offering-zero">$0.00</span>
+                {% endif %}
+              </td>
+              <td class="td-cesta">
+                {% if rep.cesta_amor %}
+                <span class="badge-cesta active" title="Cesta de amor entregada">
+                  <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                  <span>Sí</span>
+                </span>
+                {% else %}
+                <span class="badge-cesta inactive" title="No entregada">
+                  <span>No</span>
+                </span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       {% else %}
-      <div class="team-member">
-        <div class="avatar">JP</div>
-        <div>
-          <strong>Juan Carlos Pérez</strong>
-          <p>Líder principal</p>
-        </div>
-      </div>
-      <div class="team-member">
-        <div class="avatar">ER</div>
-        <div>
-          <strong>Elena Ríos</strong>
-          <p>Coordinadora</p>
-        </div>
-      </div>
-      <div class="team-member">
-        <div class="avatar">DM</div>
-        <div>
-          <strong>Daniel Morales</strong>
-          <p>Apoyo comunitario</p>
-        </div>
+      <div class="empty-state-card">
+        <span class="material-symbols-outlined" aria-hidden="true">history_edu</span>
+        <p>No se han registrado reportes aún para esta Casa de Paz.</p>
       </div>
       {% endif %}
-    </div>
-  </section>
+    </section>
+  </div>
 </div>
 {% endblock %}
+
