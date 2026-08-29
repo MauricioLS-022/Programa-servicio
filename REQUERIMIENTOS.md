@@ -8,7 +8,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 ## 1. Estado general de requerimientos
 
-**Criterio:** se considera implementado solo lo que está conectado a una ruta, servicio, consulta o listener funcional. El HTML estático por sí solo se considera maquetado.
+**Criterio:** Se considera implementado solo lo que está conectado a una ruta, servicio, consulta o listener funcional. El HTML estático por sí solo se considera maquetado.
 
 | # | Requerimiento | Estado actual | Evidencia y trabajo pendiente |
 |---|---|---|---|
@@ -38,7 +38,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
   - Decorador `@role_required` para control de acceso estricto por roles (`admin`, `supervisor`, `lider_cdp`).
   - Protección de endpoints contra manipulación de identificadores y aislamiento de supervisores.
 - **Conectividad, Resiliencia y Datos de Prueba**:
-  - Pool / Conexión centralizada con `database.py`, circuit breaker con reintentos automáticos y fallback a `mock_data.py`.
+  - Conexión centralizada con `database.py`, circuit breaker con reintentos automáticos y fallback transparente a `mock_data.py`.
   - Script automatizado `insert_test_data.py` compatible con el esquema MySQL actual, capaz de poblar usuarios, redes, CDPs, líderes y 18 reportes históricos de 8 semanas.
 - **Módulo de Reportes (Admin & Supervisor)**:
   - Consultas SQL completas con cálculo de asistencia total, filtros combinados (búsqueda de texto, red, CDP, fechas) y paginación server-side.
@@ -96,7 +96,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 ## 4. Estructura de Base de Datos Actual y Verificada (`serv_comunitario`)
 
-Esquema SQL verificado en el entorno de ejecución:
+Esquema SQL exacto y verificado en el entorno de ejecución:
 
 ```sql
 -- --------------------------------------------------------
@@ -123,7 +123,7 @@ CREATE TABLE `red` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `supervisor_id` char(36) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_red_supervisor` (`supervisor_id`),
+  UNIQUE KEY `uq_red_supervisor` (`supervisor_id`),
   CONSTRAINT `fk_red_supervisor` FOREIGN KEY (`supervisor_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -181,6 +181,8 @@ CREATE TABLE `reporte` (
   `tema` varchar(100) NOT NULL,
   `observaciones` text DEFAULT NULL,
   `ofrendas` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `ofrendas_usd` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `ofrendas_bs` decimal(10,2) NOT NULL DEFAULT 0.00,
   `cdp_id` int(11) NOT NULL,
   `enviado_por_lider_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
