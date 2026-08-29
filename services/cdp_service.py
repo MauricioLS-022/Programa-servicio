@@ -498,7 +498,11 @@ def eliminar_reporte(reporte_id, cdp_id):
 def get_cdp_detalle(cdp_id):
     """
     Obtiene todos los datos detallados de una Casa de Paz para la vista de detalles.
+    Incluye métricas consolidadas, historial de reportes, líderes y enlaces de acción rápida.
     """
+    import urllib.parse
+    import re
+
     conn = get_db_connection()
     if conn:
         try:
@@ -525,71 +529,70 @@ def get_cdp_detalle(cdp_id):
                     """, (cdp_id,))
                     lideres = cur.fetchall() or []
                     
-                    # 3. Métricas y últimos reportes
-                    try:
-                        cur.execute("""
-                            SELECT id, fecha, tema,
-                                   (nro_regulares + nro_niños + nro_visitas + nro_comprometidos) AS asistencia,
-                                   nro_visitas, observaciones
-                            FROM reporte
-                            WHERE cdp_id = %s
-                            ORDER BY fecha DESC
-                            LIMIT 5
-                        """, (cdp_id,))
-                        reportes_recientes = cur.fetchall() or []
-                    except Exception:
-                        reportes_recientes = []
+                    # 3. Métricas consolidadas
+                    metricas = db_queries.obtener_metricas_lider_cdp(cur, cdp_id)
                     
-                    # Calcular asistencia promedio
-                    if reportes_recientes:
-                        asistencias = [r['asistencia'] for r in reportes_recientes if r.get('asistencia') is not None]
-                        asistencia_prom = round(sum(asistencias) / len(asistencias)) if asistencias else 0
-                    else:
-                        asistencia_prom = 0
+                    # 4. Historial completo de reportes
+                    reportes_historial = db_queries.obtener_reportes_por_cdp(cur, cdp_id)
                     
-                    # Procesar miembros del equipo con iniciales
+                    # Procesar miembros del equipo con iniciales y enlace de WhatsApp
                     team = []
                     for l in lideres:
                         nom = (l.get('nombre') or '').strip()
                         ape = (l.get('apellido') or '').strip()
                         ini = (nom[:1] + ape[:1]).upper() if (nom and ape) else (nom[:2].upper() if nom else 'LP')
+                        tel = (l.get('telefono') or '').strip()
+                        tel_clean = re.sub(r'\D', '', tel)
+                        # Si no empieza por código de país (ej. 0414...), ajustar para WhatsApp
+                        if tel_clean.startswith('0'):
+                            tel_wa = '58' + tel_clean[1:]
+                        elif len(tel_clean) == 10 and not tel_clean.startswith('58'):
+                            tel_wa = '58' + tel_clean
+                        else:
+                            tel_wa = tel_clean
+
                         team.append({
                             'id': l['id'],
                             'nombre_completo': f"{nom} {ape}".strip() or 'Líder',
                             'rol': l.get('rol', 'Líder'),
-                            'telefono': l.get('telefono', ''),
+                            'telefono': tel,
+                            'telefono_wa': tel_wa if len(tel_wa) >= 8 else None,
                             'iniciales': ini
                         })
                     
                     # Líder principal
                     lider_principal = team[0]['nombre_completo'] if team else 'Sin líder asignado'
                     telefono_contacto = team[0]['telefono'] if (team and team[0]['telefono']) else 'No registrado'
+                    telefono_wa = team[0]['telefono_wa'] if (team and team[0].get('telefono_wa')) else None
                     
-                    # Actividad reciente formateada
-                    actividad = []
-                    for rep in reportes_recientes:
-                        fecha_str = rep['fecha'].strftime('%d/%m/%Y') if hasattr(rep['fecha'], 'strftime') else str(rep['fecha'] or '')
-                        actividad.append({
-                            'titulo': f"Reporte: {rep.get('tema') or 'Reunión semanal'}",
-                            'detalle': f"Asistencia: {rep.get('asistencia', 0)} personas · Fecha: {fecha_str}"
-                        })
-                    
+                    # Dirección y query para Google Maps
+                    direccion = cdp.get('direccion') or 'Sector Central'
+                    maps_query = urllib.parse.quote_plus(f"{direccion}, Venezuela")
+
                     return {
                         'id': cdp['id'],
                         'codigo': cdp['codigo'],
                         'nombre': f"Casa \"{cdp['codigo']}\"",
                         'red_nombre': cdp.get('red_nombre') or 'Red Zonal',
                         'supervisor_nombre': cdp.get('supervisor_nombre') or 'Sin supervisor',
-                        'direccion': cdp.get('direccion') or 'Ubicación pendiente',
+                        'direccion': direccion,
+                        'maps_url': f"https://www.google.com/maps/search/?api=1&query={maps_query}",
                         'anfitrion': cdp.get('anfitrion') or 'Sin anfitrión asignado',
                         'lider_nombre': lider_principal,
                         'telefono': telefono_contacto,
+                        'telefono_wa': telefono_wa,
                         'estado': 'activa',
                         'horario': 'Martes · 7:30 PM',
-                        'asistencia_promedio': asistencia_prom,
+                        'asistencia_promedio': metricas.get('asistencia_promedio', 0),
+                        'total_reportes': metricas.get('total_reportes', 0),
+                        'ofrendas_usd_totales': metricas.get('ofrendas_usd_totales', 0.0),
+                        'ofrendas_bs_totales': metricas.get('ofrendas_bs_totales', 0.0),
+                        'visitas_totales': metricas.get('visitas_totales', 0),
+                        'conversiones_totales': metricas.get('conversiones_totales', 0),
+                        'reconciliaciones_totales': metricas.get('reconciliaciones_totales', 0),
                         'total_voluntarios': len(team),
                         'lideres': team,
-                        'actividad_reciente': actividad
+                        'reportes': reportes_historial[:6]  # Mostrar los últimos 6
                     }
         except Exception as e:
             print(f"[DB] Error al obtener detalles de CDP {cdp_id}: {e}")
@@ -614,21 +617,74 @@ def get_cdp_detalle(cdp_id):
         'red_nombre': demo['red'],
         'supervisor_nombre': 'Pedro González',
         'direccion': demo['dir'],
+        'maps_url': f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote_plus(demo['dir'] + ', Venezuela')}",
         'anfitrion': demo['anf'],
         'lider_nombre': demo['lider'],
         'telefono': demo['tel'],
+        'telefono_wa': '584121234567',
         'estado': 'activa',
         'horario': 'Martes · 7:30 PM',
         'asistencia_promedio': demo['asist'],
+        'total_reportes': 12,
+        'ofrendas_usd_totales': 145.50,
+        'ofrendas_bs_totales': 3200.00,
+        'visitas_totales': 8,
+        'conversiones_totales': 5,
+        'reconciliaciones_totales': 3,
         'total_voluntarios': 3,
         'lideres': [
-            {'nombre_completo': demo['lider'], 'rol': 'Líder principal', 'iniciales': 'LP'},
-            {'nombre_completo': demo['anf'], 'rol': 'Anfitrión', 'iniciales': 'AN'},
-            {'nombre_completo': 'Daniel Morales', 'rol': 'Apoyo comunitario', 'iniciales': 'DM'},
+            {'id': 1, 'nombre_completo': demo['lider'], 'rol': 'Líder principal', 'telefono': demo['tel'], 'telefono_wa': '584121234567', 'iniciales': 'LP'},
+            {'id': 2, 'nombre_completo': demo['anf'], 'rol': 'Anfitrión', 'telefono': '+58 414 111 2233', 'telefono_wa': '584141112233', 'iniciales': 'AN'},
+            {'id': 3, 'nombre_completo': 'Daniel Morales', 'rol': 'Apoyo comunitario', 'telefono': '+58 424 333 4455', 'telefono_wa': '584243334455', 'iniciales': 'DM'},
         ],
-        'actividad_reciente': [
-            {'titulo': 'Registro de asistencia', 'detalle': f'Se actualizaron {demo["asist"]} participantes en la última reunión.'},
-            {'titulo': 'Visita de acompañamiento', 'detalle': 'El equipo de supervisión visitó el centro el pasado viernes.'},
-            {'titulo': 'Material entregado', 'detalle': 'Se repartieron recursos y guías de estudio para la semana.'}
+        'reportes': [
+            {
+                'id': 1,
+                'fecha_formateada': '24 Ago 2026',
+                'tema': 'El Poder de la Fe y Unidad',
+                'asistencia': 18,
+                'nro_regulares': 10,
+                'nro_niños': 4,
+                'nro_visitas': 3,
+                'nro_comprometidos': 1,
+                'ofrendas_usd': 25.0,
+                'ofrendas_bs': 450.0,
+                'cesta_amor': 1,
+                'observaciones': 'Excelente participación de nuevas familias del sector.',
+                'lider_nombre': demo['lider'],
+                'iniciales': 'LP'
+            },
+            {
+                'id': 2,
+                'fecha_formateada': '17 Ago 2026',
+                'tema': 'Creciendo en Sabiduría',
+                'asistencia': 16,
+                'nro_regulares': 9,
+                'nro_niños': 3,
+                'nro_visitas': 2,
+                'nro_comprometidos': 2,
+                'ofrendas_usd': 20.0,
+                'ofrendas_bs': 380.0,
+                'cesta_amor': 1,
+                'observaciones': 'Se entregó material de apoyo para el próximo ciclo.',
+                'lider_nombre': demo['lider'],
+                'iniciales': 'LP'
+            },
+            {
+                'id': 3,
+                'fecha_formateada': '10 Ago 2026',
+                'tema': 'Sembrando Amor en la Comunidad',
+                'asistencia': 20,
+                'nro_regulares': 12,
+                'nro_niños': 5,
+                'nro_visitas': 3,
+                'nro_comprometidos': 0,
+                'ofrendas_usd': 30.0,
+                'ofrendas_bs': 520.0,
+                'cesta_amor': 1,
+                'observaciones': 'Acompañamiento especial del equipo de supervisión.',
+                'lider_nombre': demo['lider'],
+                'iniciales': 'LP'
+            }
         ]
     }

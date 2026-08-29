@@ -287,7 +287,8 @@ def get_metricas_generales(conn):
         'cestas_amor': int(kpis.get('cestas_amor', 0) or 0),
         'total_visitas': int(kpis.get('total_visitas', 0) or 0),
         'total_casas': total_casas,
-        'reportes_enviados': int(kpis.get('reportes_enviados', 0) or 0),
+        'casas_con_reporte': con_reporte,
+        'reportes_enviados': con_reporte,
         'distribucion': distribucion,
         'tendencia_semanas': tendencia,
         'ranking_redes': ranking,
@@ -325,6 +326,7 @@ def get_metricas_red(conn, red_id):
                 COUNT(DISTINCT c.id) AS casas_activas,
                 COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
                 COALESCE(SUM(rep.nro_niños), 0) AS ninos,
+                COALESCE(SUM(rep.confesiones), 0) AS conversiones,
                 COALESCE(SUM(rep.ofrendas_usd), 0) AS ofrendas_usd,
                 COALESCE(SUM(rep.ofrendas_bs), 0) AS ofrendas_bs,
                 COUNT(DISTINCT CASE WHEN rep.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN rep.cdp_id END) AS casas_con_reporte
@@ -466,6 +468,7 @@ def get_metricas_red(conn, red_id):
         'asistencia_total': asistencia_total,
         'promedio_casa': promedio_casa,
         'ninos': int(kpis['ninos']) if kpis else 0,
+        'conversiones': int(kpis.get('conversiones', 0) or 0) if kpis else 0,
         'ofrendas': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0))) if kpis else 0.0,
         'ofrendas_usd': float(kpis.get('ofrendas_usd', kpis.get('ofrendas', 0.0))) if kpis else 0.0,
         'ofrendas_bs': float(kpis.get('ofrendas_bs', 0.0)) if kpis else 0.0,
@@ -620,6 +623,9 @@ def get_metricas_cdp(conn, cdp_id):
 
     cur.close()
 
+    ofrendas_usd = float(ultimo.get('ofrendas_usd') or ultimo.get('ofrenda') or 0.0) if ultimo else 0.0
+    ofrendas_bs = float(ultimo.get('ofrendas_bs') or 0.0) if ultimo else 0.0
+
     return {
         'nombre_cdp': f"{cdp['codigo']} - {cdp['anfitrion']}" if cdp.get('anfitrion') else cdp['codigo'],
         'codigo': cdp['codigo'],
@@ -632,6 +638,8 @@ def get_metricas_cdp(conn, cdp_id):
         'promedio_historico': promedio_historico,
         'visitas': visitas,
         'conversiones': conversiones,
+        'ofrendas_usd': ofrendas_usd,
+        'ofrendas_bs': ofrendas_bs,
         'estado_reporte': estado_reporte,
         'ultimo_reporte_por': ultimo_reporte_por,
         'ultimo_reporte_fecha': ultimo_reporte_fecha,
