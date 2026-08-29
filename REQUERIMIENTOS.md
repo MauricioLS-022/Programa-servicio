@@ -12,43 +12,50 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Requerimiento | Estado actual | Evidencia y trabajo pendiente |
 |---|---|---|---|
-| 1 | **INSERT de reportes en BD** | ✅ Implementado | `services/cdp_service.py` y `db_queries.insertar_reporte()` alineados con el esquema SQL (`nro_niños`, `nro_regulares`, `nro_visitas`, `nro_comprometidos`, `reconciliaciones`, `confesiones`, `cesta_amor`, `hr_inicio`, `hr_fin`, `tema`, `observaciones`, `ofrendas`, `cdp_id`, `enviado_por_lider_id`). Genera `UUID()` e invalida caché de dashboard. |
-| 2 | **Script de Poblado y Test Data** | ✅ Implementado | `insert_test_data.py` automatiza la inserción idempotente de usuarios (`admin`, `supervisor`, `lider_cdp`), redes, Casas de Paz, líderes y reportes históricos de 8 semanas con hashes Werkzeug y UUIDs válidos. |
-| 3 | **Dashboard con datos reales** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` implementan consultas reales, métricas por nivel (General, Red, CDP), filtros jerárquicos, modo mock, sistema de caché y estados vacíos. |
-| 4 | **Filtros de reportes** | ✅ Implementado | `templates/reportes_admin.html`, `services/report_service.py` y `db_queries.get_reportes()` procesan búsqueda por texto (`q`), red (`red_id`), Casa de Paz (`cdp_id`) y rango de fechas (`fecha_desde`, `fecha_hasta`) tanto en base de datos como en modo mock. |
-| 5 | **Paginación real conectada** | ✅ Implementado | Paginación server-side dinámica (`page`, `per_page`, `pages`, `total`) conectada en **Reportes**, **Usuarios** y **Líderes** (`services/report_service.py`, `services/user_service.py`, `services/leader_service.py`). |
-| 6 | **Vistas de supervisor aisladas** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes cuentan con aislamiento automático por red del supervisor logueado (`supervisor_red_id`). |
-| 7 | **CRUD de Usuarios (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros y paginación completados** (`get_usuarios_context`). Pendiente conectar el procesamiento `POST` en formularios de crear/editar y alternar estado activo/inactivo (`is_active`). |
-| 8 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | Visualización en estructura y asignación de líderes/usuarios funcional. Pendiente conectar operaciones `POST` (`INSERT`/`UPDATE`/`DELETE`/pausar) en formularios admin. |
-| 9 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | Visualización jerárquica y filtros de red completados. Pendiente conectar formularios de creación/edición de redes y asignación de supervisor vía `POST`. |
-| 10 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros por red/CDP y paginación completados** (`get_lideres_context`). Pendiente conectar el guardado de nuevos líderes y edición vía formulario `POST`. |
-| 11 | **Vista de reportes enviados para CDP** | ⚠️ Parcial | `cdp/dashboard` (`index.html`) cuenta con maquetación y acceso al formulario de reporte; falta dinamizar el historial semanal y resumen de métricas del líder en sesión. |
-| 12 | **Módulo de Perfil y Cambio de Contraseña** | ⚠️ Parcial | `cdp_service.get_perfil_data()` y `update_perfil()` implementados. Falta formulario específico para cambio seguro de contraseña con verificación de clave actual. |
-| 13 | **Flash messages y toasts** | ❌ Pendiente | Falta integrar contenedor visual de `get_flashed_messages()` en `admin_layout.html` y emitir mensajes tras operaciones CRUD. |
+| 1 | **INSERT de reportes en BD** | ✅ Implementado | `services/cdp_service.py` y `db_queries.insertar_reporte()` alineados con el esquema SQL. Genera `UUID()`, invalida caché de dashboard y soporta ofrendas duales (USD/Bs). |
+| 2 | **Script de Poblado y Test Data** | ✅ Implementado | `insert_test_data.py` automatiza la inserción idempotente de usuarios, redes, Casas de Paz, líderes y reportes históricos de 8 semanas con hashes Werkzeug y UUIDs válidos. |
+| 3 | **Dashboard con datos reales** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` con consultas reales, métricas por nivel, filtros jerárquicos, caché y estados vacíos. Nuevo diseño con tarjetas dinámicas y scripts dedicados (`dashboard.js`, `lider_dashboard.js`). |
+| 4 | **Filtros de reportes** | ✅ Implementado | Búsqueda por texto, red, Casa de Paz y rango de fechas en admin y supervisor. Soporte de ofrendas duales (USD/Bs) en la vista y modales. |
+| 5 | **Paginación real conectada** | ✅ Implementado | Paginación server-side con ventana deslizante (±2 páginas) y puntos suspensivos en **Reportes**, **Usuarios** y **Líderes**. |
+| 6 | **Vistas de supervisor aisladas** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes con aislamiento automático por red del supervisor logueado. |
+| 7 | **CRUD de Usuarios (Mutaciones POST)** | ⚠️ Parcial | Lectura, filtros y paginación completados. Formulario crear/editar maquetado (`form_usuario.html`). Pendiente conectar procesamiento `POST` con validación backend y alternar `is_active`. |
+| 8 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | Visualización en estructura y asignación de líderes/usuarios funcional. Pendiente conectar operaciones `POST` en formularios admin. |
+| 9 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | Visualización jerárquica y filtros de red completados. Pendiente conectar formularios de creación/edición y asignación de supervisor vía `POST`. |
+| 10 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | Lectura, filtros por red/CDP y paginación completados. Pendiente conectar guardado de nuevos líderes y edición vía formulario `POST`. |
+| 11 | **Vista de reportes enviados para CDP** | ⚠️ Parcial | `index.html` con maquetación, modales de detalle/edición/eliminación y script `lider_dashboard.js` funcional. Falta conectar el formulario de envío de reporte con el servicio. |
+| 12 | **Módulo de Perfil y Cambio de Contraseña** | ✅ Implementado | Página de perfil rediseñada con cambio de usuario, cambio de contraseña (verificación de clave actual, barra de fortaleza, indicador de coincidencia) y toggle de tema oscuro/claro. `cdp_service.py` provee `get_perfil_data()` y `update_perfil()`. |
+| 13 | **Flash messages y toasts** | ✅ Implementado | `get_flashed_messages(with_categories=true)` integrado en `admin_layout.html` con toast auto-dismiss (5s), soporte de categorías (`success`, `danger`, `warning`, `info`) e iconos contextuales. |
 | 14 | **Exportar PDF/Excel** | ❌ Pendiente | Botones visuales maquetados; falta implementar librerías de generación (e.g. ReportLab / openpyxl) y endpoints de descarga con filtros aplicados. |
-| 15 | **Búsqueda en tiempo real (Client-side)** | ⚠️ Parcial | Filtros por GET implementados en Reportes, Usuarios, Líderes y Dashboard; en Estructura el filtrado por chips de red es dinámico en frontend. Falta búsqueda instantánea sin recarga vía JavaScript en tablas admin. |
-| 16 | **Contactar por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados con teléfonos de líderes y CDPs. Pendiente normalización de código de país internacional (`+58`, `+52`, etc.). |
+| 15 | **Búsqueda en tiempo real (Client-side)** | ⚠️ Parcial | Filtros por GET con paginación de ventana en todas las vistas admin. Falta búsqueda instantánea sin recarga vía JavaScript en tablas. |
+| 16 | **Contactar por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados con teléfonos de líderes y CDPs. Pendiente normalización de código de país internacional. |
+| 17 | **Modo Oscuro** | ✅ Implementado | `dark_theme.css` con variable CSS `data-theme="dark"`, persistencia en `localStorage`, detección anti-FOUC y toggle desde perfil y login. |
+| 18 | **Páginas de Error** | ✅ Implementado | 403 y 404 rediseñadas con diseño consistente, botón de retorno y look-and-feel unificado con la aplicación. |
 
 ---
 
 ### Funcionalidades ya cumplidas o disponibles
 
 - **Autenticación y Seguridad de Acceso**:
-  - Login con validación y hasheo seguro mediante Werkzeug (`scrypt`/`pbkdf2`), con migración transparente de contraseñas legacy.
+  - Login rediseñado con validación y hasheo seguro mediante Werkzeug (`pbkdf2:sha256`), migración transparente de contraseñas legacy y toggle de modo oscuro.
   - Decorador `@role_required` para control de acceso estricto por roles (`admin`, `supervisor`, `lider_cdp`).
   - Protección de endpoints contra manipulación de identificadores y aislamiento de supervisores.
+  - Flash messages con categorías para retroalimentación de errores de autenticación.
 - **Conectividad, Resiliencia y Datos de Prueba**:
   - Conexión centralizada con `database.py`, circuit breaker con reintentos automáticos y fallback transparente a `mock_data.py`.
-  - Script automatizado `insert_test_data.py` compatible con el esquema MySQL actual, capaz de poblar usuarios, redes, CDPs, líderes y 18 reportes históricos de 8 semanas.
+  - Script `insert_test_data.py` compatible con el esquema MySQL actual, capaz de poblar usuarios, redes, CDPs, líderes y reportes históricos.
 - **Módulo de Reportes (Admin & Supervisor)**:
-  - Consultas SQL completas con cálculo de asistencia total, filtros combinados (búsqueda de texto, red, CDP, fechas) y paginación server-side.
-  - Modal de detalle/visualización estructurado y diseño adaptativo.
+  - Consultas SQL completas con cálculo de asistencia total, filtros combinados y paginación server-side con ventana deslizante.
+  - Modales de detalle/visualización, edición y eliminación con confirmación. Soporte de ofrendas duales USD/Bs.
 - **Directorios Administrativos (Usuarios y Líderes)**:
-  - Servicios desacoplados `user_service.py` y `leader_service.py` con paginación server-side y filtros funcionales sobre base de datos.
+  - Servicios desacoplados con paginación server-side, filtros funcionales y formularios CRUD maquetados.
 - **Módulo de Estructura**:
-  - Vista jerárquica de redes y CDPs con filtrado interactivo por chips, avatares representativos, eliminación de doble scrollbar y cumplimiento de contraste accesible WCAG 2.2 AA/AAA.
+  - Vista jerárquica de redes y CDPs con filtrado interactivo por chips, avatares representativos y accesibilidad WCAG 2.2 AA/AAA.
 - **Dashboard Multi-Nivel**:
-  - KPIs globales, ranking de redes con cumplimiento semanal, distribución de asistencia, tendencias mensuales y alertas de casas sin reporte (14+ días).
+  - KPIs globales, ranking de redes, distribución de asistencia, tendencias mensuales y alertas de casas sin reporte. Nuevo diseño con tarjetas dinámicas y scripts dedicados.
+- **Módulo de Perfil**:
+  - Cambio de usuario, cambio de contraseña con verificación de clave actual, barra de fortaleza y toggle de tema oscuro/claro con persistencia.
+- **Modo Oscuro**:
+  - Tema global vía `data-theme` attribute, CSS con variables, persistencia en `localStorage`, anti-FOUC y toggle desde login y perfil.
 
 ---
 
@@ -56,24 +63,51 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 1. **Mutaciones POST en CRUDs Admin**: Conectar las rutas de creación y edición (Usuarios, Redes, Casas de Paz, Líderes) con validación de datos en backend y persistencia en BD.
 2. **Protección CSRF**: Incorporar tokens CSRF en todos los formularios HTML antes de habilitar mutaciones `POST`.
-3. **Módulo de Perfil (Contraseña)**: Implementar endpoint y modal para que el usuario pueda cambiar su contraseña verificando la actual.
-4. **Historial Dinámico en Home CDP**: Conectar las métricas y reportes recientes en la vista de Casa de Paz (`index.html`) con la sesión del líder.
-5. **Flash Messages & Toasts**: Añadir componente Toast / Alert en `admin_layout.html` para notificar éxito/error tras mutaciones.
+3. **Rate Limiting en Login**: Implementar limitación de intentos de acceso para prevenir fuerza bruta.
+4. **Headers de Seguridad**: Agregar `X-Frame-Options`, `Content-Security-Policy`, `HSTS` y `Referrer-Policy` en todas las respuestas.
+5. **Hardening de Sesiones**: Configurar `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE` y `PERMANENT_SESSION_LIFETIME`.
 6. **Exportación de Reportes**: Crear endpoints para descarga de reportes en PDF y Excel con filtros aplicados.
+7. **Protección de API**: Agregar `@login_required` al endpoint `/api/dashboard/datos` que actualmente es público.
+8. **Validación de Entrada Server-Side**: Implementar validación de tipos, longitudes, formatos y unicidad en todos los formularios.
 
 ---
 
 ## 2. Problemas de seguridad
 
-| # | Problema | Estado / severidad | Detalle |
+### 2.1 Estado actual de controles de seguridad
+
+| # | Área de Seguridad | Estado | Severidad |
 |---|---|---|---|
-| 1 | **Contraseñas en texto plano** | ✅ Resuelto | Login y scripts de datos usan hashes Werkzeug seguros. Los nuevos endpoints CRUD deben aplicar `generate_password_hash()`. |
-| 2 | **Sin protección CSRF** | 🔴 Alta / Pendiente | Los formularios POST no incluyen tokens CSRF. Implementar protección (Flask-WTF o token de sesión) al activar los CRUDs. |
-| 3 | **Credenciales de BD por defecto** | 🟡 Media / Pendiente | `config.py` y `insert_test_data.py` permiten variables de entorno (`.env`), pero mantienen fallbacks para desarrollo local. |
-| 4 | **Manejo de conexiones** | ✅ Bueno | Servicios principales (`cdp_service`, `report_service`, `dashboard_service`, `user_service`, `leader_service`) usan `try/finally` asegurando el cierre de conexiones. |
-| 5 | **Debug habilitado por defecto** | 🟡 Media / Pendiente | `DEBUG=True` activo en desarrollo. Desactivar en configuración de producción. |
-| 6 | **Modo demo permisivo** | 🟡 Media / Pendiente | Fallback mock activo solo cuando la BD no está disponible. |
-| 7 | **Validación de entrada en CRUDs** | 🟡 Media / Pendiente | Requerido validar tipos, rangos numéricos, unicidad de nombres/códigos y relaciones FK al habilitar mutaciones `POST`. |
+| 1 | **Protección CSRF** | 🔴 **CRÍTICO / Pendiente** | Ningún formulario incluye tokens CSRF. Todos los POST son vulnerables a ataques CSRF. |
+| 2 | **Rate Limiting en Login** | 🔴 **CRÍTICO / Pendiente** | Sin limitación de intentos. Ataques de fuerza bruta ilimitados contra todas las cuentas. |
+| 3 | **Validación de Entrada** | 🟠 **ALTA / Pendiente** | Sin librería de validación server-side (marshmallow, WTForms). Sin sanitización XSS (bleach, markupsafe). Solo `.strip()` y casting `int()` básico. |
+| 4 | **Headers de Seguridad** | 🟠 **ALTA / Pendiente** | Solo `X-Content-Type-Options: nosniff` en archivos estáticos. Faltan: `X-Frame-Options`, `Content-Security-Policy`, `HSTS`, `Referrer-Policy`, `Permissions-Policy`. |
+| 5 | **Configuración de Sesiones** | 🟠 **ALTA / Parcial** | `SECRET_KEY` configurada pero sin hardening de cookies (`Secure`, `HttpOnly`, `SameSite`). Sin `PERMANENT_SESSION_LIFETIME`. |
+| 6 | **Autenticación en API** | 🟠 **ALTA / Pendiente** | Endpoint `/api/dashboard/datos` sin `@login_required`. Datos de dashboard accesibles sin autenticación. |
+| 7 | **Fortaleza de Contraseñas** | 🟡 **MEDIA / Débil** | Solo mínimo 6 caracteres. Sin requisitos de mayúsculas, números o símbolos. Sin máximo de longitud. |
+| 8 | **Logout** | 🟡 **MEDIA / Parcial** | Usa `session.pop()` parcial en vez de `session.clear()`. Sin invalidación server-side de sesión. Sin regeneración de sesión post-login. |
+| 9 | **Credenciales por Defecto** | 🟡 **MEDIA / Pendiente** | Fallbacks de BD en `config.py` para desarrollo. `.env` con `SECRET_KEY` en el repositorio. |
+| 10 | **Debug en Producción** | 🟡 **MEDIA / Pendiente** | `DEBUG=True` en desarrollo. Asegurar `DEBUG=False` en producción. |
+| 11 | **Contraseñas en Texto Plano** | ✅ **Resuelto** | Login y scripts usan hashes Werkzeug seguros (`pbkdf2:sha256`). Migración automática de legado. |
+| 12 | **SQL Injection** | ✅ **Protegido** | Todas las consultas usan parámetros `%s` con tuplas. Sin interpolación de datos de usuario en SQL. |
+| 13 | **Manejo de Conexiones** | ✅ **Bueno** | Servicios principales usan `try/finally` para cierre seguro de conexiones. |
+| 14 | **Flash Messages** | ✅ **Implementado** | Toasts con categorías, auto-dismiss e iconos contextuales en `admin_layout.html`. |
+| 15 | **Control de Acceso por Roles** | ✅ **Implementado** | `@login_required` y `@role_required` en todas las rutas protegidas (admin, supervisor, líder). Aislamiento de supervisores por red. |
+
+### 2.2 Acciones correctivas prioritarias
+
+| Prioridad | Acción | Dependencias |
+|---|---|---|
+| **P0** | Instalar `flask-wtf` y habilitar `CSRFProtect(app)`. Agregar `{{ csrf_token() }}` a todos los formularios. | Ninguna |
+| **P0** | Instalar `flask-limiter` y aplicar rate limiting al login (ej. 5 intentos/min por IP). | Ninguna |
+| **P1** | Agregar `@login_required` a `routes/api_routes.py` para proteger `/api/dashboard/datos`. | Ninguna |
+| **P1** | Instalar `flask-talisman` o configurar headers de seguridad en `after_request` para todas las respuestas (CSP, HSTS, X-Frame-Options, Referrer-Policy). | Ninguna |
+| **P1** | Configurar cookies de sesión seguras: `SESSION_COOKIE_SECURE=True`, `SESSION_COOKIE_HTTPONLY=True`, `SESSION_COOKIE_SAMESITE='Lax'`, `PERMANENT_SESSION_LIFETIME=timedelta(hours=2)`. | Ninguna |
+| **P1** | Eliminar `.env` del repositorio (agregar a `.gitignore`) y rotar el `SECRET_KEY` actual. | Ninguna |
+| **P2** | Implementar validación server-side de entrada (longitudes, tipos, formatos de teléfono, unicidad de username). | Elegir librería (WTForms / marshmallow) |
+| **P2** | Endurecer política de contraseñas: mínimo 8 caracteres, al menos 1 mayúscula, 1 número, 1 símbolo. Máximo 128 caracteres. | Instalar librería o validar manualmente |
+| **P2** | Usar `session.clear()` en logout y considerar sesiones server-side para invalidación real. | Evaluar Flask-Session |
+| **P3** | Implementar sanitización XSS con `bleach` o `markupsafe.escape()` en campos de texto libre (tema, observaciones, nombre). | Instalar librería |
 
 ---
 
@@ -81,16 +115,20 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Mejora | Estado actual | Detalle / Trabajo pendiente |
 |---|---|---|---|
-| 1 | **Home CDP** | ⚠️ Parcial | Maquetada; falta enlazar historial de reportes y equipo de líderes del usuario autenticado. |
-| 2 | **Responsive en móviles y tablets** | ✅ Avanzado | Tablas con visualización tipo tarjeta en mobile, chips horizontales con scroll táctil, header desktop adaptativo y breakpoints limpios. |
-| 3 | **Accesibilidad y Contraste de Color** | ✅ Implementado | Colores ajustados bajo estándar WCAG 2.2 AA/AAA en `estructura.css`, selectores de foco visibles (`:focus-visible`) e insignias con alto contraste. |
-| 4 | **Doble scrollbar** | ✅ Resuelto | Eliminado el scroll interno anidado en `.casas-section` y `.estructura-main`, dejando exclusivamente la barra global. |
-| 5 | **Sidebar visual limpio** | ✅ Implementado | Scroll lateral estilizado y limpio en `sidebar.css` preservando navegación fluida. |
-| 6 | **Estados vacíos** | ✅ Implementado | Implementados en Dashboard, Estructura, Reportes, Usuarios y Líderes (`.empty-state`). |
+| 1 | **Home CDP** | ⚠️ Parcial | Maquetada con modales de reporte (detalle, editar, eliminar) y script `lider_dashboard.js`. Falta conectar el formulario de envío de reporte con el servicio. |
+| 2 | **Responsive en móviles y tablets** | ✅ Avanzado | Tablas tipo tarjeta en mobile, chips horizontales con scroll táctil, header desktop adaptativo con 2 breakpoints (≤1100px, ≤745px). |
+| 3 | **Accesibilidad y Contraste de Color** | ✅ Implementado | WCAG 2.2 AA/AAA en `estructura.css`, selectores de foco visibles, insignias con alto contraste. |
+| 4 | **Doble scrollbar** | ✅ Resuelto | Eliminado el scroll interno anidado en vistas admin. |
+| 5 | **Sidebar visual limpio** | ✅ Implementado | Scroll lateral estilizado en `sidebar.css` preservando navegación fluida. |
+| 6 | **Estados vacíos** | ✅ Implementado | Implementados en Dashboard, Estructura, Reportes, Usuarios y Líderes. |
 | 7 | **Feedback de botones copiar** | ❌ Pendiente | Implementar Clipboard API con feedback visual al copiar credenciales de usuarios. |
 | 8 | **Tooltips del gráfico donut** | ⚠️ Parcial | Leyenda funcional; falta tooltip flotante en los segmentos SVG/Canvas. |
-| 9 | **Mensajes de operación (Toasts)** | ❌ Pendiente | Renderizar `get_flashed_messages()` en `admin_layout.html`. |
-| 10 | **Consistencia de enlaces y botones** | ⚠️ Parcial | Conectar enlaces contextuales de estructura y acciones de edición en usuarios/líderes a rutas POST funcionales. |
+| 9 | **Mensajes de operación (Toasts)** | ✅ Implementado | Toasts auto-dismiss con categorías (`success`, `danger`, `warning`, `info`) integrados en `admin_layout.html`. |
+| 10 | **Consistencia de enlaces y botones** | ⚠️ Parcial | Conectar enlaces contextuales de estructura y acciones de edición a rutas POST funcionales. |
+| 11 | **Modo Oscuro** | ✅ Implementado | Toggle global desde login y perfil. Persistencia en `localStorage`. Anti-FOUC. |
+| 12 | **Diseño de Login** | ✅ Implementado | Login rediseñado con tarjeta centrada, iconos, toggle contraseña, banner de entorno de desarrollo y modo oscuro. |
+| 13 | **Páginas de Error** | ✅ Implementado | 403 y 404 con diseño consistente, iconos y botón de retorno. |
+| 14 | **Paginación con Ventana** | ✅ Implementado | Ventana deslizante ±2 páginas con puntos suspensivos en Reportes, Usuarios y Líderes. |
 
 ---
 
@@ -199,27 +237,39 @@ CREATE TABLE `reporte` (
 
 ### Fase 1 — Núcleo, Reportes y Datos (✅ Completada)
 - [x] Conexión centralizada a base de datos con circuit breaker y fallbacks transparentes.
-- [x] Corrección e inserción de reportes (`cdp_service.py` y `db_queries.insertar_reporte` alineados con el esquema SQL).
-- [x] Script automatizado `insert_test_data.py` con datos de prueba realistas, hashes Werkzeug y compatibilidad con el esquema.
-- [x] Módulo de reportes dinámico para Admin y Supervisor con filtros multidimensionales (texto, red, casa, fechas) y paginación server-side.
+- [x] Corrección e inserción de reportes con soporte de ofrendas duales USD/Bs.
+- [x] Script automatizado `insert_test_data.py` con datos de prueba realistas.
+- [x] Módulo de reportes dinámico con filtros multidimensionales y paginación server-side con ventana.
 - [x] Dashboard multi-nivel conectado a datos reales, filtros jerárquicos y caché.
-- [x] Directorios de lectura de Usuarios y Líderes con filtros y paginación conectada a BD.
-- [x] Depuración responsive, solución de doble scrollbar y accesibilidad WCAG 2.2 AA/AAA en estructura y reportes.
+- [x] Directorios de lectura de Usuarios y Líderes con filtros y paginación.
+- [x] Depuración responsive, solución de doble scrollbar y accesibilidad WCAG 2.2 AA/AAA.
 
-### Fase 2 — Mutaciones CRUDs Administrativos (Próximo paso prioritario)
-- [ ] **CRUD Usuarios (POST)**: Formulario crear/editar, activar/desactivar (`is_active`) y hasheo seguro de contraseñas.
+### Fase 2 — UI/UX, Perfil y Tema Oscuro (✅ Completada)
+- [x] Login rediseñado con tarjeta centrada, toggle contraseña y modo oscuro.
+- [x] Perfil completo: cambio de usuario, cambio de contraseña con verificación y barra de fortaleza.
+- [x] Modo oscuro global con persistencia en `localStorage` y anti-FOUC.
+- [x] Dashboard rediseñado con tarjetas dinámicas y scripts dedicados.
+- [x] Paginación con ventana deslizante en Reportes, Usuarios y Líderes.
+- [x] Flash messages / toasts con categorías y auto-dismiss.
+- [x] Páginas de error 403 y 404 con diseño consistente.
+
+### Fase 3 — Seguridad y Hardening (Próximo paso prioritario)
+- [ ] **CSRF**: Instalar `flask-wtf`, habilitar `CSRFProtect(app)` y agregar tokens a todos los formularios.
+- [ ] **Rate Limiting**: Instalar `flask-limiter`, limitar login a 5 intentos/min por IP.
+- [ ] **Headers de Seguridad**: Configurar CSP, HSTS, X-Frame-Options, Referrer-Policy en `after_request`.
+- [ ] **Hardening de Sesiones**: Cookies seguras (`Secure`, `HttpOnly`, `SameSite='Lax'`), timeout de 2 horas.
+- [ ] **Protección de API**: Agregar `@login_required` a `/api/dashboard/datos`.
+- [ ] **Eliminar `.env` del repo**: Agregar a `.gitignore` y rotar `SECRET_KEY`.
+
+### Fase 4 — Mutaciones CRUDs Administrativos
+- [ ] **CRUD Usuarios (POST)**: Conectar formularios con validación backend, hasheo de contraseñas y alternar `is_active`.
 - [ ] **CRUD Casas de Paz (POST)**: Crear, editar, pausar/activar, asignar usuario y vincular a red.
-- [ ] **CRUD Redes (POST)**: Crear, editar, pausar/activar, asignar supervisor y gestionar casas asociadas.
+- [ ] **CRUD Redes (POST)**: Crear, editar, pausar/activar, asignar supervisor.
 - [ ] **CRUD Líderes (POST)**: Crear, editar, eliminar/desactivar y vincular a Casas de Paz.
-- [ ] Incorporación de validación de formularios backend y protección CSRF.
+- [ ] **Validación Server-Side**: Implementar validación de tipos, longitudes, formatos y unicidad.
 
-### Fase 3 — Home CDP, Perfil y Notificaciones
-- [ ] Historial y resumen dinámico en el panel de Casa de Paz (`index.html`) según líder en sesión.
-- [ ] Módulo de Perfil: Cambio de contraseña con verificación de clave actual.
-- [ ] Sistema de Flash Messages / Toasts globales en `admin_layout.html` para retroalimentación de operaciones.
-
-### Fase 4 — Exportación y Polish final
+### Fase 5 — Exportación y Polish final
 - [ ] Exportación de reportes y listados a PDF y Excel con filtros aplicados.
 - [ ] Búsqueda en tiempo real sin recarga en tablas de Usuarios y Líderes.
 - [ ] Tooltips interactivos y accesibles en gráficos del dashboard.
-- [ ] Configuración segura de producción (variables de entorno obligatorias, `DEBUG=False`, desactivación de modo mock).
+- [ ] Configuración segura de producción (`DEBUG=False`, variables de entorno obligatorias, desactivación de mock).
