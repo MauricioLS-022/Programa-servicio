@@ -13,7 +13,7 @@ from routes.supervisor_routes import supervisor_bp
 from routes.lider_cdp_routes import lider_cdp_bp
 from routes.api_routes import api_bp
 from utils.context import context_functions
-from database import get_db_connection
+from database import get_db_connection, close_db_connection
 
 load_dotenv()
 
@@ -21,6 +21,9 @@ env = os.getenv('FLASK_ENV', 'development')
 app = Flask(__name__)
 app.config.from_object(config[env])
 app.secret_key = app.config['SECRET_KEY']
+
+# Limpieza de conexión por ciclo de petición
+app.teardown_appcontext(close_db_connection)
 
 # ---------------------------------------------------------------------------
 # Registrar Blueprints

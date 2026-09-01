@@ -4,6 +4,9 @@ import sys
 from datetime import date, timedelta
 import pymysql
 from werkzeug.security import generate_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Asegurar codificación utf-8 en consola si está disponible
 if hasattr(sys.stdout, 'reconfigure'):
@@ -18,8 +21,10 @@ DB_PORT = int(os.getenv('DB_PORT', '3306'))
 DB_USER = os.getenv('DB_USER', 'root')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DB_NAME = os.getenv('DB_NAME', 'serv_comunitario')
+DB_SSL = os.getenv('DB_SSL', 'true').lower() in ('true', '1', 't', 'required')
 
 def get_connection():
+    ssl_kwargs = {'ssl': {'ssl_mode': 'REQUIRED'}} if (DB_SSL and DB_HOST not in ('localhost', '127.0.0.1')) else {}
     return pymysql.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -27,7 +32,8 @@ def get_connection():
         password=DB_PASSWORD,
         database=DB_NAME,
         charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
+        **ssl_kwargs
     )
 
 def poblar_datos():
@@ -229,9 +235,9 @@ def poblar_datos():
                 INSERT INTO reporte (
                     id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                     reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                    tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
+                    tema, observaciones, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """, (
                 str(uuid.uuid4()),
@@ -248,7 +254,6 @@ def poblar_datos():
                 f'{tema_1} (Semana {8 - semana_idx})',
                 'Reunión llena de bendición y comunión.',
                 usd_1,
-                usd_1,
                 bs_1,
                 1,
                 1
@@ -264,9 +269,9 @@ def poblar_datos():
                     INSERT INTO reporte (
                         id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                         reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                        tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
+                        tema, observaciones, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, (
                     str(uuid.uuid4()),
@@ -283,7 +288,6 @@ def poblar_datos():
                     f'{tema_2} (Grupo Sur)',
                     'Buena participación de los asistentes.',
                     usd_2,
-                    usd_2,
                     bs_2,
                     2,
                     3
@@ -299,9 +303,9 @@ def poblar_datos():
                     INSERT INTO reporte (
                         id, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
                         reconciliaciones, confesiones, cesta_amor, fecha, hr_inicio, hr_fin,
-                        tema, observaciones, ofrendas, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
+                        tema, observaciones, ofrendas_usd, ofrendas_bs, cdp_id, enviado_por_lider_id
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, (
                     str(uuid.uuid4()),
@@ -317,7 +321,6 @@ def poblar_datos():
                     '20:30:00',
                     f'{tema_3} (Red Sur)',
                     'Gran tiempo de ministración.',
-                    usd_3,
                     usd_3,
                     bs_3,
                     3,

@@ -82,7 +82,7 @@ def get_perfil_data(usuario_id):
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT id, username, nombre, apellido, email, tipo_usuario
+                SELECT id, username, nombre, apellido, tipo_usuario
                 FROM usuario 
                 WHERE id = %s
             """, (str(usuario_id),))

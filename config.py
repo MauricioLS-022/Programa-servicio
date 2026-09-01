@@ -12,6 +12,8 @@ class Config:
     DB_USER = os.getenv('DB_USER', 'root')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_NAME = os.getenv('DB_NAME', 'serv_comunitario')
+    DB_TIMEOUT = float(os.getenv('DB_TIMEOUT', '5.0'))
+    DB_SSL = os.getenv('DB_SSL', 'true').lower() in ('true', '1', 't', 'required')
     
     # App
     HOST = os.getenv('APP_HOST', '0.0.0.0')
@@ -26,7 +28,8 @@ class Config:
     
     @property
     def SQLALCHEMY_DATABASE_URI(self):
-        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        ssl_param = "?ssl-mode=REQUIRED" if self.DB_SSL and self.DB_HOST not in ('localhost', '127.0.0.1') else ""
+        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}{ssl_param}"
 
 
 class DevelopmentConfig(Config):
