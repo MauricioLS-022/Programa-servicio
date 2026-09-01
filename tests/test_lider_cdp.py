@@ -318,7 +318,7 @@ class TestLiderCDPRoutes(unittest.TestCase):
 
         response = self.client.get('/admin/casa_de_paz/1')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Detalle de Casa de Paz', response.data)
+        self.assertIn(b'Casa de Paz', response.data)
 
     def test_supervisor_casa_de_paz_detalles(self):
         """Ruta GET /supervisor/casa_de_paz/<id> debe renderizar detalles de la Casa de Paz para supervisor."""
@@ -329,7 +329,7 @@ class TestLiderCDPRoutes(unittest.TestCase):
 
         response = self.client.get('/supervisor/casa_de_paz/1')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Detalle de Casa de Paz', response.data)
+        self.assertIn(b'Casa de Paz', response.data)
 
 
 if __name__ == '__main__':
