@@ -44,6 +44,9 @@ def process_reporte(cdp_id, form_data):
     # 2. Control de conexión a base de datos
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True
         print("[ERROR] No se pudo establecer conexión a la base de datos.")
         return False
 
@@ -77,6 +80,20 @@ def get_perfil_data(usuario_id):
     """
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_usuarios
+            usuarios = get_mock_usuarios()
+            user = next((u for u in usuarios if str(u['id']) == str(usuario_id) or str(u.get('username')) == str(usuario_id)), None)
+            if not user:
+                user = usuarios[0]
+            return {
+                'id': user['id'],
+                'username': user['username'],
+                'nombre': user['nombre'],
+                'apellido': user['apellido'],
+                'tipo_usuario': user['rol']
+            }
         return {}
     
     try:
@@ -229,6 +246,30 @@ def get_cdp_datos_usuario(usuario_id):
     """
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_casas_demo, get_mock_lideres
+            casas = get_casas_demo()
+            lideres_all = get_mock_lideres()
+            cdp_match = next((c for c in casas if str(c.get('lider_id')) == str(usuario_id)), None)
+            if not cdp_match:
+                lider_match = next((l for l in lideres_all if str(l.get('usuario_id')) == str(usuario_id)), None)
+                if lider_match:
+                    cdp_match = next((c for c in casas if c['id'] == lider_match['cdp_id']), None)
+            if not cdp_match:
+                cdp_match = casas[0]
+
+            lideres_cdp = [
+                {'id': l['id'], 'nombre': l['nombre'], 'apellido': l['apellido'], 'rol': l['rol']}
+                for l in lideres_all if l['cdp_id'] == cdp_match['id']
+            ]
+            return {
+                'id': cdp_match['id'],
+                'codigo': cdp_match['codigo'],
+                'nombre': cdp_match['nombre'],
+                'direccion': cdp_match['direccion'],
+                'anfitrion': cdp_match['anfitrion']
+            }, lideres_cdp
         return None, []
     
     try:
@@ -262,53 +303,34 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
         # Fallback en caso de que no haya conexión (modo demo / mock)
         from services.dashboard_service import mock_mode_enabled
         if mock_mode_enabled():
-            from mock_data import get_mock_cdp, get_mock_lideres
-            mock_cdp = get_mock_cdp(1)
-            mock_lideres_list = [
-                {'id': 1, 'nombre': 'Mateo', 'apellido': 'Rodríguez', 'rol': 'Lider', 'telefono': '+584141234567'},
-                {'id': 2, 'nombre': 'Lucía', 'apellido': 'Mendoza', 'rol': 'Sublider', 'telefono': '+584129876543'}
+            from mock_data import get_mock_cdp, get_mock_lideres, get_mock_reportes, get_casas_demo
+            casas = get_casas_demo()
+            cdp_match = next((c for c in casas if str(c.get('lider_id')) == str(usuario_id)), None)
+            cid = cdp_match['id'] if cdp_match else 1
+            mock_cdp = get_mock_cdp(cid)
+
+            lideres_list = [
+                {'id': l['id'], 'nombre': l['nombre'], 'apellido': l['apellido'], 'rol': l['rol'], 'telefono': l['telefono']}
+                for l in get_mock_lideres() if l['cdp_id'] == cid
             ]
-            mock_reps = [
-                {
-                    'id': f'mock-{i}',
-                    'fecha': h['fecha'],
-                    'fecha_formateada': h['fecha'],
-                    'hr_inicio': '19:00',
-                    'hr_fin': '20:30',
-                    'tema': 'El Poder de la Fe',
-                    'nro_regulares': 25,
-                    'nro_niños': h['ninos'],
-                    'nro_visitas': h['visitas'],
-                    'nro_comprometidos': 5,
-                    'asistencia': h['asistencia'],
-                    'reconciliaciones': 1,
-                    'confesiones': 2,
-                    'ofrendas': h['ofrenda'],
-                    'ofrendas_usd': h['ofrenda'],
-                    'ofrendas_bs': 0.0,
-                    'cesta_amor': 1,
-                    'observaciones': h['observaciones'],
-                    'lider_nombre': 'Mateo Rodríguez',
-                    'iniciales': 'MR'
-                }
-                for i, h in enumerate(mock_cdp.get('historial', []))
-            ]
-            total_reps = len(mock_reps)
+            reps_cdp = [r for r in get_mock_reportes() if r['cdp_id'] == cid]
+            total_reps = len(reps_cdp)
             start = (page - 1) * per_page
-            mock_reps_page = mock_reps[start:start + per_page]
+            mock_reps_page = reps_cdp[start:start + per_page]
             pages = max((total_reps + per_page - 1) // per_page, 1)
+
             return {
-                'cdp': {'id': 1, 'codigo': mock_cdp['codigo'], 'anfitrion': mock_cdp['anfitrion']},
-                'lideres': mock_lideres_list,
+                'cdp': {'id': cid, 'codigo': mock_cdp['codigo'], 'anfitrion': mock_cdp['anfitrion']},
+                'lideres': lideres_list,
                 'metricas': {
                     'total_reportes': total_reps,
                     'asistencia_promedio': mock_cdp['promedio_historico'],
-                    'ofrendas_totales': sum(r['ofrendas'] for r in mock_reps),
-                    'ofrendas_usd_totales': sum(r['ofrendas'] for r in mock_reps),
-                    'ofrendas_bs_totales': 0.0,
-                    'visitas_totales': mock_cdp['visitas'],
-                    'conversiones_totales': mock_cdp['conversiones'],
-                    'reconciliaciones_totales': 4,
+                    'ofrendas_totales': sum(r['ofrendas_usd'] for r in reps_cdp),
+                    'ofrendas_usd_totales': sum(r['ofrendas_usd'] for r in reps_cdp),
+                    'ofrendas_bs_totales': sum(r['ofrendas_bs'] for r in reps_cdp),
+                    'visitas_totales': sum(r['nro_visitas'] for r in reps_cdp),
+                    'conversiones_totales': sum(r['confesiones'] for r in reps_cdp),
+                    'reconciliaciones_totales': sum(r['reconciliaciones'] for r in reps_cdp),
                     'reporte_esta_semana': True,
                     'dias_cierre_texto': 'Próximo cierre: 3 días',
                 },
@@ -600,91 +622,5 @@ def get_cdp_detalle(cdp_id):
             conn.close()
             
     # Mock / Demo fallback cuando DB no está conectada o no existe el id
-    cdp_demos = {
-        '1': {'codigo': 'HEB-001', 'nombre': 'Casa Bethel', 'red': 'Red Hebrón', 'dir': 'Calle 12 #18-45, sector El Carmen', 'anf': 'David Gómez y Elena Ríos', 'asist': 18, 'lider': 'Juan Carlos Pérez', 'tel': '+58 412 123 4567'},
-        '2': {'codigo': 'SUR-001', 'nombre': 'Casa de Oración Sur', 'red': 'Red Sur', 'dir': 'Av. Principal #45, sector Sur', 'anf': 'María López', 'asist': 14, 'lider': 'Elena Pérez', 'tel': '+58 414 987 6543'},
-        '3': {'codigo': 'CEN-001', 'nombre': 'Casa Nueva Vida', 'red': 'Red Central', 'dir': 'Carrera 8 #22-10, Centro', 'anf': 'Carlos Ramírez', 'asist': 22, 'lider': 'Andrés Soler', 'tel': '+58 424 567 8901'},
-        '4': {'codigo': 'HEB-002', 'nombre': 'Casa Luz', 'red': 'Red Hebrón', 'dir': 'Calle 5 #9-14, sector Las Flores', 'anf': 'Pedro González', 'asist': 12, 'lider': 'Mateo Rodríguez', 'tel': '+58 416 345 6789'},
-    }
-    demo = cdp_demos.get(str(cdp_id), {
-        'codigo': f'CDP-{cdp_id}', 'nombre': f'Casa "{cdp_id}"', 'red': 'Red Ministerial', 'dir': 'Ubicación comunitaria', 'anf': 'Sin anfitrión asignado', 'asist': 15, 'lider': 'Sin líder asignado', 'tel': '+58 400 000 0000'
-    })
-    
-    return {
-        'id': cdp_id,
-        'codigo': demo['codigo'],
-        'nombre': demo['nombre'],
-        'red_nombre': demo['red'],
-        'supervisor_nombre': 'Pedro González',
-        'direccion': demo['dir'],
-        'maps_url': f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote_plus(demo['dir'] + ', Venezuela')}",
-        'anfitrion': demo['anf'],
-        'lider_nombre': demo['lider'],
-        'telefono': demo['tel'],
-        'telefono_wa': '584121234567',
-        'estado': 'activa',
-        'horario': 'Martes · 7:30 PM',
-        'asistencia_promedio': demo['asist'],
-        'total_reportes': 12,
-        'ofrendas_usd_totales': 145.50,
-        'ofrendas_bs_totales': 3200.00,
-        'visitas_totales': 8,
-        'conversiones_totales': 5,
-        'reconciliaciones_totales': 3,
-        'total_voluntarios': 3,
-        'lideres': [
-            {'id': 1, 'nombre_completo': demo['lider'], 'rol': 'Líder principal', 'telefono': demo['tel'], 'telefono_wa': '584121234567', 'iniciales': 'LP'},
-            {'id': 2, 'nombre_completo': demo['anf'], 'rol': 'Anfitrión', 'telefono': '+58 414 111 2233', 'telefono_wa': '584141112233', 'iniciales': 'AN'},
-            {'id': 3, 'nombre_completo': 'Daniel Morales', 'rol': 'Apoyo comunitario', 'telefono': '+58 424 333 4455', 'telefono_wa': '584243334455', 'iniciales': 'DM'},
-        ],
-        'reportes': [
-            {
-                'id': 1,
-                'fecha_formateada': '24 Ago 2026',
-                'tema': 'El Poder de la Fe y Unidad',
-                'asistencia': 18,
-                'nro_regulares': 10,
-                'nro_niños': 4,
-                'nro_visitas': 3,
-                'nro_comprometidos': 1,
-                'ofrendas_usd': 25.0,
-                'ofrendas_bs': 450.0,
-                'cesta_amor': 1,
-                'observaciones': 'Excelente participación de nuevas familias del sector.',
-                'lider_nombre': demo['lider'],
-                'iniciales': 'LP'
-            },
-            {
-                'id': 2,
-                'fecha_formateada': '17 Ago 2026',
-                'tema': 'Creciendo en Sabiduría',
-                'asistencia': 16,
-                'nro_regulares': 9,
-                'nro_niños': 3,
-                'nro_visitas': 2,
-                'nro_comprometidos': 2,
-                'ofrendas_usd': 20.0,
-                'ofrendas_bs': 380.0,
-                'cesta_amor': 1,
-                'observaciones': 'Se entregó material de apoyo para el próximo ciclo.',
-                'lider_nombre': demo['lider'],
-                'iniciales': 'LP'
-            },
-            {
-                'id': 3,
-                'fecha_formateada': '10 Ago 2026',
-                'tema': 'Sembrando Amor en la Comunidad',
-                'asistencia': 20,
-                'nro_regulares': 12,
-                'nro_niños': 5,
-                'nro_visitas': 3,
-                'nro_comprometidos': 0,
-                'ofrendas_usd': 30.0,
-                'ofrendas_bs': 520.0,
-                'cesta_amor': 1,
-                'observaciones': 'Acompañamiento especial del equipo de supervisión.',
-                'lider_nombre': demo['lider'],
-                'iniciales': 'LP'
-            }
-        ]
-    }
+    from mock_data import get_mock_cdp_detalle
+    return get_mock_cdp_detalle(cdp_id)

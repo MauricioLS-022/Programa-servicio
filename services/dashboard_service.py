@@ -14,11 +14,12 @@ from utils.cache import get_cached_value, set_cached_value
 
 
 def mock_mode_enabled():
-    """Indica si los datos demo están explícitamente habilitados en desarrollo."""
-    return (
-        current_app.config.get('FLASK_ENV') == 'development'
-        and current_app.config.get('MOCK_MODE', False)
-    )
+    """Indica si los datos demo están explícitamente habilitados."""
+    try:
+        from database import is_mock_mode
+        return is_mock_mode()
+    except Exception:
+        return bool(current_app.config.get('MOCK_MODE', False))
 
 
 def sanitize_metricas(metricas):

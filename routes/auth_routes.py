@@ -78,7 +78,19 @@ def login():
                     session["usuario"] = "supervisor"
                     session["rol"] = "supervisor"
                     return _redirect_by_role("supervisor")
+                elif usuario == "lider" and contrasena == "lider":
+                    session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
+                    session["usuario"] = "lider"
+                    session["rol"] = "lider_cdp"
+                    return _redirect_by_role("lider_cdp")
                 elif usuario and contrasena:
+                    from mock_data import get_mock_usuarios
+                    m_user = next((u for u in get_mock_usuarios() if u['username'] == usuario), None)
+                    if m_user:
+                        session["usuario_id"] = m_user['id']
+                        session["usuario"] = m_user['username']
+                        session["rol"] = m_user['rol']
+                        return _redirect_by_role(m_user['rol'])
                     session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
                     session["usuario"] = usuario
                     session["rol"] = "lider_cdp"

@@ -2,20 +2,45 @@
 Módulo de conexión a MySQL con Circuit Breaker y Reutilización por Request Context.
 Maneja reintentos automáticos cuando la base de datos no está disponible
 y mantiene una única conexión por petición para minimizar la latencia de red.
+Cuando MOCK_MODE está activo, aísla por completo el sistema de la BD (cero conexiones).
 """
+import os
 import pymysql
 import time
 import threading
+from dotenv import load_dotenv
 from flask import current_app, g, has_request_context
 
+load_dotenv()
+
+
+# Estados del Circuit Breaker
+STATE_CLOSED = "CLOSED"        # Operación normal con base de datos
+STATE_OPEN = "OPEN"            # Circuito abierto tras fallos; fast-fail sin intentar conexión
+STATE_HALF_OPEN = "HALF_OPEN"  # Prueba de reconexión tras expirar el intervalo de espera
 
 # Estado global del circuit breaker
 DB_AVAILABLE = False
+_circuit_state = STATE_CLOSED
 _last_db_attempt = 0.0
 _db_fail_count = 0
 _DB_RETRY_INTERVAL = 15  # segundos entre reintentos si la BD falla
-_DB_TIMEOUT = 5.0  # timeout de conexión en segundos
+_DB_TIMEOUT = 5.0        # timeout de conexión en segundos
+_FAIL_THRESHOLD = 1      # fallos consecutivos requeridos para abrir el circuito
 _db_lock = threading.Lock()
+
+
+def is_mock_mode():
+    """
+    Determina si el modo mock está activado en la app o por entorno.
+    Permite omitir cualquier intento de conexión hacia la BD.
+    """
+    if has_request_context() or current_app:
+        try:
+            return bool(current_app.config.get('MOCK_MODE', False))
+        except RuntimeError:
+            pass
+    return os.getenv('MOCK_MODE', 'False').lower() in ('true', '1', 't', 'yes')
 
 
 class _RequestScopedConnection:
@@ -68,9 +93,15 @@ def get_db_connection():
     """
     Obtiene la conexión a MySQL reutilizando la del request actual si existe,
     o creando una nueva si es necesario, protegida por circuit breaker.
+    Si MOCK_MODE está activado, retorna None de inmediato sin abrir sockets de red.
     """
-    global DB_AVAILABLE, _last_db_attempt, _db_fail_count
+    global DB_AVAILABLE, _circuit_state, _last_db_attempt, _db_fail_count
 
+    # 1. Cero intentos de conexión cuando el modo mock está activado
+    if is_mock_mode():
+        return None
+
+    # 2. Reutilización por request context
     if has_request_context():
         scoped = getattr(g, '_db_conn', None)
         if scoped is not None:
@@ -83,14 +114,18 @@ def get_db_connection():
     with _db_lock:
         ahora = time.time()
 
-        # Si falló recientemente, NO intentar conectar (evita lag de reintentos continuos)
-        if _db_fail_count > 0 and (ahora - _last_db_attempt) < _DB_RETRY_INTERVAL:
-            DB_AVAILABLE = False
-            return None
+        # 3. Circuito Abierto: Fast-fail no bloqueante si falló recientemente
+        if _circuit_state == STATE_OPEN:
+            if (ahora - _last_db_attempt) < _DB_RETRY_INTERVAL:
+                DB_AVAILABLE = False
+                return None
+            # El intervalo expiró -> pasar a HALF_OPEN para probar la conexión
+            _circuit_state = STATE_HALF_OPEN
 
         try:
             conn = _create_raw_connection()
             DB_AVAILABLE = True
+            _circuit_state = STATE_CLOSED
             _db_fail_count = 0
             _last_db_attempt = ahora
 
@@ -102,11 +137,14 @@ def get_db_connection():
         except Exception as e:
             _db_fail_count += 1
             _last_db_attempt = ahora
+            if _db_fail_count >= _FAIL_THRESHOLD:
+                _circuit_state = STATE_OPEN
             DB_AVAILABLE = False
             try:
                 if current_app:
                     current_app.logger.warning(
-                        "[DB] No disponible (reintentando en %ss): %s",
+                        "[DB] No disponible (Circuit Breaker %s, reintentando en %ss): %s",
+                        _circuit_state,
                         _DB_RETRY_INTERVAL,
                         e,
                     )
@@ -126,4 +164,28 @@ def close_db_connection(e=None):
 
 def is_db_available():
     """Retorna el estado actual de la conexión a la base de datos."""
-    return DB_AVAILABLE
+    if is_mock_mode():
+        return False
+    return DB_AVAILABLE and _circuit_state == STATE_CLOSED
+
+
+def get_circuit_breaker_status():
+    """Retorna métricas y estado actual del circuit breaker."""
+    return {
+        'state': _circuit_state,
+        'db_available': DB_AVAILABLE,
+        'fail_count': _db_fail_count,
+        'last_attempt': _last_db_attempt,
+        'retry_interval': _DB_RETRY_INTERVAL,
+        'mock_mode': is_mock_mode()
+    }
+
+
+def reset_circuit_breaker():
+    """Reinicia el estado del circuit breaker (útil para tests o mantenimiento)."""
+    global DB_AVAILABLE, _circuit_state, _db_fail_count, _last_db_attempt
+    with _db_lock:
+        DB_AVAILABLE = False
+        _circuit_state = STATE_CLOSED
+        _db_fail_count = 0
+        _last_db_attempt = 0.0
