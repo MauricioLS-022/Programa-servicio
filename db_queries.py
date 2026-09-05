@@ -838,7 +838,7 @@ def insertar_reporte(cursor, datos_reporte):
             INSERT INTO reporte (
                 id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
                 tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
-                reconciliaciones, confesiones, ofrendas, ofrendas_usd, ofrendas_bs, cesta_amor, observaciones
+                reconciliaciones, confesiones, ofrendas_usd, ofrendas_bs, cesta_amor, observaciones
             ) VALUES (
                 UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
@@ -866,11 +866,25 @@ def insertar_reporte(cursor, datos_reporte):
     except Exception:
         query = """
             INSERT INTO reporte (
-                id, cdp_id, enviado_por_lider_id, fecha, hr_inicio, hr_fin,
-                tema, nro_niños, nro_regulares, nro_visitas, nro_comprometidos,
-                reconciliaciones, confesiones, ofrendas, cesta_amor, observaciones
+                id, 
+                cdp_id, 
+                enviado_por_lider_id, 
+                fecha, 
+                hr_inicio, 
+                hr_fin,
+                tema, 
+                nro_niños, 
+                nro_regulares, 
+                nro_visitas, 
+                nro_comprometidos,
+                reconciliaciones, 
+                confesiones, 
+                ofrendas_usd,
+                ofrendas_bs, 
+                cesta_amor, 
+                observaciones
             ) VALUES (
-                UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                UUID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
         """
         params = (
@@ -887,6 +901,7 @@ def insertar_reporte(cursor, datos_reporte):
             datos_reporte.get('reconciliaciones', 0),
             datos_reporte.get('confesiones', 0),
             ofrendas_usd,
+            ofrendas_bs, 
             1 if datos_reporte.get('cesta_amor') else 0,
             datos_reporte.get('observaciones', '')
         )

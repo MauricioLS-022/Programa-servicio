@@ -35,7 +35,6 @@ def process_reporte(cdp_id, form_data):
         'nro_comprometidos': int(form_data.get('nro_comprometidos', 0) or 0),
         'reconciliaciones': int(form_data.get('reconciliaciones', 0) or 0),
         'confesiones': int(form_data.get('confesiones', 0) or 0),
-        'ofrendas': ofrendas_usd,
         'ofrendas_usd': ofrendas_usd,
         'ofrendas_bs': ofrendas_bs,
         'cesta_amor': _parse_cesta_amor(form_data.get('cesta_amor', 0)),
