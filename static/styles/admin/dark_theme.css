@@ -504,15 +504,64 @@ html[data-theme="dark"],
     color: var(--text-muted);
 }
 
+/* Tarjeta de Acción "Nuevo Reporte" en Modo Oscuro (Alto Contraste) */
 [data-theme="dark"] .action-card {
-    background: linear-gradient(135deg, #241618 0%, #1b1416 100%);
-    border: 1.5px solid var(--border-accent);
-    box-shadow: var(--shadow-card);
+    background: linear-gradient(135deg, #2b171a 0%, #1c1214 100%);
+    border: 1.5px solid rgba(255, 141, 161, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 180, 171, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+[data-theme="dark"] .action-card .card-icon,
+[data-theme="dark"] .action-card .card-icon.text-primary {
+    color: #ff8da1 !important;
+    filter: drop-shadow(0 2px 8px rgba(255, 141, 161, 0.4));
+    transition: color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    align-self: flex-start;
+    transform-origin: left center;
+}
+
+[data-theme="dark"] .action-card .card-title {
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+[data-theme="dark"] .action-card .card-subtitle {
+    color: #e2d1cf !important;
+    opacity: 0.95;
+}
+
+/* Estado Hover con alto contraste y resplandor vino elegante */
+[data-theme="dark"] .action-card:hover {
+    background: linear-gradient(135deg, #781017 0%, #4a0205 100%) !important;
+    border-color: #ff8da1 !important;
+    box-shadow: 0 12px 32px rgba(120, 16, 23, 0.5), 0 0 0 1px rgba(255, 141, 161, 0.35) !important;
+    transform: translateY(-4px);
+}
+
+[data-theme="dark"] .action-card:hover .card-icon,
+[data-theme="dark"] .action-card:hover .card-icon.text-primary {
+    color: #ffffff !important;
+    transform: scale(1.08);
+    transform-origin: left center;
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.65)) !important;
+}
+
+[data-theme="dark"] .action-card:hover .card-title {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .action-card:hover .card-subtitle {
+    color: rgba(255, 255, 255, 0.95) !important;
+    opacity: 1;
 }
 
 [data-theme="dark"] .summary-card:hover,
 [data-theme="dark"] .status-card:hover,
-[data-theme="dark"] .action-card:hover,
 [data-theme="dark"] .casa-card:hover {
     border-color: var(--border-accent);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
