@@ -1,7 +1,3 @@
-/* =========================================================
-   REDISEÑO COMPACTO, ESTÉTICO Y RESPONSIVO - GENERAR REPORTE
-   ========================================================= */
-
 .crud-container.report-container {
     max-width: 840px;
     width: 100%;
@@ -10,9 +6,24 @@
     box-sizing: border-box;
 }
 
+/* En móvil y tablet (hasta 1024px) el header móvil mide 52px y es fixed */
+@media (max-width: 1024px) {
+    .crud-container.report-container {
+        padding-top: calc(52px + 1.5rem) !important;
+        padding-bottom: calc(60px + 2rem) !important;
+    }
+}
+
 @media (max-width: 640px) {
     .crud-container.report-container {
-        padding: 1.25rem 0.75rem 2.5rem;
+        padding-top: calc(52px + 1.25rem) !important;
+        padding-bottom: calc(60px + 1.5rem) !important;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .report-header .form-title {
+        font-size: 1.6rem;
     }
 }
 

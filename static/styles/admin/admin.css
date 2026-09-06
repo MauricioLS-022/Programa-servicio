@@ -31,7 +31,7 @@
     --danger-color: #b32626;
 }
 
-body{
+body {
   min-height: 100vh;
   background-color: var(--bg-surface);
   background-image: linear-gradient(rgba(255, 248, 247, 0.985), rgba(255, 248, 247, 0.985)), url("../../fondo.webp");
@@ -43,6 +43,7 @@ body{
   font-family: var(--font-body);
   color: var(--text-main);
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ===============================
@@ -284,6 +285,12 @@ textarea:focus {
         margin-bottom: 1rem;
         position: relative;
         z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        align-self: flex-start;
+        transform-origin: left center;
     }
 
     /* Colores específicos de los íconos */

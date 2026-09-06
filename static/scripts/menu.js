@@ -4,17 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    // 2. Función genérica para abrir/cerrar
+    // 2. Función genérica para abrir/cerrar menú
     function toggleMenu() {
+        if (!sidebar || !overlay) return;
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
-        
-        // Evitar que el usuario haga scroll en el cuerpo cuando el menú está abierto
-        if (sidebar.classList.contains('active')) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
     }
 
     // 3. Asignamos los eventos de clic
