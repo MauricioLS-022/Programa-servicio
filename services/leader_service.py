@@ -1,10 +1,12 @@
 """Obtención de líderes para el directorio administrativo."""
+import db_queries
 from flask import current_app
 
 from database import get_db_connection
-from db_queries import get_lideres
+from db_queries import get_lideres, insertar_usuario
 from mock_data import get_mock_lideres, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
+from werkzeug.security import generate_password_hash
 
 
 def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_page=5, supervisor_red_id=None):
@@ -60,3 +62,48 @@ def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_pag
         'red_id': red_id,
         'cdp_id': cdp_id,
     }
+
+def crear_nuevo_usuario(form_data):
+    """
+    Lógica de negocio para crear un usuario.
+    Recibe los datos del formulario web, valida, encripta y guarda.
+    """
+    username = form_data.get('username')
+    password = form_data.get('password')
+    nombre = form_data.get('nombre')
+    apellido = form_data.get('apellido')
+    tipo_usuario = form_data.get('tipo_usuario')
+
+    # Validaciones básicas (puedes agregar más)
+    if not all([username, password, nombre, apellido, tipo_usuario]):
+        return False, "Todos los campos son obligatorios."
+
+    conn = get_db_connection()
+    if not conn:
+        return False, "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            # 1. (Opcional pero recomendado) Verificar si el username ya existe
+            cursor.execute("SELECT id FROM usuario WHERE username = %s", (username,))
+            if cursor.fetchone():
+                return False, f"El nombre de usuario '{username}' ya está en uso."
+
+            # 2. Encriptar la contraseña (NUNCA guardar en texto plano)
+            password_hash = generate_password_hash(password)
+
+            # 3. Guardar en BD usando tu db_queries
+            nuevo_id = insertar_usuario(
+                cursor, username, password_hash, nombre, apellido, tipo_usuario
+            )
+            
+        # Confirmar la transacción
+        conn.commit()
+        return True, "Usuario creado exitosamente."
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"[Service] Error al crear usuario: {e}")
+        return False, "Ocurrió un error interno al crear el usuario."
+    finally:
+        conn.close()

@@ -1160,3 +1160,17 @@ def eliminar_reporte_cdp(cursor, reporte_id, cdp_id):
     query = "DELETE FROM reporte WHERE id = %s AND cdp_id = %s"
     cursor.execute(query, (str(reporte_id), cdp_id))
     return cursor.rowcount > 0
+
+def insertar_usuario(cursor, username, password_hash, nombre, apellido, tipo_usuario):
+    """
+    Inserta un nuevo usuario en la base de datos.
+    """
+    query = """
+        INSERT INTO usuario (username, password, nombre, apellido, tipo_usuario)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    cursor.execute(query, (username, password_hash, nombre, apellido, tipo_usuario))
+    
+    # Devuelve el ID del usuario recién creado
+    return cursor.lastrowid
+    
