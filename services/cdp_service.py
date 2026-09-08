@@ -6,6 +6,8 @@ from database import get_db_connection
 from utils.cache import invalidate_dashboard_cache
 import db_queries
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 def _parse_cesta_amor(val):
     if isinstance(val, bool):
         return 1 if val else 0
@@ -188,7 +190,7 @@ def cambiar_password(usuario_id, password_actual, password_nueva):
     Returns:
         tuple: (success: bool, message: str)
     """
-    from werkzeug.security import generate_password_hash, check_password_hash
+    #from werkzeug.security import generate_password_hash, check_password_hash
     
     if not password_nueva or len(password_nueva) < 6:
         return False, "La nueva contraseña debe tener al menos 6 caracteres"
