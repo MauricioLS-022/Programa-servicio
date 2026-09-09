@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fields.reconciliaciones) fields.reconciliaciones.value = btn.dataset.reconciliaciones || 0;
         if (fields.confesiones) fields.confesiones.value = btn.dataset.confesiones || 0;
         if (fields.ofrendasBs) fields.ofrendasBs.value = 'Bs. ' + (parseFloat(btn.dataset.ofrendasBs || 0).toFixed(2));
-        if (fields.ofrendasUsd) fields.ofrendasUsd.value = '$' + (parseFloat(btn.dataset.ofrendasUsd || btn.dataset.ofrendas || 0).toFixed(2));
+        if (fields.ofrendasUsd) fields.ofrendasUsd.value = '$' + (parseFloat(btn.dataset.ofrendasUsd || 0).toFixed(2));
         if (fields.cesta) fields.cesta.value = btn.dataset.cesta || '';
         if (fields.tema) fields.tema.value = btn.dataset.tema || '';
         if (fields.obs) fields.obs.value = btn.dataset.obs || '';
@@ -183,14 +183,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const liderEl = tr.querySelector('.leader-cell .font-semibold');
             const cdpEl = tr.querySelector('td[data-label="Casa de Paz"]');
             const asisEl = tr.querySelector('td[data-label="Asistencia"] .badge');
-            const ofrEl = tr.querySelector('td[data-label="Ofrendas"]');
+            const actionBtn = tr.querySelector('.btn-view') || tr.querySelector('.btn-edit');
+
+            const ofrendasUsd = actionBtn ? (actionBtn.dataset.ofrendasUsd || '0.00') : '0.00';
+            const ofrendasBs = actionBtn ? (actionBtn.dataset.ofrendasBs || '0.00') : '0.00';
 
             data.push({
                 fecha: fechaEl ? fechaEl.textContent.trim() : '',
                 lider: liderEl ? liderEl.textContent.trim() : '',
                 cdp: cdpEl ? cdpEl.textContent.trim() : '',
                 asistencia: asisEl ? asisEl.textContent.trim() : '0',
-                ofrendas: ofrEl ? ofrEl.textContent.replace('$', '').trim() : '0.00'
+                ofrendas_usd: ofrendasUsd,
+                ofrendas_bs: ofrendasBs
             });
         });
 
@@ -205,16 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let csv = '\uFEFF'; // UTF-8 BOM
-        csv += 'Fecha,Líder,Casa de Paz,Asistencia,Ofrendas\n';
+        csv += 'Fecha,Líder,Casa de Paz,Asistencia,Ofrendas ($ USD),Ofrendas (Bs)\n';
 
         data.forEach(item => {
             const fecha = `"${item.fecha.replace(/"/g, '""')}"`;
             const lider = `"${item.lider.replace(/"/g, '""')}"`;
             const cdp = `"${item.cdp.replace(/"/g, '""')}"`;
             const asis = `"${item.asistencia.replace(/"/g, '""')}"`;
-            const ofr = `"${item.ofrendas.replace(/"/g, '""')}"`;
+            const ofrUsd = `"${item.ofrendas_usd.replace(/"/g, '""')}"`;
+            const ofrBs = `"${item.ofrendas_bs.replace(/"/g, '""')}"`;
 
-            csv += `${fecha},${lider},${cdp},${asis},${ofr}\n`;
+            csv += `${fecha},${lider},${cdp},${asis},${ofrUsd},${ofrBs}\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -250,13 +255,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let rowsHtml = '';
         let totalAsis = 0;
-        let totalOfr = 0;
+        let totalOfrUsd = 0;
+        let totalOfrBs = 0;
 
         data.forEach(item => {
             const asisNum = parseInt(item.asistencia) || 0;
-            const ofrNum = parseFloat(item.ofrendas.replace(/,/g, '')) || 0;
+            const ofrUsdNum = parseFloat(item.ofrendas_usd) || 0;
+            const ofrBsNum = parseFloat(item.ofrendas_bs) || 0;
             totalAsis += asisNum;
-            totalOfr += ofrNum;
+            totalOfrUsd += ofrUsdNum;
+            totalOfrBs += ofrBsNum;
 
             rowsHtml += `
                 <tr>
@@ -264,7 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><strong>${item.lider}</strong></td>
                     <td>${item.cdp}</td>
                     <td style="text-align:center;">${item.asistencia}</td>
-                    <td style="text-align:right;">$${item.ofrendas}</td>
+                    <td style="text-align:right;">$${ofrUsdNum.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align:right;">Bs. ${ofrBsNum.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
             `;
         });
@@ -354,7 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th>Líder</th>
                             <th>Casa de Paz</th>
                             <th style="text-align:center;">Asistencia</th>
-                            <th style="text-align:right;">Ofrendas</th>
+                            <th style="text-align:right;">Ofrendas ($ USD)</th>
+                            <th style="text-align:right;">Ofrendas (Bs)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -362,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr class="totals-row">
                             <td colspan="3">TOTALES REGISTRADOS</td>
                             <td style="text-align:center;">${totalAsis}</td>
-                            <td style="text-align:right;">$${totalOfr.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td style="text-align:right;">$${totalOfrUsd.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td style="text-align:right;">Bs. ${totalOfrBs.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                     </tbody>
                 </table>

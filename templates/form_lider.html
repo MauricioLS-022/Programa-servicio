@@ -9,6 +9,7 @@
 </header>
 
 <form action="" method="POST" class="crud-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
   <span
     class="material-symbols-outlined form-watermark"
     style="font-variation-settings: 'FILL' 1"

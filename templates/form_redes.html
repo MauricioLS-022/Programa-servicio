@@ -5,31 +5,33 @@
     <p class="form-description">Defina los parámetros de gestión y asigne la supervisión correspondiente para esta unidad organizativa.</p>
 </header>
 
-<form class="crud-form">
+<form class="crud-form" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <span class="material-symbols-outlined form-watermark" style="font-variation-settings: 'FILL' 1;">nest_eco_leaf</span>
 
     <div class="form-grid">
         
         <!-- Campo sin ícono: lo envolvemos en input-wrapper para mantener la consistencia del CSS -->
         <div class="form-group full-width">
-            <label>Nombre de la Red</label>
+            <label for="nombre">Nombre de la Red</label>
             <div class="input-wrapper">
-                <input type="text" value="Red de Jóvenes Adultos" placeholder="Ej. Red de Crecimiento Norte">
+                <input type="text" id="nombre" name="nombre" value="{{ red.nombre if red else '' }}" placeholder="Ej. Red de Crecimiento Norte" required>
             </div>
         </div>
 
         <!-- Selector: Aplicamos input-wrapper e icon-right -->
         <div class="form-group full-width">
-            <label>Supervisor Asignado</label>
+            <label for="supervisor_id">Supervisor Asignado</label>
             <div class="input-wrapper icon-right">
-                <select>
-                    <option selected>Carlos Eduardo Méndez</option>
-                    <option>Ana María Restrepo</option>
-                    <option>Roberto Villagrán</option>
-                    <option>Lucía Fernández</option>
+                <select id="supervisor_id" name="supervisor_id">
+                    <option value="" {% if not red or not red.supervisor_id %}selected{% endif %}>-- Sin supervisor asignado --</option>
+                    {% for sup in supervisores_disponibles %}
+                    <option value="{{ sup.id }}" {% if red and red.supervisor_id == sup.id %}selected{% endif %}>{{ sup.nombre }} {{ sup.apellido }} (@{{ sup.username }})</option>
+                    {% endfor %}
                 </select>
                 <span class="material-symbols-outlined input-icon">expand_more</span>
             </div>
+            <span class="input-hint">Muestra los usuarios con rol supervisor disponibles para asignación.</span>
         </div>
     </div>
 

@@ -22,6 +22,7 @@
     </header>
 
     <form class="crud-form report-form" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <!-- SECCIÓN 1: DATOS DE LA REUNIÓN Y HORARIO -->
         <section class="form-section-card">
             <div class="section-card-header">
