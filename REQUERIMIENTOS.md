@@ -25,10 +25,10 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 11 | **Modo Oscuro Global** | ✅ Implementado | Variable `data-theme="dark"`, persistencia en `localStorage`, script anti-FOUC y toggles en Login y Perfil. |
 | 12 | **Flash Messages y Notificaciones Toast** | ✅ Implementado | `get_flashed_messages(with_categories=true)` en `admin_layout.html` y `layout.html` con auto-dismiss (5s), categorías semánticas e iconos contextuales. |
 | 13 | **Páginas de Error Personalizadas** | ✅ Implementado | Errores 400, 403 y 404 estilizados con botones de navegación e integración visual con el sistema de diseño. |
-| 14 | **CRUD de Usuarios (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros y paginación completados.** Formulario maquetado (`form_usuario.html`). <br>**Falta:** Conectar rutas `POST /admin/usuario/crear` y `/admin/usuario/<id>/editar` con validación backend, hasheo seguro y alternancia de estado `is_active`. |
-| 15 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | **Lectura, detalle (`detalles_cdp.html`) y estructura completados.** Formulario maquetado (`form_cdp.html`). <br>**Falta:** Conectar rutas `POST /admin/casa_de_paz/crear` y `/admin/casa_de_paz/<id>/editar` para persistir cambios, vincular a red y asignar usuario. |
-| 16 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | **Visualización jerárquica y filtros completados.** Formulario maquetado (`form_redes.html`). <br>**Falta:** Conectar rutas `POST /admin/red/crear` y `/admin/red/<id>/editar` con asignación de supervisor y control de unicidad. |
-| 17 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros por red/CDP y paginación completados.** Formulario maquetado (`form_lider.html`). <br>**Falta:** Conectar rutas `POST /admin/lider/crear` y `/admin/lider/<id>/editar` para registrar o modificar líderes/sublíderes. |
+| 14 | **CRUD de Usuarios (Mutaciones POST)** | ✅ Implementado / Parcial | `POST /admin/usuario/crear` completado con validación segura (`utils/validators`), hasheo Werkzeug, inserción relacional y asignación opcional ministerial (`red_id` para supervisores, `cdp_id` para líderes). <br>**Falta:** Flujo de alternancia de estado `is_active` y eliminación segura. |
+| 15 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | **Lectura, detalle (`detalles_cdp.html`) y estructura completados.** Formulario maquetado (`form_cdp.html`). <br>**Falta:** Conectar rutas `POST /admin/casa_de_paz/crear` y `/admin/casa_de_paz/<id>/editar` para persistir cambios, vincular a red, pasar redes disponibles al template y asignar cuenta de usuario. |
+| 16 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | **Visualización jerárquica y filtros completados.** Selectores dinámicos integrados en `form_redes.html`. <br>**Falta:** Conectar rutas `POST /admin/red/crear` y `/admin/red/<id>/editar` con validación de nombre, asignación de supervisor y control de unicidad (`uq_red_supervisor`). |
+| 17 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros por red/CDP y paginación completados.** Formulario maquetado (`form_lider.html`). <br>**Falta:** Conectar rutas `POST /admin/lider/crear` y `/admin/lider/<id>/editar` para registrar o modificar líderes/sublíderes con validación de teléfono y asignación a Casa de Paz. |
 | 18 | **Búsqueda Client-Side en Tiempo Real** | ⚠️ Parcial | Filtros por GET con recarga completados. <br>**Falta:** Implementar filtrado instantáneo en vivo sin recarga vía JavaScript en tablas de Usuarios y Líderes. |
 | 19 | **Integración de Contacto por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados dinámicamente con números de contacto. <br>**Falta:** Normalización y validación de prefijo de código de país telefónico (ej. +58). |
 | 20 | **Exportación a PDF y Excel** | ❌ Pendiente | Botones visuales maquetados. <br>**Falta:** Implementar generación con ReportLab / openpyxl / CSV en reportes y listados administrativos con filtros aplicados. |
@@ -41,17 +41,17 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 
 | # | Área de Seguridad | Estado | Nivel de Riesgo | Detalle Técnico |
 |---|---|---|---|---|
-| 1 | **Protección CSRF** | 🔴 **Pendiente** | **Crítico** | Los formularios HTML carecen de tokens CSRF. Es necesario habilitar `Flask-WTF` con `CSRFProtect(app)` y agregar `{{ csrf_token() }}` en cada formulario antes de abrir mutaciones `POST`. |
-| 2 | **Rate Limiting en Autenticación** | 🔴 **Pendiente** | **Crítico** | El endpoint `/login` no tiene limitación de intentos por IP/usuario, exponiendo el sistema a ataques de fuerza bruta. Requiere `Flask-Limiter` (ej. 5 intentos/minuto). |
-| 3 | **Autenticación en Endpoint API** | 🟠 **Pendiente** | **Alto** | La ruta `/api/dashboard/datos` no cuenta con decorador `@login_required` ni validación de rol, permitiendo consulta anónima de métricas. |
-| 4 | **Cabeceras de Seguridad HTTP** | 🟠 **Pendiente** | **Alto** | Faltan cabeceras `X-Frame-Options` (anti-Clickjacking), `Content-Security-Policy`, `Strict-Transport-Security` (HSTS), `Referrer-Policy` y `Permissions-Policy` en `after_request`. |
-| 5 | **Hardening de Cookies de Sesión** | 🟠 **Pendiente** | **Alto** | Configurar en `config.py`: `SESSION_COOKIE_SECURE=True`, `SESSION_COOKIE_HTTPONLY=True`, `SESSION_COOKIE_SAMESITE='Lax'` y `PERMANENT_SESSION_LIFETIME=timedelta(hours=2)`. |
-| 6 | **Validación y Sanitización Server-Side** | 🟠 **Pendiente** | **Alto** | Las entradas de formularios requieren validación rigurosa de tipos, longitudes, rangos numéricos y sanitización XSS (`markupsafe.escape` / regex) en campos de texto libre. |
-| 7 | **Política de Complejidad de Contraseñas** | 🟡 **Parcial** | **Medio** | Actualmente se valida longitud mínima de 6 caracteres. Conviene endurecer a mínimo 8 caracteres con combinaciones de mayúsculas, minúsculas y números. |
-| 8 | **Gestión de Sesión en Logout** | 🟡 **Parcial** | **Medio** | Se usa `session.pop()` individual. Debe usarse `session.clear()` y regeneración de sesión post-autenticación para prevenir fijación de sesión. |
+| 1 | **Protección CSRF** | ✅ **Protegido** | **Bajo** | `Flask-WTF` activo con `CSRFProtect(app)` y tokens `{{ csrf_token() }}` inyectados en todos los formularios y modales POST. |
+| 2 | **Rate Limiting en Autenticación** | ✅ **Protegido** | **Bajo** | `Flask-Limiter` activo limitando intentos en `POST /iniciar_sesion` (5 intentos por minuto) y límites globales anti-DoS. |
+| 3 | **Autenticación en Endpoint API** | ✅ **Protegido** | **Bajo** | Ruta `/api/dashboard/datos` protegida con `@login_required`, `@role_required` y aislamiento estricto de red para supervisores (IDOR prevenido). |
+| 4 | **Cabeceras de Seguridad HTTP** | ✅ **Protegido** | **Bajo** | Inyección global en `after_request`: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy` (CSP), `Referrer-Policy` y `Permissions-Policy`. |
+| 5 | **Hardening de Cookies de Sesión** | ✅ **Protegido** | **Bajo** | `SESSION_COOKIE_HTTPONLY=True`, `SESSION_COOKIE_SAMESITE='Lax'`, `SESSION_COOKIE_SECURE` y `PERMANENT_SESSION_LIFETIME=timedelta(hours=2)`. |
+| 6 | **Validación y Sanitización Server-Side** | ✅ **Protegido** | **Bajo** | Módulo centralizado `utils/validators.py`: validación de tipos, rangos numéricos, coherencia horaria y sanitización XSS (`markupsafe.escape`). |
+| 7 | **Política de Complejidad de Contraseñas** | ✅ **Protegido** | **Bajo** | `validate_password_strength` exige mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número. |
+| 8 | **Gestión de Sesión en Logout & Fixation** | ✅ **Protegido** | **Bajo** | `session.clear()` en logout y regeneración/limpieza previa de sesión en login para neutralizar fijación de sesión. |
 | 9 | **Hasheo de Contraseñas** | ✅ **Protegido** | **Bajo** | Implementado con Werkzeug `generate_password_hash` (`pbkdf2:sha256`), verificación segura y migración automática transparente de claves legacy. |
 | 10 | **Inyección SQL** | ✅ **Protegido** | **Bajo** | Todas las consultas en `db_queries.py` y servicios utilizan consultas parametrizadas `%s` con tuplas. |
-| 11 | **Control de Acceso Basado en Roles (RBAC)** | ✅ **Protegido** | **Bajo** | Decoradores `@login_required` y `@role_required("admin", "supervisor", "lider_cdp")` activos en todas las rutas de vistas. |
+| 11 | **Control de Acceso Basado en Roles (RBAC)** | ✅ **Protegido** | **Bajo** | Decoradores `@login_required`, `@role_required("admin", "supervisor", "lider_cdp")` y validación de pertenencia territorial activa en vistas y API. |
 
 ---
 
@@ -172,28 +172,34 @@ graph TD
 - [x] Accesibilidad y diseño responsivo optimizado (móviles, tablets y desktop).
 - [x] Páginas de error 400, 403 y 404 estilizadas e integradas al sistema visual.
 
-### 🟡 Fase 3 — Seguridad y Hardening (Prioridad Inmediata P0 / P1)
-- [ ] **P0 - Protección CSRF**: Integrar `Flask-WTF` con `CSRFProtect(app)` y tokens `{{ csrf_token() }}` en todos los formularios.
-- [ ] **P0 - Rate Limiting en Login**: Instalar `Flask-Limiter` y limitar intentos a 5 por minuto por IP.
-- [ ] **P1 - Protección de API**: Agregar `@login_required` y verificación de rol al endpoint `/api/dashboard/datos`.
-- [ ] **P1 - Cabeceras de Seguridad**: Configurar CSP, HSTS, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy` en `after_request`.
-- [ ] **P1 - Hardening de Cookies y Sesiones**: Activar `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE='Lax'` y `PERMANENT_SESSION_LIFETIME`.
-- [ ] **P1 - Limpieza de Sesiones**: Reemplazar `session.pop()` por `session.clear()` en `logout` para garantizar invalidación total.
+### ✅ Fase 3 — Seguridad y Hardening (Completada)
+- [x] **P0 - Protección CSRF**: Integrar `Flask-WTF` con `CSRFProtect(app)` y tokens `{{ csrf_token() }}` en todos los formularios.
+- [x] **P0 - Rate Limiting en Login**: Instalar `Flask-Limiter` y limitar intentos a 5 por minuto por IP con protección global anti-DoS.
+- [x] **P1 - Protección de API**: Agregar `@login_required` y verificación de rol al endpoint `/api/dashboard/datos` con aislamiento por red (IDOR prevenido).
+- [x] **P1 - Cabeceras de Seguridad**: Configurar CSP, HSTS, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy` en `after_request`.
+- [x] **P1 - Hardening de Cookies y Sesiones**: Activar `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE='Lax'` y `PERMANENT_SESSION_LIFETIME`.
+- [x] **P1 - Limpieza de Sesiones**: Reemplazar `session.pop()` por `session.clear()` en `logout` y neutralizar fijación de sesión en `login`.
+- [x] **P1 - Módulo de Validaciones Server-Side**: `utils/validators.py` con validación exhaustiva de rangos numéricos, coherencia horaria y sanitización XSS.
 
 ### ⏳ Fase 4 — Mutaciones en CRUDs Administrativos (POST)
-- [ ] **CRUD de Usuarios (POST)**:
-  - Ruta `POST /admin/usuario/crear`: validación de campos, unicidad de `username`, hasheo de contraseña e inserción en BD.
-  - Ruta `POST /admin/usuario/<id>/editar`: actualización de datos y alternancia de estado activo (`is_active`).
-- [ ] **CRUD de Casas de Paz (POST)**:
-  - Ruta `POST /admin/casa_de_paz/crear`: validación de código único, asignación de usuario líder y red correspondiente.
-  - Ruta `POST /admin/casa_de_paz/<id>/editar`: modificación de datos, dirección, anfitrión y vinculaciones.
+- [x] **CRUD de Usuarios (Creación POST)**:
+  - Ruta `POST /admin/usuario/crear`: validación estricta de nombres, username y fortaleza de contraseña (`validate_password_strength`), hasheo Werkzeug, verificación de unicidad e inserción atómica.
+  - Dropdowns condicionales de asignación ministerial: asignación de red para supervisores (`asignar_supervisor_a_red`) o Casa de Paz para líderes (`asignar_usuario_a_cdp`).
+- [ ] **CRUD de Usuarios (Edición y Estado)**:
+  - Ruta `POST /admin/usuario/<id>/editar`: actualización de datos personales, cambio opcional de contraseña y alternancia de estado activo (`is_active`).
+  - Ruta `POST /admin/usuario/<id>/eliminar`: desactivación lógica o eliminación segura.
 - [ ] **CRUD de Redes (POST)**:
-  - Ruta `POST /admin/red/crear`: creación de red y asignación opcional de supervisor.
-  - Ruta `POST /admin/red/<id>/editar`: modificación de nombre, estado y supervisor asignado.
+  - Ruta `POST /admin/red/crear`: formulario conectado con método POST, validación de nombre único, asignación de supervisor disponible (`supervisor_id`) y control de unicidad (`uq_red_supervisor`).
+  - Ruta `POST /admin/red/<id>/editar`: modificación de nombre, reasignación o desvinculación de supervisor y alternancia de estado `is_active`.
+  - Ruta `POST /admin/red/<id>/eliminar`: eliminación o desactivación con validación de Casas de Paz huérfanas.
+- [ ] **CRUD de Casas de Paz (POST)**:
+  - Ruta `POST /admin/casa_de_paz/crear`: pasar listado de redes activas al formulario, validar unicidad del código de casa (ej. `SUR-001`), registrar dirección, anfitrión y crear/vincular usuario de acceso.
+  - Ruta `POST /admin/casa_de_paz/<id>/editar`: modificación de ubicación física, anfitrión, reasignación de red y actualización de credenciales de acceso.
+  - Ruta `POST /admin/casa_de_paz/<id>/eliminar`: control de reportes y líderes asociados antes de baja.
 - [ ] **CRUD de Líderes (POST)**:
-  - Ruta `POST /admin/lider/crear`: vinculación de nuevo líder/sublíder a una Casa de Paz.
-  - Ruta `POST /admin/lider/<id>/editar`: actualización de cargo, teléfono y datos personales.
-- [ ] **Validación Server-Side Centralizada**: Validación de formatos de teléfono, unicidad y sanitización de cadenas.
+  - Ruta `POST /admin/lider/crear`: formulario conectado con método POST, validación de teléfono con formato E.164 (+58), selección de rol (`Lider` o `Sublider`) y vinculación obligatoria a `cdp_id`.
+  - Ruta `POST /admin/lider/<id>/editar`: actualización de datos de contacto, rol y reasignación de Casa de Paz.
+  - Ruta `POST /admin/lider/<id>/eliminar`: confirmación accesible y eliminación en BD.
 
 ### ⏳ Fase 5 — Exportación y Optimización Final
 - [ ] **Generación de Reportes PDF/Excel**:

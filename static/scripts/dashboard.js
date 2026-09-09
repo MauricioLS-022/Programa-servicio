@@ -38,6 +38,10 @@
             const searchData = option.dataset.search || '';
             if (searchData.includes(query)) {
                 if (selectNivel) selectNivel.value = 'cdp';
+                if (selectRed && option.dataset.redId) {
+                    selectRed.value = option.dataset.redId;
+                    filterCdpOptions(option.dataset.redId);
+                }
                 updateFilterVisibility();
                 if (selectCdp) selectCdp.value = option.value;
                 setTimeout(() => submitForm(), 100);
@@ -170,6 +174,35 @@
     // -------------------------------------------------------------------------
     // Sistema de Filtros Jerárquicos en Cascada
     // -------------------------------------------------------------------------
+    function filterCdpOptions(redId) {
+        if (!selectCdp) return;
+        const options = Array.from(selectCdp.querySelectorAll('option'));
+        let firstVisible = null;
+        let isSelectedVisible = false;
+
+        options.forEach(opt => {
+            if (!opt.value) return; // omitir placeholder o vacío
+            const optRedId = opt.dataset.redId;
+            const match = !redId || optRedId === String(redId);
+            if (match) {
+                opt.hidden = false;
+                opt.disabled = false;
+                if (!firstVisible) firstVisible = opt;
+                if (opt.value === selectCdp.value) {
+                    isSelectedVisible = true;
+                }
+            } else {
+                opt.hidden = true;
+                opt.disabled = true;
+            }
+        });
+
+        // Si la opción seleccionada no pertenece a la red elegida, cambiar al primer CDP visible
+        if (!isSelectedVisible && firstVisible) {
+            selectCdp.value = firstVisible.value;
+        }
+    }
+
     function updateFilterVisibility() {
         if (!selectNivel) return;
         
@@ -186,6 +219,9 @@
         if (groupCdp) {
             if (nivel === 'cdp') {
                 groupCdp.classList.remove('hidden');
+                if (selectRed && selectRed.value) {
+                    filterCdpOptions(selectRed.value);
+                }
             } else {
                 groupCdp.classList.add('hidden');
             }
@@ -255,9 +291,17 @@
                 }
                 submitForm();
             } else if (this.value === 'cdp') {
-                // Preseleccionar la primera casa si no hay una elegida
-                if (selectCdp && !selectCdp.value && selectCdp.options.length > 0) {
-                    selectCdp.selectedIndex = 0;
+                if (selectRed && selectRed.value) {
+                    filterCdpOptions(selectRed.value);
+                }
+                // Preseleccionar la primera casa visible si no hay una elegida o está deshabilitada
+                if (selectCdp && (!selectCdp.value || selectCdp.selectedOptions[0]?.disabled)) {
+                    for (const opt of selectCdp.options) {
+                        if (!opt.disabled && opt.value) {
+                            selectCdp.value = opt.value;
+                            break;
+                        }
+                    }
                 }
                 submitForm();
             } else {
@@ -271,6 +315,9 @@
             const nivel = selectNivel ? selectNivel.value : 'general';
             if (nivel === 'red' && this.value) {
                 submitForm();
+            } else if (nivel === 'cdp' && this.value) {
+                filterCdpOptions(this.value);
+                submitForm();
             }
         });
     }
@@ -279,13 +326,21 @@
         selectCdp.addEventListener('change', function() {
             const nivel = selectNivel ? selectNivel.value : 'general';
             if (nivel === 'cdp' && this.value) {
+                // Sincronización bidireccional: al cambiar de CDP, sincronizar la red correspondiente
+                const selectedOpt = this.selectedOptions[0];
+                if (selectedOpt && selectedOpt.dataset.redId && selectRed) {
+                    selectRed.value = selectedOpt.dataset.redId;
+                }
                 submitForm();
             }
         });
     }
 
-    // Forzar actualización de visibilidad al cargar
+    // Forzar actualización de visibilidad y filtros al cargar
     setTimeout(function() {
+        if (selectRed && selectRed.value) {
+            filterCdpOptions(selectRed.value);
+        }
         updateFilterVisibility();
         initDonutCharts();
     }, 50);

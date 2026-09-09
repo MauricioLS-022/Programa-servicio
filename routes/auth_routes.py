@@ -4,11 +4,13 @@ Rutas de autenticación: /iniciar_sesion, /logout
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from database import get_db_connection
 from werkzeug.security import check_password_hash, generate_password_hash
+from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/iniciar_sesion', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     """Página de inicio de sesión."""
     from flask import current_app
@@ -53,7 +55,8 @@ def login():
                         )
                         conn.commit()
 
-                    # Guardar todos los datos en sesión
+                    # Prevenir fijación de sesión limpiando cualquier dato residual
+                    session.clear()
                     session["usuario_id"] = str(r['id'])  # Convertir UUID a string
                     session["usuario"] = r['username']
                     # Normalizar 'cdp' a 'lider_cdp' si viene de BD legacy
@@ -120,10 +123,8 @@ def _check_password(stored_password, provided_password):
 
 @auth_bp.route('/logout')
 def logout():
-    """Cierra la sesión del usuario."""
-    session.pop("usuario_id", None)
-    session.pop("usuario", None)
-    session.pop("rol", None)
+    """Cierra la sesión del usuario invalidándola por completo."""
+    session.clear()
     return redirect(url_for("auth.login"))
 
 

@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (detalleFields.reconciliaciones) detalleFields.reconciliaciones.value = d.reconciliaciones || 0;
         if (detalleFields.confesiones) detalleFields.confesiones.value = d.confesiones || 0;
         if (detalleFields.ofrendasBs) detalleFields.ofrendasBs.value = `Bs. ${parseFloat(d.ofrendasBs || 0).toFixed(2)}`;
-        if (detalleFields.ofrendasUsd) detalleFields.ofrendasUsd.value = `$${parseFloat(d.ofrendasUsd || d.ofrendas || 0).toFixed(2)}`;
+        if (detalleFields.ofrendasUsd) detalleFields.ofrendasUsd.value = `$${parseFloat(d.ofrendasUsd || 0).toFixed(2)}`;
         const tieneCesta = (d.cesta === '1' || d.cesta === 'true' || d.cesta === 'True' || d.cesta === 1 || d.cesta === true || d.cesta === 'Sí' || d.cesta === 'Si');
         if (detalleFields.cesta) detalleFields.cesta.value = tieneCesta ? 'Sí' : 'No';
         if (detalleFields.observaciones) detalleFields.observaciones.value = d.observaciones || 'Sin observaciones adicionales.';
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editInputs.reconciliaciones) editInputs.reconciliaciones.value = d.reconciliaciones || 0;
         if (editInputs.confesiones) editInputs.confesiones.value = d.confesiones || 0;
         if (editInputs.ofrendasBs) editInputs.ofrendasBs.value = parseFloat(d.ofrendasBs || 0).toFixed(2);
-        if (editInputs.ofrendasUsd) editInputs.ofrendasUsd.value = parseFloat(d.ofrendasUsd || d.ofrendas || 0).toFixed(2);
+        if (editInputs.ofrendasUsd) editInputs.ofrendasUsd.value = parseFloat(d.ofrendasUsd || 0).toFixed(2);
         if (editInputs.cesta) {
             const tieneCesta = (d.cesta === '1' || d.cesta === 'true' || d.cesta === 'True' || d.cesta === 1 || d.cesta === true || d.cesta === 'Sí' || d.cesta === 'Si');
             editInputs.cesta.value = tieneCesta ? '1' : '0';

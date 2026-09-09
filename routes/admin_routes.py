@@ -5,7 +5,12 @@ from flask import Blueprint, render_template, request, session, redirect, url_fo
 from utils.auth import login_required, role_required
 from services.dashboard_service import get_dashboard_context, get_estructura_context
 from services.user_service import get_usuarios_context
-from services.leader_service import get_lideres_context, crear_nuevo_usuario
+from services.leader_service import (
+    get_lideres_context,
+    crear_nuevo_usuario,
+    get_opciones_asignacion,
+    get_supervisores_disponibles_servicio,
+)
 from services.report_service import get_reportes_context
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -45,28 +50,51 @@ def usuario():
 @login_required
 @role_required("admin")
 def usuario_crear():
-    # Si el usuario envió el formulario...
     if request.method == 'POST':
-        # Pasamos request.form (un diccionario con los datos) al servicio
         success, message = crear_nuevo_usuario(request.form)
-        
         if success:
             flash(message, "success")
-            # Redirigir a la lista de usuarios (ajusta 'admin_bp.lista_usuarios' al nombre de tu ruta)
             return redirect(url_for('admin.usuario')) 
         else:
             flash(message, "danger")
-            # Si falló, nos quedamos en el formulario
             
-    # Si es GET o si falló el POST, mostramos el formulario
-    return render_template('form_usuario.html', title='Usuarios', breadcrumb='Usuario', link='usuario', is_edit=False)
+    redes_disponibles, cdps_disponibles = get_opciones_asignacion()
+    return render_template(
+        'form_usuario.html',
+        title='Usuarios',
+        breadcrumb='Usuario',
+        link='usuario',
+        is_edit=False,
+        redes_disponibles=redes_disponibles,
+        cdps_disponibles=cdps_disponibles,
+    )
 
 
-@admin_bp.route('/usuario/<id>/editar')
+from services.user_service import get_usuarios_context, obtener_usuario_por_id, actualizar_usuario_admin
+
+
+@admin_bp.route('/usuario/<id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
 def usuario_editar(id):
-    return render_template('form_usuario.html', title='Usuarios', breadcrumb='Usuario', link='usuario', recurso_id=id, is_edit=True)
+    usuario_data = obtener_usuario_por_id(id)
+    if request.method == 'POST':
+        success, message = actualizar_usuario_admin(id, request.form)
+        if success:
+            flash(message, "success")
+            return redirect(url_for('admin.usuario'))
+        else:
+            flash(message, "danger")
+
+    return render_template(
+        'form_usuario.html',
+        title='Usuarios',
+        breadcrumb='Usuario',
+        link='usuario',
+        recurso_id=id,
+        usuario_data=usuario_data,
+        is_edit=True
+    )
 
 
 @admin_bp.route('/reportes')
@@ -141,7 +169,15 @@ def casa_de_paz_editar(id):
 @login_required
 @role_required("admin")
 def red_crear():
-    return render_template('form_redes.html', title='Redes', breadcrumb='Red', link='red', is_edit=False)
+    supervisores_disponibles = get_supervisores_disponibles_servicio()
+    return render_template(
+        'form_redes.html',
+        title='Redes',
+        breadcrumb='Red',
+        link='red',
+        is_edit=False,
+        supervisores_disponibles=supervisores_disponibles,
+    )
 
 
 @admin_bp.route('/red/<id>/editar')

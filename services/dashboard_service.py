@@ -66,7 +66,8 @@ def sanitize_metricas(metricas):
         'reconciliaciones': 0,
         'cestas_amor': 0,
         'total_visitas': 0,
-        'ofrendas': 0,
+        'ofrendas_usd': 0.0,
+        'ofrendas_bs': 0.0,
         'casas_con_reporte': 0,
         'casas_pendientes': 0,
         'lideres_red': [],
@@ -98,9 +99,11 @@ def sanitize_metricas(metricas):
 
 def get_supervisor_red_id(usuario_id):
     """Obtiene el ID de la red asignada al supervisor."""
+    if not usuario_id:
+        return None
     conn = get_db_connection()
     if not conn:
-        return 1  # Default para modo demo
+        return 1  # Modo demo / offline cuando no hay base de datos conectada
     
     try:
         cur = conn.cursor()
@@ -111,10 +114,10 @@ def get_supervisor_red_id(usuario_id):
         red_result = cur.fetchone()
         if red_result:
             return red_result['id']
-        return 1
+        return None
     except Exception as e:
         print(f"[DB] Error obteniendo red del supervisor: {e}")
-        return 1
+        return None
     finally:
         conn.close()
 
@@ -351,38 +354,69 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     
     # Obtener red del supervisor si aplica
     supervisor_red_id = None
+    sin_red_asignada = False
     if is_supervisor:
         supervisor_red_id = get_supervisor_red_id(usuario_id)
-        # Para supervisores, solo permitir niveles 'red' y 'cdp'
-        if nivel not in ('red', 'cdp'):
-            nivel = 'red'
-        red_id = supervisor_red_id
+        if not supervisor_red_id:
+            sin_red_asignada = True
+            red_id = None
+            cdp_id = None
+        else:
+            # Para supervisores con red, solo permitir niveles 'red' y 'cdp'
+            if nivel not in ('red', 'cdp'):
+                nivel = 'red'
+            red_id = supervisor_red_id
 
     # Obtener selectores
     redes, casas = get_selectores()
 
     # Filtrar por red del supervisor si aplica
     if is_supervisor:
-        redes = [r for r in redes if r['id'] == supervisor_red_id] if supervisor_red_id else redes[:1]
-        casas = [c for c in casas if c['red_id'] == supervisor_red_id] if supervisor_red_id else casas
+        if sin_red_asignada:
+            redes = []
+            casas = []
+        else:
+            redes = [r for r in redes if r['id'] == supervisor_red_id]
+            casas = [c for c in casas if c['red_id'] == supervisor_red_id]
 
-        # Seguridad: asegurar que el cdp_id pertenezca a la red del supervisor
+            # Seguridad: asegurar que el cdp_id pertenezca a la red del supervisor
+            if nivel == 'cdp':
+                casas_ids = [c['id'] for c in casas]
+                if cdp_id and cdp_id not in casas_ids and casas_ids:
+                    cdp_id = casas_ids[0]
+                elif not cdp_id and casas_ids:
+                    cdp_id = casas_ids[0]
+    else:
+        # Administrador: sincronización bidireccional y cascada server-side
         if nivel == 'cdp':
-            casas_ids = [c['id'] for c in casas]
-            if cdp_id and cdp_id not in casas_ids and casas_ids:
-                cdp_id = casas_ids[0]
-            elif not cdp_id and casas_ids:
-                cdp_id = casas_ids[0]
+            # Si se dio un cdp_id y no un red_id, deducir la red del CDP
+            if cdp_id and not red_id:
+                cdp_match = next((c for c in casas if c['id'] == cdp_id), None)
+                if cdp_match and cdp_match.get('red_id'):
+                    red_id = cdp_match['red_id']
+            # Si se especificó red_id, asegurar que el cdp_id pertenezca a esa red
+            elif red_id:
+                casas_de_red = [c for c in casas if c.get('red_id') == red_id]
+                if casas_de_red:
+                    if not cdp_id or cdp_id not in [c['id'] for c in casas_de_red]:
+                        cdp_id = casas_de_red[0]['id']
+                else:
+                    cdp_id = None
 
     # Si se seleccionó nivel red o cdp sin ID específico, usar el primero disponible
-    if nivel == 'red' and not red_id and redes:
-        red_id = redes[0]['id']
-    elif nivel == 'cdp' and not cdp_id and casas:
-        cdp_id = casas[0]['id']
+    if not sin_red_asignada:
+        if nivel == 'red' and not red_id and redes:
+            red_id = redes[0]['id']
+        elif nivel == 'cdp' and not cdp_id and casas:
+            cdp_id = casas[0]['id']
 
     # Obtener métricas
-    metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id)
-    mock_used = metricas.pop('mock_used', False)
+    if sin_red_asignada:
+        metricas = sanitize_metricas({})
+        mock_used = False
+    else:
+        metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id)
+        mock_used = metricas.pop('mock_used', False)
 
     return {
         'usuario': usuario,
@@ -394,4 +428,5 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
         'metricas': metricas,
         'db_connected': db_connected,
         'mock_used': mock_used,
+        'sin_red_asignada': sin_red_asignada,
     }

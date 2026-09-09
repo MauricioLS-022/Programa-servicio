@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,8 +24,14 @@ class Config:
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
     MOCK_MODE = os.getenv('MOCK_MODE', 'False').lower() in ('true', '1', 't', 'yes')
     
-    # Flask
+    # Flask & Security Hardening
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 7200
     
     @property
     def SQLALCHEMY_DATABASE_URI(self):
@@ -34,14 +41,24 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    SESSION_COOKIE_SECURE = False
 
 
 class ProductionConfig(Config):
     DEBUG = False
+    SESSION_COOKIE_SECURE = True
+
+
+class TestingConfig(Config):
+    TESTING = True
+    DEBUG = False
+    WTF_CSRF_ENABLED = False
+    SESSION_COOKIE_SECURE = False
 
 
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'testing': TestingConfig,
     'default': DevelopmentConfig
 }
