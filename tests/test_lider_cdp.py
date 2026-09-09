@@ -34,7 +34,8 @@ class TestLiderCDPService(unittest.TestCase):
             metricas = data['metricas']
             self.assertIn('total_reportes', metricas)
             self.assertIn('asistencia_promedio', metricas)
-            self.assertIn('ofrendas_totales', metricas)
+            self.assertIn('ofrendas_usd_totales', metricas)
+            self.assertIn('ofrendas_bs_totales', metricas)
             self.assertIn('reporte_esta_semana', metricas)
             self.assertIn('dias_cierre_texto', metricas)
 
@@ -51,7 +52,8 @@ class TestLiderCDPService(unittest.TestCase):
             'nro_ninos': '2',
             'nro_visitas': '1',
             'nro_comprometidos': '0',
-            'ofrendas': '150.00'
+            'ofrendas_usd': '15.00',
+            'ofrendas_bs': '150.00'
         }
         with app.app_context():
             exito, mensaje = actualizar_reporte('rep-1', 1, form_data)
@@ -86,7 +88,8 @@ class TestLiderCDPService(unittest.TestCase):
             'nro_ninos': '4',
             'nro_visitas': '2',
             'nro_comprometidos': '1',
-            'ofrendas': '250.00'
+            'ofrendas_usd': '25.00',
+            'ofrendas_bs': '250.00'
         }
         with app.app_context():
             exito, mensaje = actualizar_reporte('rep-1', 1, form_data)
@@ -176,7 +179,8 @@ class TestLiderCDPRoutes(unittest.TestCase):
             'metricas': {
                 'total_reportes': 1,
                 'asistencia_promedio': 25,
-                'ofrendas_totales': 500.0,
+                'ofrendas_usd_totales': 50.0,
+                'ofrendas_bs_totales': 500.0,
                 'reporte_esta_semana': True,
                 'dias_cierre_texto': 'Próximo cierre: 3 días'
             },
@@ -196,7 +200,8 @@ class TestLiderCDPRoutes(unittest.TestCase):
                 'nro_comprometidos': 2,
                 'reconciliaciones': 1,
                 'confesiones': 1,
-                'ofrendas': 500.0,
+                'ofrendas_usd': 50.0,
+                'ofrendas_bs': 500.0,
                 'cesta_amor': 0,
                 'observaciones': 'Gran reunión'
             }],
@@ -242,7 +247,8 @@ class TestLiderCDPRoutes(unittest.TestCase):
             'nro_comprometidos': '1',
             'reconciliaciones': '0',
             'confesiones': '1',
-            'ofrendas': '300.00',
+            'ofrendas_usd': '30.00',
+            'ofrendas_bs': '300.00',
             'cesta_amor': '0',
             'observaciones': 'Todo excelente'
         }
