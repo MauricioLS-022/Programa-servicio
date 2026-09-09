@@ -41,12 +41,14 @@ def generar_reporte():
         return redirect(url_for('lider_cdp.dashboard'))
 
     if request.method == 'POST':
-        exito = process_reporte(cdp_id=cdp['id'], form_data=request.form)
+        res = process_reporte(cdp_id=cdp['id'], form_data=request.form)
+        exito = res[0] if isinstance(res, (tuple, list)) else bool(res)
+        mensaje = res[1] if isinstance(res, (tuple, list)) and len(res) > 1 else ('Reporte guardado exitosamente.' if exito else 'Error al guardar el reporte. Verifica los datos introducidos.')
         if exito:
-            flash('Reporte guardado exitosamente.', 'success')
+            flash(mensaje, 'success')
             return redirect(url_for('lider_cdp.dashboard'))
         else:
-            flash('Error al guardar el reporte. Verifica los datos introducidos.', 'danger')
+            flash(mensaje, 'danger')
 
     return render_template('generar_reporte.html', cdp=cdp, lideres=lideres)
 

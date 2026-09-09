@@ -3,7 +3,15 @@ import db_queries
 from flask import current_app
 
 from database import get_db_connection
-from db_queries import get_lideres, insertar_usuario
+from db_queries import (
+    get_lideres,
+    insertar_usuario,
+    asignar_supervisor_a_red,
+    asignar_usuario_a_cdp,
+    get_redes_disponibles,
+    get_cdps_disponibles,
+    get_supervisores_disponibles,
+)
 from mock_data import get_mock_lideres, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
 from werkzeug.security import generate_password_hash
@@ -65,18 +73,43 @@ def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_pag
 
 def crear_nuevo_usuario(form_data):
     """
-    Lógica de negocio para crear un usuario.
-    Recibe los datos del formulario web, valida, encripta y guarda.
+    Lógica de negocio para crear un usuario con validaciones de seguridad defensivas.
     """
-    username = form_data.get('username')
-    password = form_data.get('password')
-    nombre = form_data.get('nombre')
-    apellido = form_data.get('apellido')
-    tipo_usuario = form_data.get('tipo_usuario')
+    from utils.validators import (
+        validate_username,
+        validate_password_strength,
+        validate_person_name
+    )
 
-    # Validaciones básicas (puedes agregar más)
-    if not all([username, password, nombre, apellido, tipo_usuario]):
-        return False, "Todos los campos son obligatorios."
+    username_raw = form_data.get('username', '')
+    password_raw = form_data.get('password', '')
+    nombre_raw = form_data.get('nombre', '')
+    apellido_raw = form_data.get('apellido', '')
+    tipo_usuario = form_data.get('tipo_usuario', '').strip()
+
+    # Validar Nombre y Apellido
+    ok_nom, res_nom = validate_person_name(nombre_raw, "Nombre")
+    if not ok_nom:
+        return False, res_nom
+
+    ok_ape, res_ape = validate_person_name(apellido_raw, "Apellido")
+    if not ok_ape:
+        return False, res_ape
+
+    # Validar Username
+    ok_user, res_user = validate_username(username_raw)
+    if not ok_user:
+        return False, res_user
+
+    # Validar Complejidad de Contraseña
+    ok_pass, res_pass = validate_password_strength(password_raw)
+    if not ok_pass:
+        return False, res_pass
+
+    # Validar Rol permitido
+    roles_permitidos = ('admin', 'supervisor', 'lider_cdp')
+    if tipo_usuario not in roles_permitidos:
+        return False, f"Rol no válido. Debe ser uno de: {', '.join(roles_permitidos)}."
 
     conn = get_db_connection()
     if not conn:
@@ -84,18 +117,35 @@ def crear_nuevo_usuario(form_data):
 
     try:
         with conn.cursor() as cursor:
-            # 1. (Opcional pero recomendado) Verificar si el username ya existe
-            cursor.execute("SELECT id FROM usuario WHERE username = %s", (username,))
+            # 1. Verificar si el username ya existe
+            cursor.execute("SELECT id FROM usuario WHERE username = %s", (res_user,))
             if cursor.fetchone():
-                return False, f"El nombre de usuario '{username}' ya está en uso."
+                return False, f"El nombre de usuario '{res_user}' ya está en uso."
 
             # 2. Encriptar la contraseña (NUNCA guardar en texto plano)
-            password_hash = generate_password_hash(password)
+            password_hash = generate_password_hash(password_raw)
 
             # 3. Guardar en BD usando tu db_queries
             nuevo_id = insertar_usuario(
-                cursor, username, password_hash, nombre, apellido, tipo_usuario
+                cursor, res_user, password_hash, res_nom, res_ape, tipo_usuario
             )
+
+            # 4. Asignación opcional según el rol seleccionado
+            red_id_raw = form_data.get('red_id', '').strip()
+            cdp_id_raw = form_data.get('cdp_id', '').strip()
+
+            if tipo_usuario == 'supervisor' and red_id_raw:
+                try:
+                    red_id = int(red_id_raw)
+                    asignar_supervisor_a_red(cursor, nuevo_id, red_id)
+                except (ValueError, TypeError):
+                    pass
+            elif tipo_usuario == 'lider_cdp' and cdp_id_raw:
+                try:
+                    cdp_id = int(cdp_id_raw)
+                    asignar_usuario_a_cdp(cursor, nuevo_id, cdp_id)
+                except (ValueError, TypeError):
+                    pass
             
         # Confirmar la transacción
         conn.commit()
@@ -105,5 +155,41 @@ def crear_nuevo_usuario(form_data):
         conn.rollback()
         print(f"[Service] Error al crear usuario: {e}")
         return False, "Ocurrió un error interno al crear el usuario."
+    finally:
+        conn.close()
+
+
+def get_opciones_asignacion():
+    """
+    Obtiene redes y CDPs disponibles para los selectores de asignación en form_usuario.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return [], []
+    try:
+        with conn.cursor() as cursor:
+            redes = get_redes_disponibles(cursor)
+            cdps = get_cdps_disponibles(cursor)
+        return redes, cdps
+    except Exception as e:
+        current_app.logger.error("Error obteniendo opciones de asignación: %s", e)
+        return [], []
+    finally:
+        conn.close()
+
+
+def get_supervisores_disponibles_servicio():
+    """
+    Obtiene la lista de usuarios con rol supervisor que no tienen red asignada.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cursor:
+            return get_supervisores_disponibles(cursor)
+    except Exception as e:
+        current_app.logger.error("Error obteniendo supervisores disponibles: %s", e)
+        return []
     finally:
         conn.close()
