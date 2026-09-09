@@ -67,6 +67,7 @@
 
         <!-- Formulario de Acceso -->
         <form class="login-form" method="POST" id="loginForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group">
                 <label for="usuario" class="form-label">Usuario</label>
                 <div class="input-wrapper">

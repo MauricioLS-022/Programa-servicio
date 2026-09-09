@@ -1,17 +1,22 @@
 """
 Rutas de API: /api/dashboard/datos
 """
-from flask import Blueprint, request, jsonify
-from services.dashboard_service import get_metricas, mock_mode_enabled
+from flask import Blueprint, request, jsonify, session
+from services.dashboard_service import get_metricas, mock_mode_enabled, get_supervisor_red_id
 from database import get_db_connection
 from utils.cache import get_cached_value, set_cached_value
+from utils.auth import login_required, role_required
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 
 @api_bp.route('/dashboard/datos')
+@login_required
+@role_required("admin", "supervisor")
 def api_dashboard_datos():
-    """Endpoint AJAX que retorna métricas en JSON para filtros dinámicos."""
+    """Endpoint AJAX protegido que retorna métricas en JSON para filtros dinámicos."""
+    rol = session.get('rol')
+    usuario_id = session.get('usuario_id')
     nivel = request.args.get('nivel', 'general')
     red_id_str = request.args.get('red_id', '')
     cdp_id_str = request.args.get('cdp_id', '')
@@ -26,7 +31,15 @@ def api_dashboard_datos():
     except (ValueError, TypeError):
         cdp_id = None
 
-    db_connected = get_db_connection() is not None
+    # Aislamiento defensivo de rol supervisor:
+    # No puede consultar nivel 'general' ni redes ajenas
+    if rol == 'supervisor':
+        sup_red = get_supervisor_red_id(usuario_id)
+        if not sup_red:
+            return jsonify({})
+        nivel = 'red'
+        red_id = sup_red
+
     cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{mock_mode_enabled()}'
 
     # Verificar caché primero

@@ -280,7 +280,6 @@ def get_mock_reportes():
             'asistencia': 18,
             'reconciliaciones': 2,
             'confesiones': 1,
-            'ofrendas': 25.00,
             'ofrendas_usd': 25.00,
             'ofrendas_bs': 450.00,
             'cesta_amor': 1,
@@ -308,7 +307,6 @@ def get_mock_reportes():
             'asistencia': 12,
             'reconciliaciones': 1,
             'confesiones': 0,
-            'ofrendas': 20.00,
             'ofrendas_usd': 20.00,
             'ofrendas_bs': 360.00,
             'cesta_amor': 1,
@@ -336,7 +334,6 @@ def get_mock_reportes():
             'asistencia': 14,
             'reconciliaciones': 1,
             'confesiones': 1,
-            'ofrendas': 22.00,
             'ofrendas_usd': 22.00,
             'ofrendas_bs': 390.00,
             'cesta_amor': 1,
@@ -364,7 +361,6 @@ def get_mock_reportes():
             'asistencia': 22,
             'reconciliaciones': 3,
             'confesiones': 2,
-            'ofrendas': 35.00,
             'ofrendas_usd': 35.00,
             'ofrendas_bs': 630.00,
             'cesta_amor': 1,
@@ -392,7 +388,6 @@ def get_mock_reportes():
             'asistencia': 16,
             'reconciliaciones': 1,
             'confesiones': 0,
-            'ofrendas': 20.00,
             'ofrendas_usd': 20.00,
             'ofrendas_bs': 360.00,
             'cesta_amor': 1,
@@ -412,7 +407,7 @@ def get_mock_generales():
     casas = get_casas_demo()
     
     total_asistencia = sum(c['asistencia'] for c in casas)
-    total_ofrendas = sum(r['ofrendas_usd'] for r in reportes)
+    total_ofrendas_usd = sum(r['ofrendas_usd'] for r in reportes)
     total_ofrendas_bs = sum(r['ofrendas_bs'] for r in reportes)
     total_visitas = sum(r['nro_visitas'] for r in reportes)
     total_reconciliaciones = sum(r['reconciliaciones'] for r in reportes)
@@ -421,8 +416,7 @@ def get_mock_generales():
     return {
         'total_asistencia': total_asistencia,
         'cumplimiento': 85,
-        'ofrendas': total_ofrendas,
-        'ofrendas_usd': total_ofrendas,
+        'ofrendas_usd': total_ofrendas_usd,
         'ofrendas_bs': total_ofrendas_bs,
         'conversiones': total_confesiones,
         'reconciliaciones': total_reconciliaciones,
@@ -467,7 +461,7 @@ def get_mock_red(red_id):
 
     asistencia_total = sum(c['asistencia'] for c in casas_red)
     promedio_casa = round(asistencia_total / len(casas_red)) if casas_red else 0
-    ofrendas_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red)
+    ofrendas_usd_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red)
     ofrendas_bs_total = sum(rep.get('ofrendas_bs', 0.0) for rep in reportes_red)
     ninos_total = sum(rep.get('nro_niños', 0) for rep in reportes_red)
     conversiones_total = sum(rep.get('confesiones', 0) for rep in reportes_red)
@@ -504,8 +498,7 @@ def get_mock_red(red_id):
         'promedio_casa': promedio_casa,
         'ninos': ninos_total,
         'conversiones': conversiones_total,
-        'ofrendas': ofrendas_total,
-        'ofrendas_usd': ofrendas_total,
+        'ofrendas_usd': ofrendas_usd_total,
         'ofrendas_bs': ofrendas_bs_total,
         'distribucion': {
             'regulares': sum(rep.get('nro_regulares', 0) for rep in reportes_red) or 20,
@@ -552,7 +545,6 @@ def get_mock_cdp(cdp_id):
             'asistencia': r['asistencia'],
             'ninos': r['nro_niños'],
             'visitas': r['nro_visitas'],
-            'ofrenda': r['ofrendas'],
             'ofrendas_usd': r['ofrendas_usd'],
             'ofrendas_bs': r['ofrendas_bs'],
             'observaciones': r['observaciones'],
@@ -565,7 +557,7 @@ def get_mock_cdp(cdp_id):
 
     if not historial:
         historial = [
-            {'fecha': '2026-08-24', 'asistencia': cdp['asistencia'], 'ninos': 4, 'visitas': 2, 'ofrenda': 20.0, 'ofrendas_usd': 20.0, 'ofrendas_bs': 360.0, 'observaciones': 'Reunión de edificación.'}
+            {'fecha': '2026-08-24', 'asistencia': cdp['asistencia'], 'ninos': 4, 'visitas': 2, 'ofrendas_usd': 20.0, 'ofrendas_bs': 360.0, 'observaciones': 'Reunión de edificación.'}
         ]
         mini_hist = [
             {'fecha': '24 Ago', 'asistencia': cdp['asistencia'], 'altura': 90}
@@ -650,6 +642,7 @@ def get_mock_cdp_detalle(cdp_id):
     return {
         'id': cid,
         'codigo': cdp['codigo'],
+        'red_id': cdp.get('red_id', 1),
         'nombre': cdp['nombre'],
         'red_nombre': cdp['red_nombre'],
         'supervisor_nombre': cdp['supervisor'],
@@ -682,7 +675,6 @@ def get_empty_generales():
     return {
         'total_asistencia': 0,
         'cumplimiento': 0,
-        'ofrendas': 0,
         'ofrendas_usd': 0,
         'ofrendas_bs': 0,
         'conversiones': 0,
@@ -715,7 +707,6 @@ def get_empty_red(red_id):
         'promedio_casa': 0,
         'ninos': 0,
         'conversiones': 0,
-        'ofrendas': 0,
         'ofrendas_usd': 0,
         'ofrendas_bs': 0,
         'cumplimiento': 0,

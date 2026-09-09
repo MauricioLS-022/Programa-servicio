@@ -11,6 +11,10 @@
 <div class="user-bento-grid">
     <div class="user-main-form">
         <form class="crud-form" method="POST">
+<<<<<<< HEAD
+=======
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+>>>>>>> ad66ecbc772e359d0c5ba3c7928099fda1159631
             <span class="material-symbols-outlined form-watermark" style="font-variation-settings: 'FILL' 1;">pigeon</span>
 
             <div class="form-grid">
@@ -19,14 +23,14 @@
                     <label for="nombre">Nombre</label>
                     <div class="input-wrapper icon-left">
                         <span class="material-symbols-outlined input-icon">id_card</span>
-                        <input type="text" id="nombre" name="nombre" value="Daniel" placeholder="Ingrese su nombre">
+                        <input type="text" id="nombre" name="nombre" value="{{ usuario_data.nombre if usuario_data else '' }}" placeholder="Ingrese su nombre" required>
                     </div>
                 </div>
                 <div class="form-group full-width">
                     <label for="apellido">Apellido</label>
                     <div class="input-wrapper icon-left">
                         <span class="material-symbols-outlined input-icon">id_card_2</span>
-                        <input type="text" id="apellido" name="apellido" value="Rivera" placeholder="Ingrese su apellido">
+                        <input type="text" id="apellido" name="apellido" value="{{ usuario_data.apellido if usuario_data else '' }}" placeholder="Ingrese su apellido" required>
                     </div>
                 </div>
 
@@ -34,7 +38,7 @@
                     <label for="username">Username</label>
                     <div class="input-wrapper icon-left">
                         <span class="material-symbols-outlined input-icon">alternate_email</span>
-                        <input type="text" id="username" name="username" value="daniel.rivera" placeholder="usuario">
+                        <input type="text" id="username" name="username" value="{{ usuario_data.username if usuario_data else '' }}" placeholder="usuario" required>
                     </div>
                 </div>
 
@@ -42,23 +46,63 @@
                     <label for="rol">Rol</label>
                     <div class="input-wrapper icon-left icon-right">
                         <span class="material-symbols-outlined input-icon">badge</span>
+<<<<<<< HEAD
                         <select id="rol" name="tipo_usuario">
                             <option value="admin">Administrador</option>
                             <option value="supervisor" selected>Supervisor</option>
                             <option value="lider_cdp">Líder de Casa de Paz</option>
+=======
+                        <select id="rol" name="tipo_usuario" required>
+                            <option value="admin" {% if usuario_data and usuario_data.tipo_usuario == 'admin' %}selected{% endif %}>Administrador</option>
+                            <option value="supervisor" {% if usuario_data and usuario_data.tipo_usuario == 'supervisor' %}selected{% endif %}>Supervisor</option>
+                            <option value="lider_cdp" {% if not usuario_data or usuario_data.tipo_usuario in ('lider_cdp', 'cdp') %}selected{% endif %}>Líder de Casa de Paz</option>
+>>>>>>> ad66ecbc772e359d0c5ba3c7928099fda1159631
                         </select>
                         <span class="material-symbols-outlined input-icon">expand_more</span>
                     </div>
                 </div>
 
+                {% if not is_edit %}
+                <!-- Asignación Ministerial Opcional -->
+                <div id="grupo-asignacion-red" class="form-group full-width" style="display: none;">
+                    <label for="red_id">Asignar Red Ministerial (Opcional)</label>
+                    <div class="input-wrapper icon-left icon-right">
+                        <span class="material-symbols-outlined input-icon">lan</span>
+                        <select id="red_id" name="red_id">
+                            <option value="">-- Sin asignar por ahora (podrás asignarla después) --</option>
+                            {% for red in redes_disponibles %}
+                            <option value="{{ red.id }}">{{ red.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined input-icon">expand_more</span>
+                    </div>
+                    <span class="input-hint">Redes que actualmente no tienen supervisor asignado.{% if not redes_disponibles %} (No hay redes disponibles sin supervisor){% endif %}</span>
+                </div>
+
+                <div id="grupo-asignacion-cdp" class="form-group full-width" style="display: none;">
+                    <label for="cdp_id">Asignar Casa de Paz (Opcional)</label>
+                    <div class="input-wrapper icon-left icon-right">
+                        <span class="material-symbols-outlined input-icon">home</span>
+                        <select id="cdp_id" name="cdp_id">
+                            <option value="">-- Sin asignar por ahora (podrás asignarla después) --</option>
+                            {% for cdp in cdps_disponibles %}
+                            <option value="{{ cdp.id }}">{{ cdp.codigo }}{% if cdp.direccion %} · {{ cdp.direccion }}{% endif %}{% if cdp.red_nombre %} ({{ cdp.red_nombre }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined input-icon">expand_more</span>
+                    </div>
+                    <span class="input-hint">Casas de Paz sin usuario asignado.{% if not cdps_disponibles %} (No hay Casas de Paz disponibles sin usuario){% endif %}</span>
+                </div>
+                {% endif %}
+
                 <div class="form-group full-width">
                     <label for="password">Password</label>
                     <div class="input-wrapper both-icons">
                         <span class="material-symbols-outlined input-icon">lock</span>
-                        <input type="password" id="password" name="password" value="••••••••••••" placeholder="Contraseña">
+                        <input type="password" id="password" name="password" value="" placeholder="Contraseña" {% if not is_edit %}required{% endif %}>
                         <span class="material-symbols-outlined input-icon clickable">visibility</span>
                     </div>
-                    <span class="input-hint">Mínimo 8 caracteres, incluir mayúsculas y símbolos.</span>
+                    <span class="input-hint">Mínimo 8 caracteres, incluir mayúsculas y números.{% if is_edit %} Deja en blanco para conservar la contraseña actual.{% endif %}</span>
                 </div>
 
             </div>
@@ -79,4 +123,38 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block custom_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const rolSelect = document.getElementById('rol');
+    const grupoRed = document.getElementById('grupo-asignacion-red');
+    const grupoCdp = document.getElementById('grupo-asignacion-cdp');
+
+    function actualizarVisibilidadAsignacion() {
+        if (!rolSelect) return;
+        const rol = rolSelect.value;
+        if (grupoRed) {
+            grupoRed.style.display = (rol === 'supervisor') ? 'block' : 'none';
+            if (rol !== 'supervisor') {
+                const sel = grupoRed.querySelector('select');
+                if (sel) sel.value = '';
+            }
+        }
+        if (grupoCdp) {
+            grupoCdp.style.display = (rol === 'lider_cdp') ? 'block' : 'none';
+            if (rol !== 'lider_cdp') {
+                const sel = grupoCdp.querySelector('select');
+                if (sel) sel.value = '';
+            }
+        }
+    }
+
+    if (rolSelect) {
+        rolSelect.addEventListener('change', actualizarVisibilidadAsignacion);
+        actualizarVisibilidadAsignacion();
+    }
+});
+</script>
 {% endblock %}

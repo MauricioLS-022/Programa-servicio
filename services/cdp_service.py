@@ -8,6 +8,15 @@ import db_queries
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
+<<<<<<< HEAD
+=======
+class ProcessReporteResult(tuple):
+    """Tupla (success, message) que evalúa a booleano según success."""
+    def __bool__(self):
+        return bool(self[0])
+
+
+>>>>>>> ad66ecbc772e359d0c5ba3c7928099fda1159631
 def _parse_cesta_amor(val):
     if isinstance(val, bool):
         return 1 if val else 0
@@ -19,37 +28,21 @@ def _parse_cesta_amor(val):
 
 def process_reporte(cdp_id, form_data):
     """
-    Valida y procesa el guardado de un reporte de Casa de Paz.
+    Valida defensivamente y procesa el guardado de un reporte de Casa de Paz.
     """
-    # 1. Preparación y conversión de datos (incluye los campos de reportes)
-    ofrendas_usd = float(form_data.get('ofrendas_usd', form_data.get('ofrendas', 0.0)) or 0.0)
-    ofrendas_bs = float(form_data.get('ofrendas_bs', 0.0) or 0.0)
-    datos_reporte = {
-        'cdp_id': cdp_id,
-        'lider_id': form_data.get('lider_id') or None,
-        'fecha': form_data.get('fecha'),
-        'hr_inicio': form_data.get('hr_inicio'),
-        'hr_fin': form_data.get('hr_fin'),
-        'tema': form_data.get('tema', '').strip(),
-        'nro_ninos': int(form_data.get('nro_ninos', 0) or 0),
-        'nro_regulares': int(form_data.get('nro_regulares', 0) or 0),
-        'nro_visitas': int(form_data.get('nro_visitas', 0) or 0),
-        'nro_comprometidos': int(form_data.get('nro_comprometidos', 0) or 0),
-        'reconciliaciones': int(form_data.get('reconciliaciones', 0) or 0),
-        'confesiones': int(form_data.get('confesiones', 0) or 0),
-        'ofrendas_usd': ofrendas_usd,
-        'ofrendas_bs': ofrendas_bs,
-        'cesta_amor': _parse_cesta_amor(form_data.get('cesta_amor', 0)),
-        'observaciones': form_data.get('observaciones', '').strip()
-    }
-    # 2. Control de conexión a base de datos
+    from utils.validators import validate_report_form
+    valido, error_msg, datos_reporte = validate_report_form(form_data, cdp_id)
+    if not valido:
+        return ProcessReporteResult((False, error_msg))
+
+    # Control de conexión a base de datos
     conn = get_db_connection()
     if not conn:
         from services.dashboard_service import mock_mode_enabled
         if mock_mode_enabled():
-            return True
+            return ProcessReporteResult((True, "Reporte guardado exitosamente."))
         print("[ERROR] No se pudo establecer conexión a la base de datos.")
-        return False
+        return ProcessReporteResult((False, "No se pudo conectar a la base de datos."))
 
     try:
         with conn.cursor() as cursor:
@@ -62,11 +55,11 @@ def process_reporte(cdp_id, form_data):
         except Exception as cache_err:
             print(f"[WARN] No se pudo invalidar la caché: {cache_err}")
 
-        return True
+        return ProcessReporteResult((True, "Reporte guardado exitosamente."))
     except Exception as e:
         conn.rollback()  # Revertir en caso de error
         print(f"[ERROR] Error al guardar reporte: {e}")
-        return False
+        return ProcessReporteResult((False, "Error al guardar el reporte en la base de datos."))
     finally:
         conn.close()
 
@@ -326,7 +319,6 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
                 'metricas': {
                     'total_reportes': total_reps,
                     'asistencia_promedio': mock_cdp['promedio_historico'],
-                    'ofrendas_totales': sum(r['ofrendas_usd'] for r in reps_cdp),
                     'ofrendas_usd_totales': sum(r['ofrendas_usd'] for r in reps_cdp),
                     'ofrendas_bs_totales': sum(r['ofrendas_bs'] for r in reps_cdp),
                     'visitas_totales': sum(r['nro_visitas'] for r in reps_cdp),
@@ -348,7 +340,6 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
             'metricas': {
                 'total_reportes': 0,
                 'asistencia_promedio': 0,
-                'ofrendas_totales': 0.0,
                 'ofrendas_usd_totales': 0.0,
                 'ofrendas_bs_totales': 0.0,
                 'visitas_totales': 0,
@@ -375,7 +366,8 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
                     'metricas': {
                         'total_reportes': 0,
                         'asistencia_promedio': 0,
-                        'ofrendas_totales': 0.0,
+                        'ofrendas_usd_totales': 0.0,
+                        'ofrendas_bs_totales': 0.0,
                         'visitas_totales': 0,
                         'conversiones_totales': 0,
                         'reconciliaciones_totales': 0,
@@ -422,7 +414,8 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
             'metricas': {
                 'total_reportes': 0,
                 'asistencia_promedio': 0,
-                'ofrendas_totales': 0.0,
+                'ofrendas_usd_totales': 0.0,
+                'ofrendas_bs_totales': 0.0,
                 'visitas_totales': 0,
                 'conversiones_totales': 0,
                 'reconciliaciones_totales': 0,
@@ -443,30 +436,17 @@ def actualizar_reporte(reporte_id, cdp_id, form_data):
     """
     Valida y actualiza un reporte existente perteneciente a la CDP.
     """
-    ofrendas_usd = float(form_data.get('ofrendas_usd', form_data.get('ofrendas', 0.0)) or 0.0)
-    ofrendas_bs = float(form_data.get('ofrendas_bs', 0.0) or 0.0)
-    datos_reporte = {
-        'lider_id': form_data.get('lider_id') or None,
-        'fecha': form_data.get('fecha'),
-        'hr_inicio': form_data.get('hr_inicio'),
-        'hr_fin': form_data.get('hr_fin'),
-        'tema': form_data.get('tema', '').strip(),
-        'nro_ninos': int(form_data.get('nro_ninos', 0) or 0),
-        'nro_regulares': int(form_data.get('nro_regulares', 0) or 0),
-        'nro_visitas': int(form_data.get('nro_visitas', 0) or 0),
-        'nro_comprometidos': int(form_data.get('nro_comprometidos', 0) or 0),
-        'reconciliaciones': int(form_data.get('reconciliaciones', 0) or 0),
-        'confesiones': int(form_data.get('confesiones', 0) or 0),
-        'ofrendas': ofrendas_usd,
-        'ofrendas_usd': ofrendas_usd,
-        'ofrendas_bs': ofrendas_bs,
-        'cesta_amor': _parse_cesta_amor(form_data.get('cesta_amor', 0)),
-        'observaciones': form_data.get('observaciones', '').strip()
-    }
+    if not reporte_id:
+        return False, "Identificador de reporte no válido."
 
     conn = get_db_connection()
     if not conn:
         return False, "No se pudo conectar a la base de datos."
+
+    from utils.validators import validate_report_form
+    valido, error_msg, datos_reporte = validate_report_form(form_data, cdp_id)
+    if not valido:
+        return False, error_msg
 
     try:
         with conn.cursor() as cursor:
@@ -595,6 +575,7 @@ def get_cdp_detalle(cdp_id):
                     return {
                         'id': cdp['id'],
                         'codigo': cdp['codigo'],
+                        'red_id': cdp.get('red_id'),
                         'nombre': f"Casa \"{cdp['codigo']}\"",
                         'red_nombre': cdp.get('red_nombre') or 'Red Zonal',
                         'supervisor_nombre': cdp.get('supervisor_nombre') or 'Sin supervisor',

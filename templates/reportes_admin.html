@@ -97,7 +97,7 @@
                         <td data-label="Asistencia" class="text-center"><span class="badge">{{ reporte.asistencia }}</span></td>
                         <td data-label="Ofrendas" class="text-right font-bold text-secondary">
                             <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                                <span>${{ "{:,.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}</span>
+                                <span>${{ "{:,.2f}".format(reporte.ofrendas_usd|default(0.0)) }}</span>
                                 {% if reporte.ofrendas_bs and reporte.ofrendas_bs > 0 %}
                                 <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Bs. {{ "{:,.2f}".format(reporte.ofrendas_bs) }}</span>
                                 {% endif %}
@@ -118,8 +118,7 @@
                                     data-comprometidos="{{ reporte.nro_comprometidos }}"
                                     data-reconciliaciones="{{ reporte.reconciliaciones }}"
                                     data-confesiones="{{ reporte.confesiones }}"
-                                    data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
-                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}"
+                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(0.0)) }}"
                                     data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"
@@ -141,8 +140,7 @@
                                     data-comprometidos="{{ reporte.nro_comprometidos }}"
                                     data-reconciliaciones="{{ reporte.reconciliaciones }}"
                                     data-confesiones="{{ reporte.confesiones }}"
-                                    data-ofrendas="{{ "{:.2f}".format(reporte.ofrendas) }}"
-                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(reporte.ofrendas|default(0.0))) }}"
+                                    data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(0.0)) }}"
                                     data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
                                     data-tema="{{ reporte.tema }}"

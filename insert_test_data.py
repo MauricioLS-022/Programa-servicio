@@ -215,7 +215,7 @@ def poblar_datos():
         try:
             cur.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_usd'")
             if not cur.fetchone():
-                cur.execute("ALTER TABLE reporte ADD COLUMN ofrendas_usd DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER ofrendas")
+                cur.execute("ALTER TABLE reporte ADD COLUMN ofrendas_usd DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER observaciones")
             cur.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_bs'")
             if not cur.fetchone():
                 cur.execute("ALTER TABLE reporte ADD COLUMN ofrendas_bs DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER ofrendas_usd")

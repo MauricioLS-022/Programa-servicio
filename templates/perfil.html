@@ -94,6 +94,7 @@
                     </div>
                 </div>
                 <form method="POST" class="perfil-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="action" value="cambiar_username">
                     <div class="perfil-input-group">
                         <label for="nuevo_username">Nuevo nombre de usuario</label>
@@ -127,6 +128,7 @@
                     </div>
                 </div>
                 <form method="POST" class="perfil-form" id="formCambiarPassword">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="action" value="cambiar_password">
                     <div class="perfil-input-group">
                         <label for="password_actual">Contraseña actual</label>
