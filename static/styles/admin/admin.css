@@ -846,6 +846,19 @@ textarea:focus {
     background-color: var(--surface-container-high);
 }
 
+@media (max-width: 768px) {
+    [data-theme="dark"] table tbody tr,
+    [data-theme="dark"] .lider-table tbody tr,
+    [data-theme="dark"] .user-table tbody tr,
+    [data-theme="dark"] .cdp-table tbody tr {
+        background-color: var(--surface-container-lowest, #1b1415);
+        background: var(--surface-container-lowest, #1b1415);
+        border: 1px solid var(--border-color, rgba(221, 192, 189, 0.2));
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+        color: var(--text-main, #f8f2f0);
+    }
+}
+
 /* Formularios e Inputs */
 [data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="dark"] select,

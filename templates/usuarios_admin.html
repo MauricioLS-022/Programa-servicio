@@ -112,7 +112,7 @@
                             </td>
                             <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon" aria-label="Editar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
+                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon btn-edit" aria-label="Editar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
                                     <button class="btn-icon btn-delete" type="button" aria-label="Eliminar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
                                 </div>
                             </td>
