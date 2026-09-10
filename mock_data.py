@@ -438,9 +438,9 @@ def get_mock_generales():
             {'semana': 'Sem 4', 'asistencia': 66, 'porcentaje': 90},
         ],
         'ranking_redes': [
-            {'nombre': 'Red Hebrón', 'cumplimiento': 90, 'asistencia': 30, 'supervisor': 'Pedro González', 'color_class': 'hebron'},
-            {'nombre': 'Red Central', 'cumplimiento': 85, 'asistencia': 22, 'supervisor': 'Carlos Ramírez', 'color_class': 'central'},
-            {'nombre': 'Red Sur', 'cumplimiento': 80, 'asistencia': 14, 'supervisor': 'María López', 'color_class': 'sur'},
+            {'nombre': 'Red Hebrón', 'cumplimiento': 90, 'asistencia': 30, 'asistencia_semana': 30, 'asistencia_total': 340, 'casas_reportadas': 9, 'total_casas': 10, 'supervisor': 'Pedro González', 'color_class': 'hebron'},
+            {'nombre': 'Red Central', 'cumplimiento': 85, 'asistencia': 22, 'asistencia_semana': 22, 'asistencia_total': 280, 'casas_reportadas': 8, 'total_casas': 10, 'supervisor': 'Carlos Ramírez', 'color_class': 'central'},
+            {'nombre': 'Red Sur', 'cumplimiento': 80, 'asistencia': 14, 'asistencia_semana': 14, 'asistencia_total': 190, 'casas_reportadas': 7, 'total_casas': 9, 'supervisor': 'María López', 'color_class': 'sur'},
         ],
         'alertas': [],
     }

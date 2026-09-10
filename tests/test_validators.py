@@ -15,8 +15,10 @@ from utils.validators import (
     validate_date,
     validate_time_range,
     sanitize_text,
-    validate_report_form
+    validate_report_form,
+    normalizar_hora
 )
+from db_queries import formatear_hora
 
 
 class TestValidators(unittest.TestCase):
@@ -219,6 +221,34 @@ class TestValidators(unittest.TestCase):
         ok, msg, clean_data = validate_report_form(bad_form, cdp_id=1)
         self.assertFalse(ok)
 
+        # Formulario con horas de 1 dígito ("1:02" y "5:00")
+        single_digit_form = form_data.copy()
+        single_digit_form['hr_inicio'] = '1:02'
+        single_digit_form['hr_fin'] = '5:00'
+        ok, msg, clean_data = validate_report_form(single_digit_form, cdp_id=1)
+        self.assertTrue(ok)
+        self.assertEqual(clean_data['hr_inicio'], '01:02')
+        self.assertEqual(clean_data['hr_fin'], '05:00')
+
+    def test_formatear_hora_helper(self):
+        """Verifica que formatear_hora maneje timedelta, time, strings y formatos con 1 dígito."""
+        # Timedelta devuelto por PyMySQL para 01:02:00 y 05:00:00
+        td1 = timedelta(hours=1, minutes=2)
+        td5 = timedelta(hours=5, minutes=0)
+        td19 = timedelta(hours=19, minutes=30)
+        self.assertEqual(formatear_hora(td1), "01:02")
+        self.assertEqual(formatear_hora(td5), "05:00")
+        self.assertEqual(formatear_hora(td19), "19:30")
+
+        # Cadenas con o sin segundos
+        self.assertEqual(formatear_hora("1:02:00"), "01:02")
+        self.assertEqual(formatear_hora("5:00:00"), "05:00")
+        self.assertEqual(formatear_hora("1:02:"), "01:02")
+        self.assertEqual(formatear_hora("19:00"), "19:00")
+        self.assertEqual(formatear_hora(None), "")
+        self.assertEqual(formatear_hora(""), "")
+
 
 if __name__ == '__main__':
     unittest.main()
+

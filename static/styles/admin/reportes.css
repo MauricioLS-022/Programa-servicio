@@ -409,8 +409,30 @@ tbody tr:hover {
     text-decoration: none;
 }
 .btn-icon span { font-size: 1.25rem; }
-.btn-icon:hover { background-color: var(--surface-container-high); color: var(--primary); }
-.btn-delete:hover { background-color: rgba(255, 218, 214, 0.4); color: var(--error); }
+.btn-icon:hover {
+    background-color: var(--surface-container-high, #ebdcd9);
+    color: var(--primary, #700204);
+}
+.btn-icon.btn-view:hover {
+    background-color: rgba(112, 2, 4, 0.09);
+}
+.btn-icon.btn-view:hover .text-primary {
+    color: #4a0002;
+}
+.btn-icon.btn-edit:hover {
+    background-color: rgba(107, 114, 58, 0.12);
+}
+.btn-icon.btn-edit:hover .text-secondary {
+    color: #3b401c;
+}
+.btn-delete:hover {
+    background-color: rgba(255, 218, 214, 0.45);
+    color: var(--error, #ba1a1a);
+}
+.btn-delete:hover .material-symbols-outlined,
+.btn-delete:hover span {
+    color: var(--error, #ba1a1a);
+}
 
 .empty-state {
     text-align: center;
@@ -577,10 +599,11 @@ tbody tr:hover {
         display: flex;
         flex-direction: column;
         padding: 1rem;
-        background: #fff;
+        background: var(--surface-container-lowest, #fff);
         border-radius: 0.75rem;
-        border: 1px solid rgba(137, 114, 111, 0.2);
-        box-shadow: 0 2px 8px rgba(57, 0, 2, 0.04);
+        border: 1px solid var(--border-color, rgba(137, 114, 111, 0.2));
+        box-shadow: var(--shadow-card, 0 2px 8px rgba(57, 0, 2, 0.04));
+        transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     table tbody td {
@@ -624,6 +647,7 @@ tbody tr:hover {
         min-width: 80px;
         flex-shrink: 0;
         opacity: 0.6;
+        text-align: left;
     }
 
     table tbody td[data-label="Líder"] {
@@ -655,7 +679,7 @@ tbody tr:hover {
     }
 
     table tbody tr:hover {
-        background-color: transparent;
+        background-color: var(--surface-container-high, rgba(137, 114, 111, 0.05));
     }
 }
 
@@ -1115,8 +1139,32 @@ tbody tr:hover {
     color: var(--text-main, #f8f2f0);
 }
 
+[data-theme="dark"] table tbody tr {
+    background-color: var(--surface-container-lowest, #1b1416);
+    background: var(--surface-container-lowest, #1b1416);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+    color: var(--text-main, #f8f2f0);
+}
+
+[data-theme="dark"] table tbody tr:hover,
 [data-theme="dark"] tbody tr:hover {
     background-color: var(--surface-container-high, #2f2225);
+    background: var(--surface-container-high, #2f2225);
+}
+
+[data-theme="dark"] table tbody td::before {
+    color: var(--on-surface-variant, #c2adaa);
+    opacity: 0.85;
+}
+
+[data-theme="dark"] table tbody td[data-label="Líder"] {
+    border-bottom: 2px solid var(--border-color, rgba(221, 192, 189, 0.2));
+}
+
+[data-theme="dark"] .badge {
+    background-color: var(--surface-container-high, #2f2225);
+    color: var(--primary, #ffb4ab);
 }
 
 /* Modal de edición y detalle de reporte */
@@ -1173,6 +1221,12 @@ tbody tr:hover {
 
 [data-theme="dark"] .search-input input {
     border-radius: 999px;
+}
+
+[data-theme="dark"] .filter-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f8f2f0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
 }
 
 [data-theme="dark"] .modal-field input:focus,
@@ -1238,3 +1292,50 @@ tbody tr:hover {
 [data-theme="dark"] .modal-body::-webkit-scrollbar-thumb:hover {
     background: rgba(221, 192, 189, 0.5);
 }
+
+/* Botones de acción en tabla */
+[data-theme="dark"] .btn-icon {
+    color: var(--text-muted, #d4c2bf);
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .btn-icon:hover {
+    background-color: var(--surface-container-high, #2f2225);
+    color: var(--primary, #f8deda);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .btn-icon.btn-view:hover {
+    background-color: rgba(248, 222, 218, 0.15);
+    color: var(--primary, #f8deda);
+}
+
+[data-theme="dark"] .btn-icon.btn-view:hover .text-primary {
+    color: #ffb4ab;
+}
+
+[data-theme="dark"] .btn-icon.btn-edit:hover {
+    background-color: rgba(192, 202, 116, 0.18);
+    color: #dbe786;
+}
+
+[data-theme="dark"] .btn-icon.btn-edit:hover .text-secondary {
+    color: #dbe786;
+}
+
+[data-theme="dark"] .btn-delete {
+    color: var(--text-muted, #d4c2bf);
+}
+
+[data-theme="dark"] .btn-delete:hover {
+    background-color: rgba(255, 180, 171, 0.18);
+    color: var(--error, #ffb4ab);
+    border: 1px solid rgba(255, 180, 171, 0.25);
+    box-shadow: 0 2px 8px rgba(255, 84, 73, 0.2);
+}
+
+[data-theme="dark"] .btn-delete:hover .material-symbols-outlined,
+[data-theme="dark"] .btn-delete:hover span {
+    color: var(--error, #ffb4ab);
+}
+

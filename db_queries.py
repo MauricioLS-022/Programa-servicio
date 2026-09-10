@@ -11,6 +11,27 @@ from datetime import date, timedelta
 import uuid
 
 
+def formatear_hora(valor) -> str:
+    """Formatea valores de hora (timedelta, time, datetime, str) al formato estándar HH:MM."""
+    if not valor:
+        return ''
+    # PyMySQL entrega campos TIME como datetime.timedelta
+    if isinstance(valor, timedelta) or hasattr(valor, 'total_seconds'):
+        total_segundos = int(valor.total_seconds()) % 86400
+        horas = total_segundos // 3600
+        minutos = (total_segundos % 3600) // 60
+        return f"{horas:02d}:{minutos:02d}"
+    if hasattr(valor, 'strftime'):
+        return valor.strftime("%H:%M")
+
+    val_str = str(valor).strip()
+    if ':' in val_str:
+        partes = val_str.split(':')
+        if len(partes) >= 2 and partes[0].isdigit() and partes[1].isdigit():
+            return f"{int(partes[0]):02d}:{int(partes[1]):02d}"
+    return val_str[:5] if len(val_str) >= 5 else val_str
+
+
 def get_usuarios(conn, search='', rol='', page=1, per_page=5):
     """Obtiene usuarios paginados para el directorio administrativo."""
     offset = (page - 1) * per_page
@@ -217,7 +238,9 @@ def get_metricas_generales(conn):
         SELECT
             r.nombre AS nombre,
             COUNT(DISTINCT c.id) AS total_casas,
-            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia,
+            COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END) AS casas_reportadas,
+            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
+            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
             ROUND(
                 COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END)
                 / GREATEST(COUNT(DISTINCT c.id), 1) * 100
@@ -228,8 +251,8 @@ def get_metricas_generales(conn):
         LEFT JOIN reporte rep ON rep.cdp_id = c.id
         LEFT JOIN usuario u ON r.supervisor_id = u.id
         GROUP BY r.id, r.nombre, u.nombre, u.apellido
-        ORDER BY asistencia DESC
-    """, (inicio_semana,))
+        ORDER BY cumplimiento DESC, asistencia_semana DESC, asistencia_total DESC
+    """, (inicio_semana, inicio_semana, inicio_semana))
     ranking = cur.fetchall() or []
     color_map = {
         'hebrón': 'hebron', 'cielos abiertos': 'hebron',
@@ -238,6 +261,12 @@ def get_metricas_generales(conn):
     }
     for r in ranking:
         r['color_class'] = color_map.get((r['nombre'] or '').lower().strip(), 'default')
+        r['asistencia_semana'] = int(r.get('asistencia_semana', 0) or 0)
+        r['asistencia_total'] = int(r.get('asistencia_total', 0) or 0)
+        r['asistencia'] = r['asistencia_semana']
+        r['casas_reportadas'] = int(r.get('casas_reportadas', 0) or 0)
+        r['total_casas'] = int(r.get('total_casas', 0) or 0)
+        r['cumplimiento'] = int(r.get('cumplimiento', 0) or 0)
 
     # --- Alertas: casas sin reporte en 14+ días ---
     cur.execute("""
@@ -613,8 +642,8 @@ def get_metricas_cdp(conn, cdp_id):
     ]
 
     ultimo_tema = (ultimo.get('tema') if ultimo else None) or 'Sin tema registrado'
-    hr_inicio = str(ultimo.get('hr_inicio'))[:5] if ultimo and ultimo.get('hr_inicio') else ''
-    hr_fin = str(ultimo.get('hr_fin'))[:5] if ultimo and ultimo.get('hr_fin') else ''
+    hr_inicio = formatear_hora(ultimo.get('hr_inicio')) if ultimo else ''
+    hr_fin = formatear_hora(ultimo.get('hr_fin')) if ultimo else ''
     cesta_amor = bool(ultimo.get('cesta_amor')) if ultimo else False
     potencial = len(lideres) > 1
 
@@ -746,12 +775,8 @@ def get_reportes(conn, search='', red_id='', cdp_id='', fecha_desde='', fecha_ha
         else:
             iniciales = 'VN'
 
-        hr_ini = str(r['hr_inicio'] or '')
-        hr_fin = str(r['hr_fin'] or '')
-        if len(hr_ini) >= 5 and ':' in hr_ini:
-            hr_ini = hr_ini[:5]
-        if len(hr_fin) >= 5 and ':' in hr_fin:
-            hr_fin = hr_fin[:5]
+        hr_ini = formatear_hora(r.get('hr_inicio'))
+        hr_fin = formatear_hora(r.get('hr_fin'))
 
         cdp_nombre = r['cdp_codigo'] or r['cdp_anfitrion'] or f"CDP #{r['cdp_id']}"
         if r['cdp_anfitrion'] and r['cdp_codigo']:
@@ -914,8 +939,8 @@ def obtener_reportes_por_cdp(cursor, cdp_id):
         else:
             iniciales = 'CDP'
 
-        hr_ini = str(r['hr_inicio'] or '')[:5] if r['hr_inicio'] else ''
-        hr_fin = str(r['hr_fin'] or '')[:5] if r['hr_fin'] else ''
+        hr_ini = formatear_hora(r.get('hr_inicio'))
+        hr_fin = formatear_hora(r.get('hr_fin'))
 
         ofrendas_usd = float(r.get('ofrendas_usd') or 0.0)
         ofrendas_bs = float(r.get('ofrendas_bs') or 0.0)

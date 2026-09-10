@@ -1006,12 +1006,12 @@ button.red-card {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
-        background: #ffffff;
-        border: 1px solid rgba(137, 114, 111, 0.25);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        background: var(--surface-container-lowest, #ffffff);
+        border: 1px solid var(--border-color, rgba(137, 114, 111, 0.25));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
         color: var(--primary, #390002);
         align-items: center;
         justify-content: center;
@@ -1019,7 +1019,12 @@ button.red-card {
         cursor: pointer;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.2s ease;
+        transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .scroll-arrow .material-symbols-outlined {
+        font-size: 1.25rem;
+        line-height: 1;
     }
 
     .scroll-arrow.visible {
@@ -1028,8 +1033,9 @@ button.red-card {
     }
 
     .scroll-arrow:hover {
-        background: #faf7f5;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+        background: var(--surface-container-low, #faf7f5);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        transform: translateY(-50%) scale(1.06);
     }
 
     .scroll-arrow-left {
@@ -1493,4 +1499,30 @@ button.red-card {
 
 [data-theme="dark"] .casa-add-card p {
     color: var(--text-muted, #d4c2bf);
+}
+
+/* Scroll arrows en tema oscuro */
+[data-theme="dark"] .scroll-arrow {
+    background: var(--surface-container-high, #2f2225);
+    background-color: var(--surface-container-high, #2f2225);
+    border: 1.5px solid var(--border-color, rgba(221, 192, 189, 0.35));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+    color: var(--text-main, #f8f2f0);
+}
+
+[data-theme="dark"] .scroll-arrow .material-symbols-outlined {
+    color: var(--text-main, #f8f2f0);
+}
+
+[data-theme="dark"] .scroll-arrow:hover {
+    background: var(--surface-container-highest, #3d2d31);
+    background-color: var(--surface-container-highest, #3d2d31);
+    border-color: rgba(255, 180, 171, 0.6);
+    color: #ffffff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.06);
+}
+
+[data-theme="dark"] .scroll-arrow:hover .material-symbols-outlined {
+    color: #ffffff;
 }
