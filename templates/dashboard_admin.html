@@ -289,7 +289,7 @@
                     <article class="participation-card">
                         <div class="status-card-header">
                             <h2 class="section-title">Ranking de Redes</h2>
-                            <p class="section-subtitle">Cumplimiento y asistencia por zona</p>
+                            <p class="section-subtitle">Cumplimiento y asistencia de la semana</p>
                         </div>
                         
                         <div class="network-ranking-list">
@@ -303,11 +303,11 @@
                                         <span class="ranking-sup">({{ red_item.supervisor }})</span>
                                     </div>
                                     <div class="ranking-stats">
-                                        <span class="ranking-asist">{{ red_item.asistencia }} asists.</span>
-                                        <span class="ranking-percent">{{ red_item.cumplimiento }}%</span>
+                                        <span class="ranking-asist" title="{% if red_item.asistencia_total is defined and red_item.asistencia_total %}{{ red_item.asistencia_total }} asistencias históricas acumuladas{% else %}Asistencia de la semana actual{% endif %}">{{ red_item.asistencia }} asists. sem.</span>
+                                        <span class="ranking-percent" title="{% if red_item.total_casas is defined and red_item.total_casas > 0 %}{{ red_item.casas_reportadas|default(0) }} de {{ red_item.total_casas }} Casas de Paz han reportado esta semana ({{ red_item.cumplimiento }}%){% else %}{{ red_item.cumplimiento }}% de Casas de Paz con reporte esta semana{% endif %}">{{ red_item.cumplimiento }}% cumpl. sem.</span>
                                     </div>
                                 </div>
-                                <div class="progress-bar">
+                                <div class="progress-bar" title="{% if red_item.total_casas is defined and red_item.total_casas > 0 %}{{ red_item.casas_reportadas|default(0) }} de {{ red_item.total_casas }} Casas de Paz con reporte esta semana ({{ red_item.cumplimiento }}%){% else %}{{ red_item.cumplimiento }}% de cumplimiento semanal{% endif %}">
                                     <div class="progress-fill fill-{{ red_item.color_class }}" style="--bar-width: {{ red_item.cumplimiento }}%;"></div>
                                 </div>
                             </div>
