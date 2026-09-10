@@ -100,6 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function formatTime(val) {
+        if (!val) return '';
+        const parts = val.toString().trim().split(':');
+        if (parts.length >= 2 && !isNaN(parseInt(parts[0], 10)) && !isNaN(parseInt(parts[1], 10))) {
+            const h = parts[0].padStart(2, '0');
+            const m = parts[1].padStart(2, '0');
+            return `${h}:${m}`;
+        }
+        return val;
+    }
+
     function openEditarModal(btn) {
         if (!modalEditar || !formEditar) return;
 
@@ -114,8 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
             editInputs.liderSelect.value = d.liderId || '';
         }
         if (editInputs.fecha) editInputs.fecha.value = d.fecha || '';
-        if (editInputs.hrInicio) editInputs.hrInicio.value = d.hrInicio || '';
-        if (editInputs.hrFin) editInputs.hrFin.value = d.hrFin || '';
+        if (editInputs.hrInicio) editInputs.hrInicio.value = formatTime(d.hrInicio);
+        if (editInputs.hrFin) editInputs.hrFin.value = formatTime(d.hrFin);
         if (editInputs.tema) editInputs.tema.value = d.tema || '';
         if (editInputs.regulares) editInputs.regulares.value = d.regulares || 0;
         if (editInputs.ninos) editInputs.ninos.value = d.ninos || 0;

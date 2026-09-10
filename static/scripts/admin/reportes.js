@@ -72,6 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return r + n + v + c;
     }
 
+    function formatTime(val) {
+        if (!val) return '';
+        const parts = val.toString().trim().split(':');
+        if (parts.length >= 2 && !isNaN(parseInt(parts[0], 10)) && !isNaN(parseInt(parts[1], 10))) {
+            const h = parts[0].padStart(2, '0');
+            const m = parts[1].padStart(2, '0');
+            return `${h}:${m}`;
+        }
+        return val;
+    }
+
     function openModal(btn, isEdit) {
         if (!modal) return;
         lastFocusedBtn = btn;
@@ -80,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fields.lider) fields.lider.value = btn.dataset.lider || '';
         if (fields.casa) fields.casa.value = btn.dataset.casa || '';
         if (fields.fecha) fields.fecha.value = btn.dataset.fecha || '';
-        if (fields.horaInicio) fields.horaInicio.value = btn.dataset.horaInicio || '';
-        if (fields.horaFin) fields.horaFin.value = btn.dataset.horaFin || '';
+        if (fields.horaInicio) fields.horaInicio.value = formatTime(btn.dataset.horaInicio);
+        if (fields.horaFin) fields.horaFin.value = formatTime(btn.dataset.horaFin);
         if (fields.regulares) fields.regulares.value = btn.dataset.regulares || 0;
         if (fields.ninos) fields.ninos.value = btn.dataset.ninos || 0;
         if (fields.visitas) fields.visitas.value = btn.dataset.visitas || 0;

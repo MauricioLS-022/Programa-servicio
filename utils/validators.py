@@ -169,6 +169,21 @@ def validate_date(date_str: str, allow_future: bool = False, max_past_days: int 
     return True, cleaned, ""
 
 
+def normalizar_hora(s: any) -> str:
+    """Normaliza un valor de hora al formato HH:MM de dos dígitos."""
+    if not s:
+        return ''
+    if hasattr(s, 'seconds'):  # timedelta
+        total = int(s.total_seconds()) % 86400
+        return f"{total // 3600:02d}:{(total % 3600) // 60:02d}"
+    if hasattr(s, 'strftime'):
+        return s.strftime("%H:%M")
+    partes = str(s).strip().split(':')
+    if len(partes) >= 2 and partes[0].isdigit() and partes[1].isdigit():
+        return f"{int(partes[0]):02d}:{int(partes[1]):02d}"
+    return str(s).strip()[:5]
+
+
 def validate_time_range(hr_inicio: str, hr_fin: str) -> tuple[bool, str]:
     """
     Valida que las horas de inicio y fin tengan formato HH:MM y que hr_fin > hr_inicio.
@@ -176,8 +191,8 @@ def validate_time_range(hr_inicio: str, hr_fin: str) -> tuple[bool, str]:
     if not hr_inicio or not hr_fin:
         return False, "Las horas de inicio y finalización son obligatorias."
         
-    hr_inicio = hr_inicio.strip()[:5]
-    hr_fin = hr_fin.strip()[:5]
+    hr_inicio = normalizar_hora(hr_inicio)
+    hr_fin = normalizar_hora(hr_fin)
     
     try:
         t_inicio = datetime.strptime(hr_inicio, "%H:%M").time()
@@ -212,8 +227,8 @@ def validate_report_form(form_data: dict, cdp_id: int) -> tuple[bool, str, dict]
         return False, f"Fecha inválida: {msg}", {}
 
     # 2. Validar Horas
-    hr_inicio = form_data.get('hr_inicio', '').strip()
-    hr_fin = form_data.get('hr_fin', '').strip()
+    hr_inicio = normalizar_hora(form_data.get('hr_inicio', ''))
+    hr_fin = normalizar_hora(form_data.get('hr_fin', ''))
     horas_ok, msg_horas = validate_time_range(hr_inicio, hr_fin)
     if not horas_ok:
         return False, msg_horas, {}
@@ -269,8 +284,8 @@ def validate_report_form(form_data: dict, cdp_id: int) -> tuple[bool, str, dict]
         'cdp_id': cdp_id,
         'lider_id': lider_id,
         'fecha': fecha_val,
-        'hr_inicio': hr_inicio[:5],
-        'hr_fin': hr_fin[:5],
+        'hr_inicio': hr_inicio,
+        'hr_fin': hr_fin,
         'tema': tema,
         **procesados
     }
