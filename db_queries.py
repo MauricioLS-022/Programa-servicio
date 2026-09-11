@@ -34,6 +34,27 @@ def formatear_hora(valor) -> str:
     return val_str[:5] if len(val_str) >= 5 else val_str
 
 
+def formatear_hora(valor) -> str:
+    """Formatea valores de hora (timedelta, time, datetime, str) al formato estándar HH:MM."""
+    if not valor:
+        return ''
+    # PyMySQL entrega campos TIME como datetime.timedelta
+    if isinstance(valor, timedelta) or hasattr(valor, 'total_seconds'):
+        total_segundos = int(valor.total_seconds()) % 86400
+        horas = total_segundos // 3600
+        minutos = (total_segundos % 3600) // 60
+        return f"{horas:02d}:{minutos:02d}"
+    if hasattr(valor, 'strftime'):
+        return valor.strftime("%H:%M")
+
+    val_str = str(valor).strip()
+    if ':' in val_str:
+        partes = val_str.split(':')
+        if len(partes) >= 2 and partes[0].isdigit() and partes[1].isdigit():
+            return f"{int(partes[0]):02d}:{int(partes[1]):02d}"
+    return val_str[:5] if len(val_str) >= 5 else val_str
+
+
 def get_usuarios(conn, search='', rol='', page=1, per_page=5):
     """Obtiene usuarios paginados para el directorio administrativo."""
     offset = (page - 1) * per_page
