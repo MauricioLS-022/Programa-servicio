@@ -29,6 +29,25 @@
     
     {% include 'sidebar_mobile.html' %}
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="toast-container" id="toastContainer" role="alert" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="toast-alert toast-{{ category }}">
+              <span class="material-symbols-outlined toast-icon">
+                {% if category == 'success' %}check_circle
+                {% elif category in ['danger', 'error'] %}error
+                {% elif category == 'warning' %}warning
+                {% else %}info{% endif %}
+              </span>
+              <span class="toast-message">{{ message }}</span>
+              <button type="button" class="toast-close" onclick="this.closest('.toast-alert').remove()" aria-label="Cerrar notificación">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <main class="main-content">
         <div class="crud-container">
             <nav class="breadcrumb">
@@ -57,6 +76,21 @@
     </main>
 
     {% include 'footbar_mobile.html' %}
+
+    <script>
+      // Auto-dismiss toasts after 5 seconds
+      document.addEventListener('DOMContentLoaded', () => {
+        const toasts = document.querySelectorAll('.toast-alert');
+        toasts.forEach(toast => {
+          setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+          }, 5000);
+        });
+      });
+    </script>
     {% block custom_scripts %}{% endblock %}
 </body>
 </html>
