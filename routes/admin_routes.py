@@ -50,6 +50,7 @@ def usuario():
 @login_required
 @role_required("admin")
 def usuario_crear():
+    usuario_data = None
     if request.method == 'POST':
         success, message = crear_nuevo_usuario(request.form)
         if success:
@@ -57,6 +58,7 @@ def usuario_crear():
             return redirect(url_for('admin.usuario')) 
         else:
             flash(message, "danger")
+            usuario_data = request.form
             
     redes_disponibles, cdps_disponibles = get_opciones_asignacion()
     return render_template(
@@ -65,6 +67,7 @@ def usuario_crear():
         breadcrumb='Usuario',
         link='usuario',
         is_edit=False,
+        usuario_data=usuario_data,
         redes_disponibles=redes_disponibles,
         cdps_disponibles=cdps_disponibles,
     )

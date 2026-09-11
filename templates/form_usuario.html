@@ -16,14 +16,14 @@
 
             <div class="form-grid">
                 
-                <div class="form-group full-width">
+                <div class="form-group half-width">
                     <label for="nombre">Nombre</label>
                     <div class="input-wrapper icon-left">
                         <span class="material-symbols-outlined input-icon">id_card</span>
                         <input type="text" id="nombre" name="nombre" value="{{ usuario_data.nombre if usuario_data else '' }}" placeholder="Ingrese su nombre" required>
                     </div>
                 </div>
-                <div class="form-group full-width">
+                <div class="form-group half-width">
                     <label for="apellido">Apellido</label>
                     <div class="input-wrapper icon-left">
                         <span class="material-symbols-outlined input-icon">id_card_2</span>
@@ -97,18 +97,20 @@
 
             </div>
 
-            <div class="form-actions" >
+            <div class="form-actions">
                 <div class="actions-left">
-                  <button type="submit" class="btn-save">
-                      <span class="material-symbols-outlined">save</span>
-                      Guardar Usuario
-                  </button>
-                    <button type="button" class="btn-cancel">Cancelar Cambios</button>
+                    <button type="submit" class="btn-save">
+                        <span class="material-symbols-outlined">save</span>
+                        Guardar Usuario
+                    </button>
+                    <a href="{{ url_for('admin.usuario') }}" class="btn-cancel">Cancelar Cambios</a>
                 </div>
+                {% if is_edit %}
                 <button type="button" class="btn-delete-text">
                     <span class="material-symbols-outlined">delete</span>
                     Eliminar Usuario
                 </button>
+                {% endif %}
             </div>
         </form>
     </div>
