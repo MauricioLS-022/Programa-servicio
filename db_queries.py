@@ -10,6 +10,29 @@ defecto (0, listas vacías) en lugar de mock.
 from datetime import date, timedelta
 import uuid
 
+from pymysql.cursors import Cursor
+
+
+def formatear_hora(valor) -> str:
+    """Formatea valores de hora (timedelta, time, datetime, str) al formato estándar HH:MM."""
+    if not valor:
+        return ''
+    # PyMySQL entrega campos TIME como datetime.timedelta
+    if isinstance(valor, timedelta) or hasattr(valor, 'total_seconds'):
+        total_segundos = int(valor.total_seconds()) % 86400
+        horas = total_segundos // 3600
+        minutos = (total_segundos % 3600) // 60
+        return f"{horas:02d}:{minutos:02d}"
+    if hasattr(valor, 'strftime'):
+        return valor.strftime("%H:%M")
+
+    val_str = str(valor).strip()
+    if ':' in val_str:
+        partes = val_str.split(':')
+        if len(partes) >= 2 and partes[0].isdigit() and partes[1].isdigit():
+            return f"{int(partes[0]):02d}:{int(partes[1]):02d}"
+    return val_str[:5] if len(val_str) >= 5 else val_str
+
 
 def formatear_hora(valor) -> str:
     """Formatea valores de hora (timedelta, time, datetime, str) al formato estándar HH:MM."""
@@ -1118,6 +1141,76 @@ def get_redes_disponibles(cursor):
     """)
     return cursor.fetchall() or []
 
+def insertar_red(cursor: Cursor, nombre, supervisor_id):
+    """ 
+    Inserta una nueva red ministerial en la base de datos.
+    """
+    query = """
+        INSERT INTO red (nombre, is_active, supervisor_id) 
+        VALUES (%s, 1, %s);
+    """
+    sup_id = supervisor_id if supervisor_id else None
+
+    cursor.execute(query, (nombre.strip(), sup_id))
+    return cursor.lastrowid  # Retorna el ID de la nueva red insertada
+
+
+def obtener_red_por_id(cursor: Cursor, red_id):
+    """
+    Obtiene una red ministerial por su ID.
+    """
+    cursor.execute("SELECT * FROM red WHERE id = %s", (red_id,))
+    return cursor.fetchone()
+
+
+def actualizar_red(cursor: Cursor, red_id, nombre, supervisor_id):
+    """
+    Actualiza los detalles de una red ministerial existente.
+    """
+    query = """
+        UPDATE red SET nombre = %s, supervisor_id = %s
+        WHERE id = %s
+    """
+    sup_id = supervisor_id if supervisor_id else None
+    cursor.execute(query, (nombre.strip(), sup_id, red_id))
+    return cursor.rowcount >= 0  # Retorna True si se actualizó alguna fila
+
+def toggle_estado_red(cursor: Cursor, red_id):
+    """
+    Alterna el estado is_active de la red entre 1 y 0.
+    Retorna el nuevo estado de la red (True si quedó activa, False si quedó pausada).
+    """
+    # 1. Invertir el valor de is_active en la BD
+    query = """
+        UPDATE red 
+        SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END
+        WHERE id = %s
+    """
+
+    cursor.execute(query, (red_id,))
+
+    # 2. Consultar el nuevo estado para saber qué mensaje mostrar al usuario
+    cursor.execute("SELECT is_active FROM red WHERE id = %s", (red_id,))
+    fila = cursor.fetchone()
+    return bool(fila['is_active']) if fila else None
+
+
+def eliminar_red(cursor: Cursor, red_id):
+    """
+    Elimina una red ministerial de la base de datos.
+    Retorna True si se eliminó correctamente, False si no existía.
+    """
+    # verificar si tiene casas de paz asociadas
+    cursor.execute("SELECT COUNT(*) AS total_casas FROM cdp WHERE red_id = %s", (red_id,))
+    total_casas = cursor.fetchone()['total_casas']
+    # en caspo de que tenga casas de paz asociadas
+    if total_casas > 0: 
+        return False # No se puede eliminar si tiene casas de paz asociadas
+
+    else: 
+        # eliminar la red
+        cursor.execute("DELETE FROM red WHERE id = %s", (red_id,))
+        return cursor.rowcount > 0  # Retorna True si se eliminó alguna fila
 
 def get_cdps_disponibles(cursor):
     """
