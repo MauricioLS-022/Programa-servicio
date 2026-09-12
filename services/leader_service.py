@@ -1,7 +1,6 @@
 """Obtención de líderes para el directorio administrativo."""
-import db_queries
 from flask import current_app
-
+from utils.cache import invalidate_dashboard_cache
 from database import get_db_connection
 from db_queries import (
     get_lideres,
@@ -11,10 +10,17 @@ from db_queries import (
     get_redes_disponibles,
     get_cdps_disponibles,
     get_supervisores_disponibles,
+    actualizar_red,
+    eliminar_red,
+    insertar_red,
+    toggle_estado_red,
+    obtener_red_por_id
 )
 from mock_data import get_mock_lideres, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
 from werkzeug.security import generate_password_hash
+
+from utils.validators import validate_name_red
 
 
 def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_page=5, supervisor_red_id=None):
@@ -191,5 +197,205 @@ def get_supervisores_disponibles_servicio():
     except Exception as e:
         current_app.logger.error("Error obteniendo supervisores disponibles: %s", e)
         return []
+    finally:
+        conn.close()
+
+
+def crear_red_servicio(form_data: dict) -> tuple:
+    """
+    Valida y procesa la creación de una nueva red ministerial.
+    Retorna: (success: bool, message: str)
+    """
+    nombre_red_raw = form_data.get('nombre', '').strip()
+    supervisor_id = form_data.get('supervisor_id', '').strip()
+
+    is_valid, res_red = validate_name_red(nombre_red_raw)
+    if not is_valid:
+        return False, res_red
+
+    conn = get_db_connection()
+    if not conn:
+        return False, 'Error de conexión a la base de datos.'
+
+    try: 
+        with conn.cursor() as cursor:
+            #1. Verificar que no exista otra red con el mismo nombre
+            cursor.execute("SELECT id FROM red WHERE nombre = %s", (res_red,))
+
+            if cursor.fetchone():
+                return False, f"Ya existe una red con el nombre '{res_red}'."
+            #2. Validar supervisor si fue seleccionado
+            sup_final = None
+            if supervisor_id:
+                # Comprobar que usuario exista y sea supervisor
+                cursor.execute("SELECT id FROM usuario WHERE id = %s AND tipo_usuario = 'supervisor'", (supervisor_id,))
+                if not cursor.fetchone():
+                    return False, "El supervisor seleccionado no es válido."
+                # Comprobar regla 1 a 1: que no esté asignado a otra red
+                cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s", (supervisor_id,))
+                red_ocupada = cursor.fetchone()
+                if red_ocupada:
+                    return False, f"Este supervisor ya está asignado a la red '{red_ocupada['nombre']}'"
+
+                sup_final = supervisor_id
+
+            #3. Insertar la nueva red
+            insertar_red(cursor, res_red, sup_final)
+            conn.commit()
+
+            try:
+                invalidate_dashboard_cache()
+            except Exception:
+                pass
+
+            return True, "Red creada exitosamente."
+            
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error creando red: %s", e)
+        return False, f"Error interno al crear la red: {str(e)}"
+    finally:
+        conn.close()
+
+
+def obtener_red_servicio(red_id:int):
+    """
+    Obtiene los datos de una red específica por su ID.
+    Retorna el diccionario de la red o None si no existe.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try: 
+        with conn.cursor() as cursor:
+            return obtener_red_por_id(cursor, red_id)
+    except Exception as e:
+        current_app.logger.error("Error al obtener red %s: %s",red_id, e)
+        return None
+    finally:
+        conn.close()
+
+def actualizar_red_servicio(red_id:int, form_data:dict) -> tuple[bool, str]:
+    """
+    Actualiza el nombre y supervisor de una red existente.
+    Retorna: (success: bool, message: str)
+    """
+    nombre_red_raw = form_data.get('nombre', '').strip()
+    supervisor_id = form_data.get('supervisor_id', '').strip()
+
+    is_valid, res_red = validate_name_red(nombre_red_raw)
+    if not is_valid:
+        return False, res_red
+    
+    conn = get_db_connection()
+    if not conn:
+        return False, 'Error de conexión a la base de datos.'
+
+    try:
+        with conn.cursor() as cursor:
+            #1. Verificar que la red exista
+            cursor.execute("SELECT id FROM red WHERE id = %s", (red_id,))
+            if not cursor.fetchone():
+                return False, "La red especificada no existe."
+
+            #2. Verificar que no exista otra red con el mismo nombre
+            cursor.execute("SELECT id FROM red WHERE nombre = %s AND id != %s", (res_red, red_id))
+            if cursor.fetchone():
+                return False, f"Ya existe otra red con el nombre '{res_red}'."
+            
+            #3. Validar supervisor si fue seleccionado
+            sup_final = None
+            if supervisor_id:
+                cursor.execute("SELECT id FROM usuario WHERE id = %s AND tipo_usuario = 'supervisor'", (supervisor_id,))
+                if not cursor.fetchone():
+                    return False, "El supervisor seleccionado no es válido."
+                # Comprobar que no este en otra red
+                cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s AND id != %s", (supervisor_id, red_id))
+                red_ocupada = cursor.fetchone()
+                if red_ocupada:
+                    return False, f"Este supervisor ya está asignado a la red '{red_ocupada['nombre']}'"
+                sup_final = supervisor_id
+
+            #4. Actualizar la red
+            actualizar_red(cursor, red_id, res_red, sup_final)
+        conn.commit()
+        try:
+            invalidate_dashboard_cache()
+        except Exception:
+            pass
+        return True, "Red actualizada exitosamente."
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error actualizando red: %s", e)
+        return False, f"Error interno al actualizar la red: {str(e)}"
+    finally:
+        conn.close()
+
+def toggle_red_servicio(red_id:int) -> tuple[bool, str]:
+    """
+    Pone en pausa o reactiva una red.
+    Retorna: (success: bool, message: str)
+    """
+    conn = get_db_connection()
+    if not conn: 
+        return False, 'Error de conexión a la base de datos.'
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT nombre FROM red WHERE id = %s", (red_id,))
+            red = cursor.fetchone()
+            if not red:
+                return False, "La red especificada no existe."
+
+            quedo_activa = toggle_estado_red(cursor, red_id)
+        conn.commit()
+
+        try:
+            invalidate_dashboard_cache()
+        except Exception:
+            pass
+
+        estado = 'reactivada' if quedo_activa else 'puesta en pausa'
+        return True, f"La red '{red['nombre']}' ha sido {estado} exitosamente."
+    
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al cambiar el estado de la red %s: %s", red_id, e)
+        return False, f"Error interno al cambiar el estado de la red"
+    finally:
+        conn.close()
+
+def eliminar_red_servicio(red_id:int) -> tuple[bool, str]:
+    """
+    Elimina una red si no tiene Casas de Paz vinculadas.
+    Retorna: (success: bool, message: str)
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False, 'Error de conexión a la base de datos.'
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT nombre FROM red WHERE id = %s", (red_id,))
+            red = cursor.fetchone()
+            if not red:
+                return False, "La red especificada no existe."
+
+            exito = eliminar_red(cursor, red_id)
+            if not exito:
+                return False, f"No se puede eliminar la red '{red['nombre']}' porque tiene Casas de Paz vinculadas.  Reasigna las casas primero o pon la red en pausa."
+        conn.commit()
+
+        try:
+            invalidate_dashboard_cache()
+        except Exception:
+            pass
+
+        return True, f"La red '{red['nombre']}' ha sido eliminada exitosamente."
+
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al eliminar la red %s: %s", red_id, e)
+        return False, f"Error interno al eliminar la red"
     finally:
         conn.close()

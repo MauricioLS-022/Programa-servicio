@@ -1386,6 +1386,18 @@ html[data-theme="dark"],
     color: var(--text-main, #f8f2f0);
 }
 
+[data-theme="dark"] .redes-list {
+    scrollbar-color: rgba(221, 192, 189, 0.25) transparent;
+}
+
+[data-theme="dark"] .redes-list::-webkit-scrollbar-thumb {
+    background: rgba(221, 192, 189, 0.25);
+}
+
+[data-theme="dark"] .redes-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(221, 192, 189, 0.45);
+}
+
 /* Tarjetas de Red */
 [data-theme="dark"] .red-card {
     background-color: var(--surface-container-low, #1f1618);
