@@ -25,9 +25,9 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 11 | **Modo Oscuro Global** | ✅ Implementado | Variable `data-theme="dark"`, persistencia en `localStorage`, script anti-FOUC y toggles en Login y Perfil. |
 | 12 | **Flash Messages y Notificaciones Toast** | ✅ Implementado | `get_flashed_messages(with_categories=true)` en `admin_layout.html` y `layout.html` con auto-dismiss (5s), categorías semánticas e iconos contextuales. |
 | 13 | **Páginas de Error Personalizadas** | ✅ Implementado | Errores 400, 403 y 404 estilizados con botones de navegación e integración visual con el sistema de diseño. |
-| 14 | **CRUD de Usuarios (Mutaciones POST)** | ✅ Implementado / Parcial | `POST /admin/usuario/crear` completado con validación segura (`utils/validators`), hasheo Werkzeug, inserción relacional y asignación opcional ministerial (`red_id` para supervisores, `cdp_id` para líderes). <br>**Falta:** Flujo de alternancia de estado `is_active` y eliminación segura. |
+| 14 | **CRUD de Usuarios (Mutaciones POST)** | ✅ Implementado | Rutas `POST /admin/usuario/crear` y `POST /admin/usuario/<id>/editar` completadas con validación segura (`utils/validators`), hasheo Werkzeug, verificación de unicidad, actualización de datos personales/contraseña y asignación ministerial opcional (`red_id` para supervisores, `cdp_id` para líderes). <br>**Falta:** Eliminación segura / baja lógica. |
 | 15 | **CRUD de Casas de Paz (Mutaciones POST)** | ⚠️ Parcial | **Lectura, detalle (`detalles_cdp.html`) y estructura completados.** Formulario maquetado (`form_cdp.html`). <br>**Falta:** Conectar rutas `POST /admin/casa_de_paz/crear` y `/admin/casa_de_paz/<id>/editar` para persistir cambios, vincular a red, pasar redes disponibles al template y asignar cuenta de usuario. |
-| 16 | **CRUD de Redes (Mutaciones POST)** | ⚠️ Parcial | **Visualización jerárquica y filtros completados.** Selectores dinámicos integrados en `form_redes.html`. <br>**Falta:** Conectar rutas `POST /admin/red/crear` y `/admin/red/<id>/editar` con validación de nombre, asignación de supervisor y control de unicidad (`uq_red_supervisor`). |
+| 16 | **CRUD de Redes (Mutaciones POST y Estado)** | ✅ Implementado | Rutas `POST /admin/red/crear`, `/admin/red/<id>/editar`, `/admin/red/<id>/toggle_estado` y `/admin/red/<id>/eliminar` conectadas y funcionales. Validación de nombres con regex, asignación/desvinculación de supervisor, alternancia activa/pausada con insignias dinámicas, invalidación de caché y eliminación protegida sin huérfanos. |
 | 17 | **CRUD de Líderes (Mutaciones POST)** | ⚠️ Parcial | **Lectura, filtros por red/CDP y paginación completados.** Formulario maquetado (`form_lider.html`). <br>**Falta:** Conectar rutas `POST /admin/lider/crear` y `/admin/lider/<id>/editar` para registrar o modificar líderes/sublíderes con validación de teléfono y asignación a Casa de Paz. |
 | 18 | **Búsqueda Client-Side en Tiempo Real** | ⚠️ Parcial | Filtros por GET con recarga completados. <br>**Falta:** Implementar filtrado instantáneo en vivo sin recarga vía JavaScript en tablas de Usuarios y Líderes. |
 | 19 | **Integración de Contacto por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados dinámicamente con números de contacto. <br>**Falta:** Normalización y validación de prefijo de código de país telefónico (ej. +58). |
@@ -185,13 +185,19 @@ graph TD
 - [x] **CRUD de Usuarios (Creación POST)**:
   - Ruta `POST /admin/usuario/crear`: validación estricta de nombres, username y fortaleza de contraseña (`validate_password_strength`), hasheo Werkzeug, verificación de unicidad e inserción atómica.
   - Dropdowns condicionales de asignación ministerial: asignación de red para supervisores (`asignar_supervisor_a_red`) o Casa de Paz para líderes (`asignar_usuario_a_cdp`).
-- [ ] **CRUD de Usuarios (Edición y Estado)**:
-  - Ruta `POST /admin/usuario/<id>/editar`: actualización de datos personales, cambio opcional de contraseña y alternancia de estado activo (`is_active`).
-  - Ruta `POST /admin/usuario/<id>/eliminar`: desactivación lógica o eliminación segura.
-- [ ] **CRUD de Redes (POST)**:
-  - Ruta `POST /admin/red/crear`: formulario conectado con método POST, validación de nombre único, asignación de supervisor disponible (`supervisor_id`) y control de unicidad (`uq_red_supervisor`).
-  - Ruta `POST /admin/red/<id>/editar`: modificación de nombre, reasignación o desvinculación de supervisor y alternancia de estado `is_active`.
-  - Ruta `POST /admin/red/<id>/eliminar`: eliminación o desactivación con validación de Casas de Paz huérfanas.
+- [x] **CRUD de Usuarios (Edición POST)**:
+  - Ruta `POST /admin/usuario/<id>/editar`: actualización de datos personales (`nombre`, `apellido`, `username`, `tipo_usuario`) con control de unicidad excluyendo al propio usuario y cambio opcional de contraseña con `validate_password_strength` y hash Werkzeug.
+  - Ruta `POST /admin/usuario/<id>/eliminar`: desactivación lógica o eliminación segura (Pendiente).
+- [x] **CRUD de Redes (POST y Gestión de Estado)**:
+  - Ruta `POST /admin/red/crear`: formulario conectado con método POST, validación de nombre (`validate_name_red`), asignación de supervisor disponible (`supervisor_id`) y control de unicidad (`uq_red_supervisor`).
+  - Ruta `POST /admin/red/<id>/editar`: modificación de nombre, reasignación o desvinculación de supervisor.
+  - Ruta `POST /admin/red/<id>/toggle_estado`: alternancia instantánea de estado `is_active` (pausar/reactivar), soporte visual (insignia "En pausa", estilo atenuado de tarjeta) e invalidación de caché.
+  - Ruta `POST /admin/red/<id>/eliminar`: eliminación protegida con validación preventiva de Casas de Paz asociadas (impide huérfanos).
+- [x] **Refinamientos Visuales y Responsive en Vista de Estructura**:
+  - Eliminación de saltos horizontales al filtrar en responsive (`Scrollbar Layout Shift`) mediante `scrollbar-gutter: stable;`.
+  - Panel lateral de redes (Aside) sticky y con scroll vertical interno estilizado (`.redes-list`), impidiendo crecimiento infinito en desktop.
+  - Espaciado de seguridad y truncado en tarjetas de red para evitar solapamiento entre la insignia "En pausa" y el menú de 3 puntos.
+  - Consistencia estructural completa en tarjetas de Casas de Paz (`.casa-card`): alineación superior de íconos (`align-items: flex-start`), reserva uniforme de 2 líneas en direcciones (`min-height: 2.7em`) y footers alineados al fondo (`margin-top: auto`).
 - [ ] **CRUD de Casas de Paz (POST)**:
   - Ruta `POST /admin/casa_de_paz/crear`: pasar listado de redes activas al formulario, validar unicidad del código de casa (ej. `SUR-001`), registrar dirección, anfitrión y crear/vincular usuario de acceso.
   - Ruta `POST /admin/casa_de_paz/<id>/editar`: modificación de ubicación física, anfitrión, reasignación de red y actualización de credenciales de acceso.
