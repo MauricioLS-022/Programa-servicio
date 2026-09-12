@@ -31,6 +31,10 @@
     --danger-color: #b32626;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   min-height: 100vh;
   background-color: var(--bg-surface);

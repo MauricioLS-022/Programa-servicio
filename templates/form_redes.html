@@ -7,7 +7,7 @@
 
 <form class="crud-form" method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <span class="material-symbols-outlined form-watermark" style="font-variation-settings: 'FILL' 1;">nest_eco_leaf</span>
+    <span class="material-symbols-outlined form-watermark">nest_eco_leaf</span>
 
     <div class="form-grid">
         
@@ -37,18 +37,25 @@
 
     <div class="form-actions">
         <div class="actions-left">
-            <!-- Se removió la clase with-icon sobrante -->
             <button type="submit" class="btn-save">
                 <span class="material-symbols-outlined">save</span>
                 Guardar Red
             </button>
-            <button type="button" class="btn-cancel">Cancelar</button>
+            <a href="{{ url_for('admin.estructura') }}" class="btn-cancel">Cancelar</a>
         </div>
-        <button type="button" class="btn-delete-text">
+        {% if is_edit %}
+        <button type="button" class="btn-delete-text" onclick="if(confirm('¿Estás seguro de que deseas eliminar esta red? Esta acción no se puede deshacer.')) { document.getElementById('formEliminarRed').submit(); }">
             <span class="material-symbols-outlined">delete_outline</span>
             Eliminar Red
         </button>
+        {% endif %}
         
     </div>
 </form>
+
+{% if is_edit %}
+<form id="formEliminarRed" action="{{ url_for('admin.red_eliminar', id=recurso_id) }}" method="POST" class="hidden-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endif %}
 {% endblock %}

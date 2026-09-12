@@ -2,6 +2,7 @@
 Rutas del administrador: /admin/...
 """
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from database import get_db_connection
 from utils.auth import login_required, role_required
 from services.dashboard_service import get_dashboard_context, get_estructura_context
 from services.user_service import get_usuarios_context
@@ -10,6 +11,11 @@ from services.leader_service import (
     crear_nuevo_usuario,
     get_opciones_asignacion,
     get_supervisores_disponibles_servicio,
+    crear_red_servicio,
+    obtener_red_servicio,
+    actualizar_red_servicio,
+    toggle_red_servicio,
+    eliminar_red_servicio,
 )
 from services.report_service import get_reportes_context
 
@@ -168,10 +174,18 @@ def casa_de_paz_editar(id):
     return render_template('form_cdp.html', title='Casas de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id, is_edit=True)
 
 
-@admin_bp.route('/red/crear')
+@admin_bp.route('/red/crear', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
 def red_crear():
+    if request.method == 'POST':
+        success, message = crear_red_servicio(request.form)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('admin.estructura'))
+        else:
+            flash(message, 'danger')
+
     supervisores_disponibles = get_supervisores_disponibles_servicio()
     return render_template(
         'form_redes.html',
@@ -183,11 +197,67 @@ def red_crear():
     )
 
 
-@admin_bp.route('/red/<id>/editar')
+@admin_bp.route('/red/<id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
 def red_editar(id):
-    return render_template('form_redes.html', title='Redes', breadcrumb='Red', link='red', recurso_id=id, is_edit=True)
+
+    red_data = obtener_red_servicio(id)
+    if not red_data:
+        flash("Red no encontrada", "danger")
+        return redirect(url_for('admin.estructura'))
+    
+    if request.method == 'POST':
+        success, message = actualizar_red_servicio(id, request.form)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('admin.estructura'))
+        else:
+            flash(message, 'danger')
+        
+    # Obtener supervisores disponibles + el supervisor actual de esta red (para que aparezca en el select)
+    supervisores_disponibles = get_supervisores_disponibles_servicio()
+
+    if red_data.get('supervisor_id'):
+        # Si el supervisor actual no está en la lista de disponibles (porque ya está asignado a esta red), lo consultamos y lo incluimos
+        conn = get_db_connection()
+        if conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id, nombre, apellido, username FROM usuario WHERE id = %s", (red_data['supervisor_id'],))
+                sup_actual = cursor.fetchone()
+
+                if sup_actual and not any(s['id'] == sup_actual['id'] for s in supervisores_disponibles):
+                    supervisores_disponibles.insert(0, sup_actual)  # Insertamos al inicio de la lista para que sea el seleccionado por defecto
+            conn.close()
+
+    return render_template(
+        'form_redes.html', 
+        title='Redes',
+        breadcrumb='Red', 
+        link='red', 
+        recurso_id=id, 
+        is_edit=True,
+        red = red_data,
+        supervisores_disponibles=supervisores_disponibles
+    )
+
+@admin_bp.route('/red/<int:id>/toggle_estado', methods=['POST'])
+@login_required
+@role_required("admin")
+def red_toggle_estado(id):
+    success, message = toggle_red_servicio(id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('admin.estructura'))
+
+
+@admin_bp.route('/red/<int:id>/eliminar', methods=['POST'])
+@login_required
+@role_required("admin")
+def red_eliminar(id):
+    success, message = eliminar_red_servicio(id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('admin.estructura'))
+
 
 
 @admin_bp.route('/perfil', methods=['GET', 'POST'])

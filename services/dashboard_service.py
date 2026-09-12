@@ -139,7 +139,7 @@ def get_selectores():
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT r.id, r.nombre,
+            SELECT r.id, r.nombre, r.is_active, r.supervisor_id,
                    COALESCE(CONCAT(u.nombre, ' ', u.apellido), 'Sin asignar') AS supervisor
             FROM red r
             LEFT JOIN usuario u ON r.supervisor_id = u.id
@@ -220,6 +220,7 @@ def get_estructura_context(usuario_id, is_supervisor=False):
             'slug': red_slug(red['id']),
             'supervisor': red.get('supervisor') or 'Sin asignar',
             'total_casas': len(casas_por_red.get(red['id'], [])),
+            'is_active': bool(red.get('is_active', 1)) if red.get('is_active') is not None else True,
         })
 
     casas_context = []

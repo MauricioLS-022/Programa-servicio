@@ -291,3 +291,22 @@ def validate_report_form(form_data: dict, cdp_id: int) -> tuple[bool, str, dict]
     }
 
     return True, "", datos_finales
+
+def validate_name_red(name: str) -> tuple[bool, str]:
+    """
+    Valida el nombre de una red.
+    Permite letras, números, espacios, guiones y acentos.
+    """
+    if not name or not isinstance(name, str):
+        return False, "El nombre de la red es obligatorio."
+    
+    cleaned = name.strip()
+    if len(cleaned) < 3:
+        return False, "El nombre de la red debe tener al menos 3 caracteres."
+    if len(cleaned) > 50:
+        return False, "El nombre de la red no puede exceder 50 caracteres."
+    
+    if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s'-]+$", cleaned):
+        return False, "El nombre de la red solo puede contener letras, números y espacios."
+        
+    return True, cleaned

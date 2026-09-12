@@ -63,10 +63,13 @@
                     {% endif %}
 
                     {% for red in redes_estructura %}
-                    <div class="red-card {% if has_role("supervisor") and loop.first %}active{% endif %}">
+                    <div class="red-card {% if has_role("supervisor") and loop.first %}active{% endif %} {% if not red.is_active %}red-card-paused{% endif %}">
                         <button class="red-filter-trigger {% if has_role("supervisor") and loop.first %}active{% endif %}" type="button" data-red-filter="{{ red.slug }}" data-red-name="{{ red.nombre }}" aria-pressed="{{ 'true' if has_role("supervisor") and loop.first else 'false' }}">
                             <div class="red-header">
-                                <span class="red-name">{{ red.nombre }}</span>
+                                <span class="red-name">Red {{ red.nombre }}</span>
+                                {% if not red.is_active %}
+                                <span class="badge badge-warning">En pausa</span>
+                                {% endif %}
                             </div>
                             <p class="red-leader">Supervisor: {{ red.supervisor }}</p>
                             <div class="red-stats">
@@ -89,10 +92,19 @@
                             <span class="material-symbols-outlined">more_vert</span>
                         </button>
                         <div class="red-menu" role="menu">
-                            <a href="#" role="menuitem"><span class="material-symbols-outlined">edit</span>Editar red</a>
-                            <a href="#" role="menuitem"><span class="material-symbols-outlined">home_work</span>Gestionar casas de paz</a>
-                            <a href="#" role="menuitem"><span class="material-symbols-outlined">person</span>Ver supervisor</a>
-                            <button type="button" role="menuitem" class="menu-danger"><span class="material-symbols-outlined">pause_circle</span>Poner en pausa</button>
+                            <a href="{{ url_for('admin.red_editar', id=red.id) }}" role="menuitem"><span class="material-symbols-outlined">edit</span>Editar red</a>
+                            {% if red.supervisor_id %}
+                            <a href="{{ url_for('admin.usuario_editar', id=red.supervisor_id) }}" role="menuitem">
+                                <span class="material-symbols-outlined">person</span>Ver supervisor
+                            </a>
+                            {% endif %}
+                            <form action="{{ url_for('admin.red_toggle_estado', id=red.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" role="menuitem" class="{{ 'menu-danger' if red.is_active else 'menu-success' }}">
+                                    <span class="material-symbols-outlined">{{ 'pause_circle' if red.is_active else 'play_circle' }}</span>
+                                    {{ 'Poner en pausa' if red.is_active else 'Reactivar red' }}
+                                </button>
+                            </form>
                         </div>
                         {% endif %}
                     </div>
