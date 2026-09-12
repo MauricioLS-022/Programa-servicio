@@ -16,6 +16,7 @@ def get_redes_demo():
             'supervisor': 'Pedro González',
             'supervisor_id': 'ca58cfc6-8337-11f1-8217-2016d8516279',
             'telefono': '+58 414 111 2233',
+            'is_active': 1,
         },
         {
             'id': 2,
@@ -23,6 +24,7 @@ def get_redes_demo():
             'supervisor': 'María López',
             'supervisor_id': 'mock-sup-2',
             'telefono': '+58 414 222 3344',
+            'is_active': 1,
         },
         {
             'id': 3,
@@ -30,6 +32,7 @@ def get_redes_demo():
             'supervisor': 'Carlos Ramírez',
             'supervisor_id': 'mock-sup-3',
             'telefono': '+58 414 333 4455',
+            'is_active': 1,
         },
     ]
 
