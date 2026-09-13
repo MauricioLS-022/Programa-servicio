@@ -14,6 +14,8 @@
     <!-- Estilos de Login -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
+
+    <script src="https://google.com/recaptcha/api.js?render={{ site_key }}"></script>
     
     <!-- Script de detección temprana de tema oscuro (anti-FOUC) -->
     <script src="{{ url_for('static', filename='scripts/theme_init.js') }}"></script>
@@ -59,6 +61,7 @@
         <!-- Formulario de Acceso -->
         <form class="login-form" method="POST" id="loginForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
             <div class="form-group">
                 <label for="usuario" class="form-label">Usuario</label>
                 <div class="input-wrapper">
