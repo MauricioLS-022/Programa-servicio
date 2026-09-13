@@ -87,11 +87,12 @@ def apply_security_headers(response):
     # Content-Security-Policy alineada con los estilos, iconos y fuentes del sistema
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://google.com/recaptcha/ https://www.google.com/recaptcha/ https://gstatic.com https://www.gstatic.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: https:; "
-        "connect-src 'self'; "
+        "connect-src 'self' https://google.com/recaptcha/ https://www.google.com/recaptcha/; "
+        "frame-src https://google.com/recaptcha/ https://www.google.com/ recaptcha/https://recaptcha.google.com/; "
         "frame-ancestors 'self';"
     )
 
