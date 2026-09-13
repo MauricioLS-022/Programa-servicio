@@ -21,3 +21,7 @@ services:
         value: serv_comunitario
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
