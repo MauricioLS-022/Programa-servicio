@@ -32,6 +32,9 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 7200
+
+    RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "6LcOh7MtAAAAADl8sfzWbZzgwyO1OcPYssLDNgCa")
+    RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "6LcOh7MtAAAAALFjtslS0h8zsUHTGuvYBwtEcIQ_")
     
     @property
     def SQLALCHEMY_DATABASE_URI(self):
