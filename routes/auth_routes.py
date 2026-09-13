@@ -5,15 +5,20 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from database import get_db_connection
 from werkzeug.security import check_password_hash, generate_password_hash
 from extensions import limiter
+import requests
+import os
 
 auth_bp = Blueprint('auth', __name__)
-
 
 @auth_bp.route('/iniciar_sesion', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])
 def login():
     """Página de inicio de sesión."""
     from flask import current_app
+
+    site_key = current_app.config.get("RECAPTCHA_SITE_KEY")
+    secret = current_app.config.get("RECAPTCHA_SECRET_KEY")
+
     p = ""
     is_dev = bool(
         current_app.config.get('DEBUG', False)
@@ -31,80 +36,110 @@ def login():
             return redirect(url_for('lider_cdp.dashboard'))
 
     if request.method == 'POST':
-        usuario = request.form.get('usuario', '').strip()
-        contrasena = request.form.get('contrasena', '').strip()
+        #Recaptcha
+        token = request.form.get("g-recaptcha-response")
+        
+        captcha_valido = False
+        puntaje = 0.0
+        accion = ""
 
-        conn = get_db_connection()
-        if conn:
-            try:
-                cur = conn.cursor()
-                cur.execute(
-                    "SELECT id, username, password, tipo_usuario FROM usuario WHERE username = %s",
-                    (usuario,)
-                )
-                r = cur.fetchone()
-
-                password_valid = bool(r and _check_password(r['password'], contrasena))
-                if not password_valid:
-                    p = "Usuario o contraseña incorrectos"
-                else:
-                    if r['password'] == contrasena:
-                        cur.execute(
-                            "UPDATE usuario SET password = %s WHERE id = %s",
-                            (generate_password_hash(contrasena), r['id'])
-                        )
-                        conn.commit()
-
-                    # Prevenir fijación de sesión limpiando cualquier dato residual
-                    session.clear()
-                    session["usuario_id"] = str(r['id'])  # Convertir UUID a string
-                    session["usuario"] = r['username']
-                    # Normalizar 'cdp' a 'lider_cdp' si viene de BD legacy
-                    rol_final = 'lider_cdp' if r['tipo_usuario'] == 'cdp' else r['tipo_usuario']
-                    session["rol"] = rol_final
-                    return _redirect_by_role(rol_final)
-            except Exception as e:
-                current_app.logger.exception("[DB] Error login: %s", e)
-                p = "Error al verificar credenciales"
-            finally:
-                conn.close()
+        if is_dev and not token:
+            captcha_valido = True
+            puntaje = 1.0
+            accion = "login"
         else:
-            # Modo demo: ESTRICTAMENTE habilitado SOLO en entorno de desarrollo
-            if is_dev:
-                if usuario == "admin" and contrasena == "admin":
-                    session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
-                    session["usuario"] = "admin"
-                    session["rol"] = "admin"
-                    return _redirect_by_role("admin")
-                elif usuario == "supervisor" and contrasena == "supervisor":
-                    session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
-                    session["usuario"] = "supervisor"
-                    session["rol"] = "supervisor"
-                    return _redirect_by_role("supervisor")
-                elif usuario == "lider" and contrasena == "lider":
-                    session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
-                    session["usuario"] = "lider"
-                    session["rol"] = "lider_cdp"
-                    return _redirect_by_role("lider_cdp")
-                elif usuario and contrasena:
-                    from mock_data import get_mock_usuarios
-                    m_user = next((u for u in get_mock_usuarios() if u['username'] == usuario), None)
-                    if m_user:
-                        session["usuario_id"] = m_user['id']
-                        session["usuario"] = m_user['username']
-                        session["rol"] = m_user['rol']
-                        return _redirect_by_role(m_user['rol'])
-                    session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
-                    session["usuario"] = usuario
-                    session["rol"] = "lider_cdp"
-                    return _redirect_by_role("lider_cdp")
-                else:
-                    p = "Modo desarrollo activo: ingresa admin/admin, supervisor/supervisor o un líder"
-            else:
-                current_app.logger.error("[PROD] Conexión a BD no disponible durante inicio de sesión")
-                p = "Servicio no disponible temporalmente. Intente más tarde."
+            try:
+                respuesta = requests.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={"secret": secret, "response": token},
+                    timeout=5
+                )
+                resultado = respuesta.json()
+                captcha_valido = resultado.get("success", False)
+                puntaje = resultado.get("score", 0.0)
+                accion = resultado.get("action", "")
+                print(f"reCAPTCHA -> Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion}")
+            except Exception as e:
+                current_app.logger.error(f"[reCAPTCHA] Error de conexión: {e}")
+                captcha_valido = False
 
-    return render_template('login.html', p=p, is_dev=is_dev)
+        if not captcha_valido or puntaje < 0.7 or (accion != "login" and not is_dev):
+            p = "Tráfico sospechoso o verificación de seguridad fallida. Inténtalo de nuevo."
+        else:
+            usuario = request.form.get('usuario', '').strip()
+            contrasena = request.form.get('contrasena', '').strip()
+
+            conn = get_db_connection()
+            if conn:
+                try:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT id, username, password, tipo_usuario FROM usuario WHERE username = %s",
+                        (usuario,)
+                    )
+                    r = cur.fetchone()
+
+                    password_valid = bool(r and _check_password(r['password'], contrasena))
+                    if not password_valid:
+                        p = "Usuario o contraseña incorrectos"
+                    else:
+                        if r['password'] == contrasena:
+                            cur.execute(
+                                "UPDATE usuario SET password = %s WHERE id = %s",
+                                (generate_password_hash(contrasena), r['id'])
+                            )
+                            conn.commit()
+
+                        # Prevenir fijación de sesión limpiando cualquier dato residual
+                        session.clear()
+                        session["usuario_id"] = str(r['id'])  # Convertir UUID a string
+                        session["usuario"] = r['username']
+                        # Normalizar 'cdp' a 'lider_cdp' si viene de BD legacy
+                        rol_final = 'lider_cdp' if r['tipo_usuario'] == 'cdp' else r['tipo_usuario']
+                        session["rol"] = rol_final
+                        return _redirect_by_role(rol_final)
+                except Exception as e:
+                    current_app.logger.exception("[DB] Error login: %s", e)
+                    p = "Error al verificar credenciales"
+                finally:
+                    conn.close()
+            else:
+                # Modo demo: ESTRICTAMENTE habilitado SOLO en entorno de desarrollo
+                if is_dev:
+                    if usuario == "admin" and contrasena == "admin":
+                        session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
+                        session["usuario"] = "admin"
+                        session["rol"] = "admin"
+                        return _redirect_by_role("admin")
+                    elif usuario == "supervisor" and contrasena == "supervisor":
+                        session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
+                        session["usuario"] = "supervisor"
+                        session["rol"] = "supervisor"
+                        return _redirect_by_role("supervisor")
+                    elif usuario == "lider" and contrasena == "lider":
+                        session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
+                        session["usuario"] = "lider"
+                        session["rol"] = "lider_cdp"
+                        return _redirect_by_role("lider_cdp")
+                    elif usuario and contrasena:
+                        from mock_data import get_mock_usuarios
+                        m_user = next((u for u in get_mock_usuarios() if u['username'] == usuario), None)
+                        if m_user:
+                            session["usuario_id"] = m_user['id']
+                            session["usuario"] = m_user['username']
+                            session["rol"] = m_user['rol']
+                            return _redirect_by_role(m_user['rol'])
+                        session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
+                        session["usuario"] = usuario
+                        session["rol"] = "lider_cdp"
+                        return _redirect_by_role("lider_cdp")
+                    else:
+                        p = "Modo desarrollo activo: ingresa admin/admin, supervisor/supervisor o un líder"
+                else:
+                    current_app.logger.error("[PROD] Conexión a BD no disponible durante inicio de sesión")
+                    p = "Servicio no disponible temporalmente. Intente más tarde."
+
+    return render_template('login.html', p=p, is_dev=is_dev, site_key=site_key)
 
 
 def _check_password(stored_password, provided_password):
