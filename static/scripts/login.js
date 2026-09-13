@@ -44,13 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Estado de envío en botón
     const form = document.getElementById('loginForm');
     const btn = document.getElementById('btnLogin');
+    const captcha = document.getElementById('g-recaptcha-response')
     if (form && btn) {
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
             btn.disabled = true;
-            const btnText = btn.querySelector('.btn-text');
-            if (btnText) {
-                btnText.textContent = 'Ingresando...';
-            }
+            btn.querySelector('.btn-text').textContent = 'Ingresando...';
+
+            grecaptcha.ready(() => {
+                grecaptcha.execute('{{ site_key }}', { action: 'login' })
+                    .then((token) => {
+                        captcha.value = token;
+                        form.submit();
+                    })
+                    .catch((error) => {
+                        console.error("Error al obtener reCAPTCHA:", error);
+                        btn.disabled = false;
+                        btn.querySelector('.btn-text').textContent = 'Ingresar al Sistema';
+                    });
+            });
+
         });
     }
 });
