@@ -41,18 +41,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Estado de envío en botón
+        // 3. Estado de envío en botón
     const form = document.getElementById('loginForm');
     const btn = document.getElementById('btnLogin');
     const captcha = document.getElementById('g-recaptcha-response')
     if (form && btn) {
+
+        const siteKey = form.getAttribute('data-sitekey');
+
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             btn.disabled = true;
             btn.querySelector('.btn-text').textContent = 'Ingresando...';
 
             grecaptcha.ready(() => {
-                grecaptcha.execute('{{ site_key }}', { action: 'login' })
+                grecaptcha.execute(siteKey, { action: 'login' })
                     .then((token) => {
                         captcha.value = token;
                         form.submit();
