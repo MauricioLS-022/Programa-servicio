@@ -321,8 +321,67 @@ def toggle_lider_servicio(lider_id: int) -> tuple[bool, str, str]:
         conn.close()
 
 
-def eliminar_lider_servicio(lider_id: int) -> tuple[bool, str]:
-    pass
+def eliminar_lider_servicio(lider_id_raw: int) -> tuple[bool, str, str]:
+    """
+    Gestiona la baja de un líder con candados de integridad llamando a eliminar_pausar_lider.
+    Retorna: (exito: bool, categoria_flash: str, mensaje: str)
+    """
+    try:
+        lider_id = int(lider_id_raw)
+    except (ValueError, TypeError) as e:
+        return False, "danger", "Identificador de líder no válido."
+
+    conn = get_db_connection()
+
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_reportes
+            lideres = get_mock_lideres()
+            target = next((l for l in lideres if str(l.get('id')) == str(lider_id)), None)
+            nombre = f"{target.get('nombre', '')} {target.get('apellido', '')}".strip() if target else f"Líder #{lider_id}"
+            reportes = get_mock_reportes()
+            total_reps = sum(1 for r in reportes if r.get('lider_nombre') == nombre or (target and r.get('cdp_id') == target.get('cdp_id')))
+            if total_reps > 0:
+                return False, 'danger', (
+                    f"No se puede eliminar al líder '{nombre}' porque tiene {total_reps} reporte(s) registrado(s). "
+                    f"Para evitar datos huérfanos y preservar el historial ministerial, debes ponerlo en pausa en su lugar."
+                )
+            return True, 'success', f"El líder '{nombre}' ha sido eliminado exitosamente del sistema."
+        return False, 'danger', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+
+            exito, accion, mensaje = eliminar_pausar_lider(cursor, lider_id)
+
+            categorias = {
+                'eliminado': 'success',  # Verde
+                'pausado':   'warning',  # Amarillo / Ámbar
+                'bloqueada': 'danger',   # Rojo
+                'error':     'danger'    # Rojo
+            }
+
+            categoria_flash = categorias.get(accion, 'danger')
+            if exito:
+                conn.commit()
+
+                try:
+                    invalidate_dashboard_cache()
+                except Exception:
+                    pass
+
+                return True, categoria_flash, mensaje
+            else:
+                conn.rollback()
+                return False, categoria_flash, mensaje
+
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error en baja de líder %s: %s", lider_id, e)
+        return False, "danger", f"Error interno al procesar la baja del líder: {e}"
+    finally:
+        conn.close()
 
 
 def crear_nuevo_usuario(form_data):

@@ -95,10 +95,12 @@ def get_usuarios(conn, search='', rol='', page=1, per_page=5):
     total = int(cur.fetchone()['total'])
 
     cur.execute(f"""
-        SELECT id, username, nombre, apellido, tipo_usuario AS rol, is_active
+        SELECT u.id, u.username, u.nombre, u.apellido, u.tipo_usuario AS rol, u.is_active,
+               (SELECT r.nombre FROM red r WHERE r.supervisor_id = u.id LIMIT 1) AS red_nombre,
+               (SELECT c.codigo FROM cdp c WHERE c.usuario_id = u.id LIMIT 1) AS cdp_codigo
         FROM usuario u
         {where_clause}
-        ORDER BY nombre IS NULL, nombre, apellido IS NULL, apellido, username
+        ORDER BY u.nombre IS NULL, u.nombre, u.apellido IS NULL, u.apellido, u.username
         LIMIT %s OFFSET %s
     """, [*params, per_page, offset])
     usuarios = cur.fetchall() or []
@@ -341,7 +343,6 @@ def get_metricas_generales(conn):
             COALESCE(
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
-                CONCAT(u.nombre, ' ', u.apellido),
                 'Sin asignar'
             ) AS lider,
             COALESCE(c.telefono, (SELECT l.telefono FROM lider l WHERE l.cdp_id = c.id AND l.telefono IS NOT NULL LIMIT 1), '') AS telefono
@@ -471,7 +472,6 @@ def get_metricas_red(conn, red_id):
             COALESCE(
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
-                CONCAT(u.nombre, ' ', u.apellido),
                 'Sin asignar'
             ) AS lider,
             DATEDIFF(CURDATE(), MAX(rep.fecha)) AS dias_desde_reporte
@@ -1203,7 +1203,7 @@ def get_cdps_para_lideres(cursor: Cursor):
     para los selectores de asignación en form_lider.html.
     """
     query = """
-        SELECT c.id, c.codigo, c.direccion, r,nombre, as red_nombre
+        SELECT c.id, c.codigo, c.direccion, r.nombre AS red_nombre
         FROM cdp c
         LEFT JOIN red r ON c.red_id = r.id
         WHERE c.is_active = 1
@@ -1257,19 +1257,20 @@ def actualizar_lider(cursor: Cursor, lider_id:int, nombre:str, apellido:str, tel
         cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id, lider_id))
     return cursor.rowcount >= 0
 
-def eliminar_pausar_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str]:
+def eliminar_pausar_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str, str]:
     """
-    Gestiona la baja de un líder preservando la integridad histórica de los reportes:
-    - Si tiene reportes asociados: Desactivación lógica (is_active = 0) para conservar la autoría ministerial.
-    - Si NO tiene reportes asociados: Eliminación física limpia.
+    Gestiona la baja de un líder con candado de integridad referencial:
+    - Si tiene reportes asociados: BLOQUEA la eliminación física para evitar datos huérfanos
+      en el historial ministerial, indicando que se debe poner en pausa.
+    - Si NO tiene reportes asociados: Realiza eliminación física limpia.
     
-    Retorna: (exito: bool, accion: 'pausado' | 'eliminado' | 'error', mensaje: str)
+    Retorna: (exito: bool, accion: 'bloqueada' | 'eliminado' | 'error', mensaje: str)
     """
     # 1. Verificar si el líder existe
     cursor.execute("SELECT id, nombre, apellido FROM lider WHERE id = %s", (lider_id,))
     lider = cursor.fetchone()
     if not lider:
-        return False, "El líder no existe o ya fue eliminado."
+        return False, 'error', "El líder no existe o ya fue eliminado."
 
     nombre_completo = f"{lider.get('nombre', '')} {lider.get('apellido', '')}".strip()
 
@@ -1278,14 +1279,15 @@ def eliminar_pausar_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str]:
     total_reportes = cursor.fetchone()['total']
 
     if total_reportes > 0:
-        # Caso A: Tiene historial -> Desactivación lógica (soft delete)
-        cursor.execute("UPDATE lider SET is_active = 0 WHERE id = %s", (lider_id,))
-        return True, f"El líder '{nombre_completo}' tiene {total_reportes} reporte(s) registrado(s). Ha sido desactivado para conservar la memoria histórica de las reuniones."
+        return False, 'bloqueada', (
+            f"No se puede eliminar al líder '{nombre_completo}' porque tiene {total_reportes} reporte(s) "
+            f"registrado(s). Para evitar datos huérfanos y preservar el historial ministerial, "
+            f"debes ponerlo en pausa en su lugar."
+        )
 
-    else:
-        # Caso B: Sin historial -> Eliminación física limpia
-        cursor.execute("DELETE FROM lider WHERE id = %s", (lider_id,))
-        return True, f"El líder '{nombre_completo}' ha sido eliminado exitosamente del sistema."
+    # 3. Sin historial -> Eliminación física limpia
+    cursor.execute("DELETE FROM lider WHERE id = %s", (lider_id,))
+    return True, 'eliminado', f"El líder '{nombre_completo}' ha sido eliminado exitosamente del sistema."
 
 
 def toggle_estado_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str, str]:
@@ -1718,4 +1720,4 @@ def toggle_estado_cdp(cursor: Cursor, cdp_id: int) -> tuple[bool, str, str]:
         cursor.execute("UPDATE cdp SET is_active = 0 WHERE id = %s", (cdp_id,))
         if usuario_id:
             cursor.execute("UPDATE usuario SET is_active = 0 WHERE id = %s", (usuario_id,))
-        return True, 'pausada', f"La Casa de Paz '{codigo}' ha sido puesta en pausa y su cuenta de acceso desactivada."
+        return True, 'pausada', f"La Casa de Paz '{codigo}' ha sido puesta en pausa y su cuenta de acceso desactivada."

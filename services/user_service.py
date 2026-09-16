@@ -26,6 +26,13 @@ def get_usuarios_context(search='', rol='', page=1, per_page=5):
             conn.close()
     elif mock_mode_enabled():
         usuarios = get_mock_usuarios()
+        redes = get_redes_demo()
+        casas = get_casas_demo()
+        for u in usuarios:
+            red_asig = next((r for r in redes if str(r.get('supervisor_id')) == str(u.get('id'))), None)
+            u['red_nombre'] = red_asig['nombre'] if red_asig else None
+            cdp_asig = next((c for c in casas if str(c.get('lider_id')) == str(u.get('id')) or str(c.get('usuario_id')) == str(u.get('id'))), None)
+            u['cdp_codigo'] = cdp_asig['codigo'] if cdp_asig else None
         if search:
             search_lower = search.lower()
             usuarios = [
@@ -254,5 +261,64 @@ def toggle_usuario_servicio(usuario_id: str) -> tuple[bool, str, str]:
         conn.rollback()
         current_app.logger.error("Error al alternar estado de usuario %s: %s", usuario_id, e)
         return False, 'error', f"Error interno al alternar el estado del usuario: {e}"
+    finally:
+        conn.close()
+
+def eliminar_usuario_servicio(usuario_id:str, usuario_session_id:str) -> tuple[bool, str,str]:
+    """
+    Permite eliminar un usuario solo si no es la cuenta en sesión 
+    y no tiene redes o casas de paz vinculadas.
+    """
+    if str(usuario_id) == str(usuario_session_id):
+        return False, "danger", "No puedes eliminar tu propia cuenta de usuario en sesión."
+
+    conn = get_db_connection()
+
+    if not conn:
+        if mock_mode_enabled():
+            redes = get_redes_demo()
+            red_vinculada = next((r for r in redes if str(r.get('supervisor_id')) == str(usuario_id)), None)
+            if red_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario es supervisor de la red '{red_vinculada.get('nombre')}'. Desvincula o reasigna la red primero."
+
+            casas = get_casas_demo()
+            cdp_vinculada = next((c for c in casas if str(c.get('lider_id')) == str(usuario_id) or str(c.get('usuario_id')) == str(usuario_id)), None)
+            if cdp_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario tiene acceso a la Casa de Paz '{cdp_vinculada.get('codigo')}'. Desvincula la cuenta de la Casa primero."
+
+            return True, 'success', "Usuario eliminado exitosamente del sistema."
+        return False, 'danger', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            # Candado 1: Verificar si es supervisor de alguna red
+            cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s", (usuario_id,))
+            red_vinculada = cursor.fetchone()
+
+            if red_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario es supervisor de la red '{red_vinculada['nombre']}'. Desvincula o reasigna la red primero."
+
+            # Candado 2: Verificar si tiene CDP asignada
+            cursor.execute("SELECT id, codigo FROM cdp WHERE usuario_id = %s", (usuario_id,))
+            cdp_vinculada = cursor.fetchone()
+
+            if cdp_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario tiene acceso a la Casa de Paz '{cdp_vinculada['codigo']}'. Desvincula la cuenta de la Casa primero."
+
+            # Eliminación segura
+            cursor.execute("DELETE FROM usuario WHERE id = %s", (usuario_id,))
+            conn.commit()
+
+            try:
+                invalidate_dashboard_cache()
+            except Exception:
+                pass
+
+            return True, 'success', "Usuario eliminado exitosamente del sistema."
+        
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al eliminar usuario %s: %s", usuario_id, e)
+        return False, 'danger', f"Error interno al eliminar el usuario: {e}"
     finally:
         conn.close()

@@ -11,6 +11,7 @@ from services.user_service import (
     obtener_usuario_por_id,
     actualizar_usuario_admin,
     toggle_usuario_servicio,
+    eliminar_usuario_servicio
 )
 from services.leader_service import (
     get_lideres_context,
@@ -26,6 +27,7 @@ from services.leader_service import (
     obtener_lider_servicio,
     actualizar_lider_servicio,
     crear_lider_servicio,
+    eliminar_lider_servicio,
 )
 from services.cdp_service import (
     crear_cdp_servicio,
@@ -34,38 +36,8 @@ from services.cdp_service import (
     get_lideres_cdp_disponibles_servicio,
     toggle_cdp_servicio,
     actualizar_reporte,
+    obtener_cdps_para_select
 )
-
-try:
-    from services.cdp_service import obtener_cdps_para_select
-except ImportError:
-    def obtener_cdps_para_select():
-        conn = get_db_connection()
-        if conn:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT c.id, c.codigo, c.direccion, c.is_active, r.nombre AS red_nombre
-                        FROM cdp c
-                        LEFT JOIN red r ON c.red_id = r.id
-                        WHERE c.is_active = 1
-                        ORDER BY c.codigo ASC
-                    """)
-                    return cursor.fetchall() or []
-            except Exception as e:
-                print(f"[ERROR] Error al obtener CDPs para select: {e}")
-                return []
-            finally:
-                conn.close()
-        else:
-            try:
-                from mock_data import get_mock_casas
-                return [c for c in get_mock_casas() if c.get('is_active', 1) == 1]
-            except Exception:
-                return []
-
-    import services.cdp_service
-    services.cdp_service.obtener_cdps_para_select = obtener_cdps_para_select
 
 from services.report_service import get_reportes_context
 
@@ -160,6 +132,14 @@ def usuario_editar(id):
         cdps_disponibles=cdps_disponibles,
     )
 
+@admin_bp.route('/usuario/<id>/eliminar', methods=['POST'])
+@login_required
+@role_required("admin")
+def usuario_eliminar(id):
+    usuario_session_id = session.get('usuario_id') or session.get('user_id')
+    exito, categoria, mensaje = eliminar_usuario_servicio(id, usuario_session_id)
+    flash(mensaje, categoria)
+    return redirect(url_for('admin.usuario'))
 
 @admin_bp.route('/usuario/<id>/toggle_estado', methods=['POST'])
 @login_required
@@ -298,32 +278,12 @@ def lider_editar(id):
 
 
 @admin_bp.route('/lider/<int:id>/eliminar', methods=['POST'])
+@admin_bp.route('/lider/<id>/eliminar', methods=['POST'])
 @login_required
 @role_required("admin")
 def lider_eliminar(id):
-    conn = get_db_connection()
-    if conn:
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT nombre, apellido FROM lider WHERE id = %s", (id,))
-                lider_row = cursor.fetchone()
-                if not lider_row:
-                    flash("El líder no existe o ya fue eliminado.", "warning")
-                    return redirect(url_for('admin.lider'))
-                
-                nombre_completo = f"{lider_row.get('nombre', '')} {lider_row.get('apellido', '')}".strip()
-                cursor.execute("DELETE FROM lider WHERE id = %s", (id,))
-            conn.commit()
-            flash(f"Líder '{nombre_completo}' eliminado exitosamente.", "success")
-        except Exception as e:
-            conn.rollback()
-            print(f"[ERROR] Error al eliminar líder: {e}")
-            flash("Error al eliminar el líder de la base de datos.", "danger")
-        finally:
-            conn.close()
-    else:
-        flash("No se pudo conectar a la base de datos.", "danger")
-
+    exito, categoria, mensaje = eliminar_lider_servicio(id)
+    flash(mensaje, categoria)
     return redirect(url_for('admin.lider'))
 
 
