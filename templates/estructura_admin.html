@@ -192,7 +192,7 @@
                         </div>
                     </div>
                     <div class="casa-details">
-                        {% if casa.lider and casa.lider != 'Sin líder' and casa.lider != 'Sin líder asignado' %}
+                        {% if casa.lider and casa.lider != 'Sin líder' and casa.lider != 'Sin líder asignado' and casa.lider != 'Sin asignar' %}
                         <div class="detail-row"><span class="material-symbols-outlined">shield_person</span><span>Líder: <strong>{{ casa.lider }}</strong></span></div>
                         {% endif %}
                         <div class="detail-row"><span class="material-symbols-outlined">person</span><span>Anfitrión: <strong>{{ casa.anfitrion }}</strong></span></div>

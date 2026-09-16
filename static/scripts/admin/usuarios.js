@@ -7,8 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleSelect = document.getElementById('user-role');
     const searchInput = document.getElementById('user-search');
     const deleteModal = document.getElementById('deleteModal');
-    const deleteInput = document.getElementById('deleteInput');
-    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
     let activeDeleteBtn = null;
 
     // 1. Auto-filtrado al cambiar rol
@@ -25,19 +23,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Modal de Eliminación Accesible
+    // 3. Modales de Eliminación (Bloqueo por dependencias y Confirmación con 'ELIMINAR')
+    const deleteBlockedModal = document.getElementById('deleteBlockedModal');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteInput = document.getElementById('deleteInput');
+    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+    const formEliminar = document.getElementById('formEliminarUsuario');
+
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function() {
             activeDeleteBtn = this;
-            if (deleteModal) {
-                deleteModal.style.display = 'flex';
-                deleteModal.setAttribute('aria-hidden', 'false');
-                if (deleteInput) {
-                    deleteInput.value = '';
-                    deleteInput.focus();
+            const isSelf = this.dataset.isSelf === 'true';
+            const redNombre = (this.dataset.red || '').trim();
+            const cdpCodigo = (this.dataset.cdp || '').trim();
+            const nombre = (this.dataset.nombre || 'este usuario').trim();
+            const deleteUrl = this.dataset.deleteUrl;
+
+            if (isSelf || redNombre || cdpCodigo) {
+                // Caso Bloqueado: cuenta propia, red vinculada o cdp vinculada
+                const reasonEl = document.getElementById('deleteBlockedReason');
+                const hintEl = document.getElementById('deleteBlockedHint');
+
+                if (isSelf) {
+                    if (reasonEl) reasonEl.innerHTML = `No puedes eliminar tu propia cuenta de usuario en sesión (<strong>${nombre}</strong>).`;
+                    if (hintEl) hintEl.textContent = 'Por razones de seguridad del sistema, otro administrador debe gestionar tu cuenta si es necesario.';
+                } else if (redNombre) {
+                    if (reasonEl) reasonEl.innerHTML = `El usuario <strong>${nombre}</strong> es actualmente supervisor de la red ministerial <strong>${redNombre}</strong>.`;
+                    if (hintEl) hintEl.textContent = 'Para poder eliminarlo, primero debes reasignar o desvincular la red desde la vista de estructura.';
+                } else if (cdpCodigo) {
+                    if (reasonEl) reasonEl.innerHTML = `El usuario <strong>${nombre}</strong> tiene asignada la Casa de Paz <strong>${cdpCodigo}</strong>.`;
+                    if (hintEl) hintEl.textContent = 'Para poder eliminarlo, primero debes reasignar o desvincular la cuenta en la gestión de la Casa de Paz.';
                 }
-                if (btnConfirmDelete) {
-                    btnConfirmDelete.disabled = true;
+
+                if (deleteBlockedModal) {
+                    deleteBlockedModal.style.display = 'flex';
+                    deleteBlockedModal.setAttribute('aria-hidden', 'false');
+                }
+            } else {
+                // Caso Permitido: sin dependencias
+                const nameEl = document.getElementById('deleteUserName');
+                if (nameEl) nameEl.textContent = nombre;
+                if (formEliminar && deleteUrl) formEliminar.action = deleteUrl;
+
+                if (deleteConfirmModal) {
+                    deleteConfirmModal.style.display = 'flex';
+                    deleteConfirmModal.setAttribute('aria-hidden', 'false');
+                    if (deleteInput) {
+                        deleteInput.value = '';
+                        setTimeout(() => deleteInput.focus(), 50);
+                    }
+                    if (btnConfirmDelete) {
+                        btnConfirmDelete.disabled = true;
+                    }
                 }
             }
         });
@@ -47,13 +84,19 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteInput.addEventListener('input', function() {
             btnConfirmDelete.disabled = this.value.trim().toUpperCase() !== 'ELIMINAR';
         });
+        deleteInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !btnConfirmDelete.disabled) {
+                e.preventDefault();
+                window.confirmDeleteUser();
+            }
+        });
     }
 
     window.closeDeleteModal = function() {
-        if (deleteModal) {
-            deleteModal.style.display = 'none';
-            deleteModal.setAttribute('aria-hidden', 'true');
-        }
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        });
         if (activeDeleteBtn) {
             activeDeleteBtn.focus();
             activeDeleteBtn = null;
@@ -61,29 +104,32 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.confirmDeleteUser = function() {
-        if (activeDeleteBtn) {
+        if (formEliminar && formEliminar.action) {
+            formEliminar.submit();
+        } else if (activeDeleteBtn) {
             const form = activeDeleteBtn.closest('form');
             if (form) {
                 form.submit();
             } else {
-                const userId = activeDeleteBtn.dataset.id;
-                if (userId) {
-                    window.location.href = `/admin/usuario/eliminar/${userId}`;
+                const deleteUrl = activeDeleteBtn.dataset.deleteUrl;
+                if (deleteUrl) {
+                    window.location.href = deleteUrl;
                 }
             }
         }
         window.closeDeleteModal();
     };
 
-    if (deleteModal) {
-        deleteModal.addEventListener('click', (e) => {
-            if (e.target === deleteModal) window.closeDeleteModal();
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) window.closeDeleteModal();
         });
-    }
+    });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && deleteModal && deleteModal.style.display === 'flex') {
-            window.closeDeleteModal();
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal-overlay[style*="display: flex"]');
+            if (openModal) window.closeDeleteModal();
         }
     });
 

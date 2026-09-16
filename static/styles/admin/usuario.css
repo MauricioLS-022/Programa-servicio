@@ -1121,6 +1121,10 @@ body {
     font-size: 2rem;
 }
 
+.modal-icon.modal-icon-blocked {
+    color: #d97706;
+}
+
 .modal-header h3 {
     font-family: var(--font-headline);
     font-size: 1.25rem;

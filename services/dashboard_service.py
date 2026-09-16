@@ -157,7 +157,6 @@ def get_selectores():
                    COALESCE(
                        (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
                        (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
-                       CONCAT(u.nombre, ' ', u.apellido),
                        'Sin líder'
                    ) AS lider,
                    COALESCE(

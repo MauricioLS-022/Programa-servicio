@@ -1292,3 +1292,23 @@ def get_casas_sin_reporte_7d(red_id=None):
     """
     from services.dashboard_service import get_casas_sin_reporte_7d as _get_sin_rep
     return _get_sin_rep(red_id=red_id)
+
+def obtener_cdps_para_select():
+    """Retorna las Casas de Paz activas para desplegables en formularios."""
+    conn = get_db_connection()
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_casas
+            return [c for c in get_mock_casas() if c.get('is_active', 1) == 1]
+        return []
+
+    try:
+        with conn.cursor() as cursor:
+            return db_queries.get_cdps_para_lideres(cursor)
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al obtener CDPs para select: %s", e)
+        return []
+    finally:
+        conn.close()
