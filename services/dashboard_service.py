@@ -153,6 +153,7 @@ def get_selectores():
         cur.execute("""
             SELECT c.id, c.codigo, c.codigo AS nombre, c.anfitrion, c.direccion, c.red_id, c.is_active,
                    u.username AS usuario_username,
+                   CONCAT(u.nombre, ' ', u.apellido) AS usuario_nombre,
                    COALESCE(
                        (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
                        (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
@@ -282,6 +283,8 @@ def get_estructura_context(usuario_id, is_supervisor=False):
             'red_slug': red_slug(casa['red_id']),
             'anfitrion': casa.get('anfitrion') or 'Sin anfitrión asignado',
             'lider': casa.get('lider') or 'Sin líder asignado',
+            'usuario_username': casa.get('usuario_username'),
+            'usuario_nombre': (casa.get('usuario_nombre') or '').strip(),
             'zona': casa.get('direccion') or 'Ubicación pendiente',
             'supervisor': casa.get('supervisor') or '',
             'is_active': is_active,

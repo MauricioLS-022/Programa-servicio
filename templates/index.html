@@ -321,37 +321,41 @@
         </div>
 
         <div class="lider-modal-body">
-            <!-- Sección General -->
+            <!-- Fecha y Encargado -->
             <div>
                 <h4 class="modal-section-title">
-                    <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
-                    Información General
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">calendar_today</span>
+                    Fecha y Encargado
                 </h4>
                 <div class="modal-form-grid">
-                    <div class="modal-input-group">
-                        <label>Fecha</label>
-                        <input type="text" id="detFecha" readonly>
-                    </div>
-                    <div class="modal-input-group">
-                        <label>Horario</label>
-                        <input type="text" id="detHorario" readonly>
-                    </div>
                     <div class="modal-input-group modal-full-width">
                         <label>Líder Encargado</label>
                         <input type="text" id="detLider" readonly>
                     </div>
-                    <div class="modal-input-group modal-full-width">
+                    <div class="modal-input-group">
+                        <label>Fecha de Reunión</label>
+                        <input type="text" id="detFecha" readonly>
+                    </div>
+                    <div class="modal-input-group">
                         <label>Tema Desarrollado</label>
                         <input type="text" id="detTema" readonly>
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Hora de Inicio</label>
+                        <input type="text" id="detHrInicio" readonly>
+                    </div>
+                    <div class="modal-input-group">
+                        <label>Hora de Fin</label>
+                        <input type="text" id="detHrFin" readonly>
                     </div>
                 </div>
             </div>
 
-            <!-- Sección Asistencia -->
+            <!-- Asistencia y Desglose -->
             <div>
                 <h4 class="modal-section-title">
                     <span class="material-symbols-outlined" style="font-size: 1rem;">groups</span>
-                    Asistencia
+                    Asistencia y Desglose
                 </h4>
                 <div class="modal-form-grid grid-4">
                     <div class="modal-input-group">
@@ -372,16 +376,16 @@
                     </div>
                 </div>
                 <div class="asistencia-total-pill">
-                    <span>Asistencia Total:</span>
+                    <span>Total Calculado:</span>
                     <span id="detAsistenciaTotal" style="font-size: 1.1rem;">0</span>
                 </div>
             </div>
 
-            <!-- Sección Ministerial y Recursos -->
+            <!-- Ministerio y Ofrendas -->
             <div>
                 <h4 class="modal-section-title">
-                    <span class="material-symbols-outlined" style="font-size: 1rem;">volunteer_activism</span>
-                    Resultados y Ofrendas
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">attach_money</span>
+                    Ministerio y Ofrendas
                 </h4>
                 <div class="modal-form-grid">
                     <div class="modal-input-group">
@@ -393,11 +397,11 @@
                         <input type="text" id="detConfesiones" readonly style="text-align: center;">
                     </div>
                     <div class="modal-input-group">
-                        <label>Ofrendas (Bs)</label>
+                        <label>Ofrendas en Bolívares (Bs)</label>
                         <input type="text" id="detOfrendasBs" readonly style="font-weight: 700; color: var(--secondary); text-align: center;">
                     </div>
                     <div class="modal-input-group">
-                        <label>Ofrendas ($ USD)</label>
+                        <label>Ofrendas en Dólares ($)</label>
                         <input type="text" id="detOfrendasUsd" readonly style="font-weight: 700; color: var(--secondary); text-align: center;">
                     </div>
                     <div class="modal-input-group modal-full-width">
@@ -405,7 +409,7 @@
                         <input type="text" id="detCesta" readonly style="text-align: center; font-weight: 600;">
                     </div>
                     <div class="modal-input-group modal-full-width">
-                        <label>Observaciones / Testimonios</label>
+                        <label>Observaciones</label>
                         <textarea id="detObservaciones" rows="3" readonly></textarea>
                     </div>
                 </div>

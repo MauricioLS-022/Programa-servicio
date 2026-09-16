@@ -6,7 +6,12 @@ from database import get_db_connection
 from db_queries import get_todas_las_redes, obtener_cdp_admin
 from utils.auth import login_required, role_required
 from services.dashboard_service import get_dashboard_context, get_estructura_context
-from services.user_service import get_usuarios_context
+from services.user_service import (
+    get_usuarios_context,
+    obtener_usuario_por_id,
+    actualizar_usuario_admin,
+    toggle_usuario_servicio,
+)
 from services.leader_service import (
     get_lideres_context,
     crear_nuevo_usuario,
@@ -17,13 +22,50 @@ from services.leader_service import (
     actualizar_red_servicio,
     toggle_red_servicio,
     eliminar_red_servicio,
+    toggle_lider_servicio,
+    obtener_lider_servicio,
+    actualizar_lider_servicio,
+    crear_lider_servicio,
 )
 from services.cdp_service import (
     crear_cdp_servicio,
     actualizar_cdp_servicio,
     eliminar_cdp_servicio,
     get_lideres_cdp_disponibles_servicio,
+    toggle_cdp_servicio,
+    actualizar_reporte,
 )
+
+try:
+    from services.cdp_service import obtener_cdps_para_select
+except ImportError:
+    def obtener_cdps_para_select():
+        conn = get_db_connection()
+        if conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT c.id, c.codigo, c.direccion, c.is_active, r.nombre AS red_nombre
+                        FROM cdp c
+                        LEFT JOIN red r ON c.red_id = r.id
+                        WHERE c.is_active = 1
+                        ORDER BY c.codigo ASC
+                    """)
+                    return cursor.fetchall() or []
+            except Exception as e:
+                print(f"[ERROR] Error al obtener CDPs para select: {e}")
+                return []
+            finally:
+                conn.close()
+        else:
+            try:
+                from mock_data import get_mock_casas
+                return [c for c in get_mock_casas() if c.get('is_active', 1) == 1]
+            except Exception:
+                return []
+
+    import services.cdp_service
+    services.cdp_service.obtener_cdps_para_select = obtener_cdps_para_select
 
 from services.report_service import get_reportes_context
 
@@ -86,10 +128,6 @@ def usuario_crear():
         cdps_disponibles=cdps_disponibles,
     )
 
-
-from services.user_service import get_usuarios_context, obtener_usuario_por_id, actualizar_usuario_admin
-
-
 @admin_bp.route('/usuario/<id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
@@ -123,6 +161,24 @@ def usuario_editar(id):
     )
 
 
+@admin_bp.route('/usuario/<id>/toggle_estado', methods=['POST'])
+@login_required
+@role_required("admin")
+def usuario_toggle_estado(id):
+    ok, status, mensaje = toggle_usuario_servicio(id)
+    if ok:
+        flash(mensaje, 'success')
+    else:
+        flash(mensaje, 'error')
+
+    if request.referrer:
+        return redirect(request.referrer)
+    try:
+        return redirect(url_for('admin_routes.admin_usuarios'))
+    except Exception:
+        return redirect(url_for('admin.usuario'))
+
+
 @admin_bp.route('/reportes')
 @login_required
 @role_required("admin")
@@ -140,6 +196,23 @@ def reportes():
     return render_template('reportes_admin.html', **context)
 
 
+@admin_bp.route('/reporte/<reporte_id>/editar', methods=['POST'])
+@login_required
+@role_required("admin")
+def reporte_editar(reporte_id):
+    """Procesa la actualización de un reporte desde el modal de administración."""
+    cdp_id = request.form.get('cdp_id')
+    exito, mensaje = actualizar_reporte(reporte_id, cdp_id, request.form)
+    if exito:
+        flash(mensaje, 'success')
+    else:
+        flash(mensaje, 'danger')
+
+    if request.referrer:
+        return redirect(request.referrer)
+    return redirect(url_for('admin.reportes'))
+
+
 @admin_bp.route('/lider')
 @admin_bp.route('/lideres')
 @login_required
@@ -154,18 +227,74 @@ def lider():
     return render_template('lider_admin.html', **context)
 
 
-@admin_bp.route('/lider/crear')
+@admin_bp.route('/lider/crear', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
 def lider_crear():
-    return render_template('form_lider.html', title='Líderes', breadcrumb='Lider', link='lider', is_edit=False)
+    lider_data = None
+    if request.method == 'POST':
+        success, mensaje = crear_lider_servicio(request.form)
+        if success:
+            flash(mensaje, 'success')
+            return redirect(url_for('admin.lider'))
+        else:
+            if 'inactiva' in mensaje.lower() or 'pausada' in mensaje.lower() or 'bloquead' in mensaje.lower():
+                flash(mensaje, 'warning')
+            else:
+                flash(mensaje, 'danger')
+            lider_data = request.form
+
+    casas_de_paz = obtener_cdps_para_select()
+    return render_template(
+        'form_lider.html',
+        title='Líderes',
+        breadcrumb='Lider',
+        link='lider',
+        is_edit=False,
+        lider=lider_data,
+        casas_de_paz=casas_de_paz,
+    )
 
 
-@admin_bp.route('/lider/<id>/editar')
+@admin_bp.route('/lider/<int:id>/editar', methods=['GET', 'POST'])
+@admin_bp.route('/lider/<id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
 def lider_editar(id):
-    return render_template('form_lider.html', title='Líderes', breadcrumb='Lider', link='lider', recurso_id=id, is_edit=True)
+    try:
+        id_int = int(id)
+    except (ValueError, TypeError):
+        flash("Líder no encontrado.", "danger")
+        return redirect(url_for('admin.lider'))
+
+    lider_data = obtener_lider_servicio(id_int)
+    if not lider_data:
+        flash("El líder no existe o ya fue eliminado.", "warning")
+        return redirect(url_for('admin.lider'))
+
+    if request.method == 'POST':
+        success, mensaje = actualizar_lider_servicio(id_int, request.form)
+        if success:
+            flash(mensaje, 'success')
+            return redirect(url_for('admin.lider'))
+        else:
+            if 'inactiva' in mensaje.lower() or 'pausada' in mensaje.lower() or 'bloquead' in mensaje.lower():
+                flash(mensaje, 'warning')
+            else:
+                flash(mensaje, 'danger')
+            lider_data = {**lider_data, **request.form.to_dict()}
+
+    casas_de_paz = obtener_cdps_para_select()
+    return render_template(
+        'form_lider.html',
+        title='Líderes',
+        breadcrumb='Lider',
+        link='lider',
+        recurso_id=id_int,
+        is_edit=True,
+        lider=lider_data,
+        casas_de_paz=casas_de_paz,
+    )
 
 
 @admin_bp.route('/lider/<int:id>/eliminar', methods=['POST'])
@@ -196,6 +325,28 @@ def lider_eliminar(id):
         flash("No se pudo conectar a la base de datos.", "danger")
 
     return redirect(url_for('admin.lider'))
+
+
+@admin_bp.route('/lider/<id>/toggle_estado', methods=['POST'])
+@login_required
+@role_required("admin")
+def lider_toggle_estado(id):
+    ok, status, mensaje = toggle_lider_servicio(id)
+    if ok:
+        flash(mensaje, 'success')
+    else:
+        if status == 'bloqueada':
+            flash(mensaje, 'warning')
+        else:
+            flash(mensaje, 'error')
+
+    if request.referrer:
+        return redirect(request.referrer)
+    try:
+        return redirect(url_for('admin_routes.admin_lideres'))
+    except Exception:
+        return redirect(url_for('admin.lider'))
+
 
 
 @admin_bp.route('/casa_de_paz/crear', methods=['GET', 'POST'])
@@ -266,7 +417,10 @@ def casa_de_paz_editar(id):
             flash(mensaje, 'success')
             return redirect(url_for('admin.estructura'))
         else:
-            flash(mensaje, 'danger')
+            if 'red' in mensaje.lower() and ('pausa' in mensaje.lower() or 'inactiv' in mensaje.lower() or 'bloquead' in mensaje.lower()):
+                flash(mensaje, 'warning')
+            else:
+                flash(mensaje, 'danger')
 
     lideres_disponibles = get_lideres_cdp_disponibles_servicio(cdp_id=id)
 
@@ -277,7 +431,7 @@ def casa_de_paz_editar(id):
         link='casa_de_paz', 
         recurso_id=id, 
         cdp=cdp_data,
-        redes=redes,
+        redes=redes, 
         lideres_disponibles=lideres_disponibles,
         is_edit=True
     )
@@ -289,6 +443,28 @@ def casa_de_paz_eliminar(id):
     exito, categoria, mensaje = eliminar_cdp_servicio(id)
     flash(mensaje, categoria)
     return redirect(url_for('admin.estructura'))
+
+
+@admin_bp.route('/casa_de_paz/<id>/toggle_estado', methods=['POST'])
+@login_required
+@role_required("admin")
+def casa_de_paz_toggle_estado(id):
+    ok, status, mensaje = toggle_cdp_servicio(id)
+    if ok:
+        flash(mensaje, 'success')
+    else:
+        if status == 'bloqueada':
+            flash(mensaje, 'warning')
+        else:
+            flash(mensaje, 'error')
+
+    if request.referrer:
+        return redirect(request.referrer)
+    try:
+        return redirect(url_for('admin_routes.admin_casa_de_paz'))
+    except Exception:
+        return redirect(url_for('admin.estructura'))
+
 
 @admin_bp.route('/red/crear', methods=['GET', 'POST'])
 @login_required

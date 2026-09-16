@@ -10,9 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalDetalle = document.getElementById('modalDetalleReporte');
     const closeDetalleBtns = document.querySelectorAll('.btn-close-detalle');
 
+    function formatTime12h(timeStr) {
+        if (!timeStr) return 'No registrado';
+        const match = timeStr.toString().trim().match(/^(\d{1,2}):(\d{2})/);
+        if (!match) return timeStr;
+        let hours = parseInt(match[1], 10);
+        const minutes = match[2];
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        if (hours === 0) hours = 12;
+        const padHours = hours < 10 ? '0' + hours : hours;
+        return `${padHours}:${minutes} ${ampm}`;
+    }
+
     const detalleFields = {
         fecha: document.getElementById('detFecha'),
         horario: document.getElementById('detHorario'),
+        hrInicio: document.getElementById('detHrInicio'),
+        hrFin: document.getElementById('detHrFin'),
         lider: document.getElementById('detLider'),
         tema: document.getElementById('detTema'),
         regulares: document.getElementById('detRegulares'),
@@ -33,7 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const d = btn.dataset;
         if (detalleFields.fecha) detalleFields.fecha.value = d.fechaFormateada || d.fecha || '';
-        if (detalleFields.horario) detalleFields.horario.value = (d.hrInicio && d.hrFin) ? `${d.hrInicio} - ${d.hrFin}` : (d.hrInicio || 'No registrado');
+        if (detalleFields.hrInicio) detalleFields.hrInicio.value = formatTime12h(d.hrInicio);
+        if (detalleFields.hrFin) detalleFields.hrFin.value = formatTime12h(d.hrFin);
+        if (detalleFields.horario) detalleFields.horario.value = (d.hrInicio && d.hrFin) ? `${formatTime12h(d.hrInicio)} - ${formatTime12h(d.hrFin)}` : (formatTime12h(d.hrInicio) || 'No registrado');
         if (detalleFields.lider) detalleFields.lider.value = d.liderNombre || 'Líder Encargado';
         if (detalleFields.tema) detalleFields.tema.value = d.tema || 'Sin tema registrado';
         if (detalleFields.regulares) detalleFields.regulares.value = d.regulares || 0;

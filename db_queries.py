@@ -143,9 +143,9 @@ def get_lideres(conn, search='', rol='', red_id='', cdp_id='', supervisor_red_id
     total = int(cur.fetchone()['total'])
 
     cur.execute(f"""
-        SELECT l.id, l.nombre, l.apellido, l.rol, l.telefono,
-               c.id AS cdp_id, c.codigo AS cdp_nombre, r.id AS red_id,
-               r.nombre AS red_nombre
+        SELECT l.id, l.nombre, l.apellido, l.rol, l.telefono, l.is_active,
+               c.id AS cdp_id, c.codigo AS cdp_nombre, c.is_active AS cdp_is_active,
+               r.id AS red_id, r.nombre AS red_nombre
         FROM lider l
         JOIN cdp c ON c.id = l.cdp_id
         LEFT JOIN red r ON r.id = c.red_id
@@ -1183,6 +1183,151 @@ def eliminar_reporte_cdp(cursor, reporte_id, cdp_id):
     cursor.execute(query, (str(reporte_id), cdp_id))
     return cursor.rowcount > 0
 
+def obtener_lideres_por_cdp(cursor: Cursor, cdp_id: int):
+    """
+    Obtiene todos los líderes y sublíderes ACTIVOS asociados a una Casa de Paz específica.
+    Utilizada en generar_reporte y en la vista del dashboard.
+    """
+    query = """
+        SELECT id, nombre, apellido, rol, telefono
+        FROM lider
+        WHERE cdp_id = %s AND is_active = 1
+        ORDER BY FIELD(rol, 'Lider', 'Sublider'), nombre ASC
+        """
+    cursor.execute(query, (cdp_id,))
+    return cursor.fetchall() or []
+
+def get_cdps_para_lideres(cursor: Cursor):
+    """
+    Retorna las Casas de Paz activas junto con el nombre de su red
+    para los selectores de asignación en form_lider.html.
+    """
+    query = """
+        SELECT c.id, c.codigo, c.direccion, r,nombre, as red_nombre
+        FROM cdp c
+        LEFT JOIN red r ON c.red_id = r.id
+        WHERE c.is_active = 1
+        ORDER BY c.codigo ASC
+    """
+    cursor.execute(query)
+    return cursor.fetchall() or []
+
+def insertar_lider(cursor: Cursor, nombre:str, apellido:str, telefono:str, rol:str, cdp_id:int):
+    """
+    Inserta un nuevo miembro del equipo de liderazgo en una Casa de Paz.
+    """
+    query = """
+        INSERT INTO lider (nombre, apellido, telefono, rol, is_active, cdp_id)
+        VALUES (%s, %s, %s, %s, 1, %s)
+    """
+    cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id))
+    return cursor.lastrowid
+
+def obtener_lider_por_id(cursor: Cursor, lider_id:int):
+    """
+    Obtiene la ficha de un líder por su ID, con datos de su Casa y Red asociada.
+    """
+    query = """
+        SELECT l.id, l.nombre, l.apellido, l.telefono, l.rol, l.is_active, l.cdp_id,
+        c.codigo AS cdp_codigo, c.direccion AS cdp_direccion,
+        r.nombre AS red_nombre
+        FROM lider l
+        LEFT JOIN cdp c ON l.cdp_id = c.id
+        LEFT JOIN red r ON c.red_id = r.id
+        WHERE l.id = %s
+    """
+    cursor.execute(query, (lider_id,))
+    return cursor.fetchone()
+
+def actualizar_lider(cursor: Cursor, lider_id:int, nombre:str, apellido:str, telefono:str, rol:str, cdp_id:int, is_active:int = None):
+    """
+    Actualiza la información personal, rol y Casa de Paz de un líder.
+    """
+    if is_active is not None:
+        query = """
+            UPDATE lider SET nombre = %s, apellido = %s, telefono = %s, rol = %s, cdp_id = %s, is_active = %s
+            WHERE id = %s
+        """
+        cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id, int(is_active), lider_id))
+    else:
+        query = """
+            UPDATE lider SET nombre = %s, apellido = %s, telefono = %s, rol = %s, cdp_id = %s
+            WHERE id = %s
+        """
+        cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id, lider_id))
+    return cursor.rowcount >= 0
+
+def eliminar_pausar_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str]:
+    """
+    Gestiona la baja de un líder preservando la integridad histórica de los reportes:
+    - Si tiene reportes asociados: Desactivación lógica (is_active = 0) para conservar la autoría ministerial.
+    - Si NO tiene reportes asociados: Eliminación física limpia.
+    
+    Retorna: (exito: bool, accion: 'pausado' | 'eliminado' | 'error', mensaje: str)
+    """
+    # 1. Verificar si el líder existe
+    cursor.execute("SELECT id, nombre, apellido FROM lider WHERE id = %s", (lider_id,))
+    lider = cursor.fetchone()
+    if not lider:
+        return False, "El líder no existe o ya fue eliminado."
+
+    nombre_completo = f"{lider.get('nombre', '')} {lider.get('apellido', '')}".strip()
+
+    # 2. Verificar si tiene reportes firmados
+    cursor.execute("SELECT COUNT(*) AS total FROM reporte WHERE enviado_por_lider_id = %s", (lider_id,))
+    total_reportes = cursor.fetchone()['total']
+
+    if total_reportes > 0:
+        # Caso A: Tiene historial -> Desactivación lógica (soft delete)
+        cursor.execute("UPDATE lider SET is_active = 0 WHERE id = %s", (lider_id,))
+        return True, f"El líder '{nombre_completo}' tiene {total_reportes} reporte(s) registrado(s). Ha sido desactivado para conservar la memoria histórica de las reuniones."
+
+    else:
+        # Caso B: Sin historial -> Eliminación física limpia
+        cursor.execute("DELETE FROM lider WHERE id = %s", (lider_id,))
+        return True, f"El líder '{nombre_completo}' ha sido eliminado exitosamente del sistema."
+
+
+def toggle_estado_lider(cursor: Cursor, lider_id: int) -> tuple[bool, str, str]:
+    """
+    Alterna el estado is_active de un líder.
+    Valida que la Casa de Paz asignada esté activa antes de permitir la reactivación.
+    
+    Retorna: (éxito: bool, acción: 'bloqueada' | 'reactivado' | 'pausado' | 'error', mensaje: str)
+    """
+    cursor.execute("""
+        SELECT l.id, l.nombre, l.apellido, l.is_active, l.cdp_id, 
+               c.codigo AS cdp_codigo, c.is_active AS cdp_is_active 
+        FROM lider l 
+        JOIN cdp c ON l.cdp_id = c.id 
+        WHERE l.id = %s
+    """, (lider_id,))
+    lider = cursor.fetchone()
+
+    if not lider:
+        return False, 'error', "El líder no existe o no tiene Casa de Paz asignada."
+
+    nombre_completo = f"{lider.get('nombre', '')} {lider.get('apellido', '')}".strip()
+    cdp_codigo = lider.get('cdp_codigo', '')
+    is_active = bool(lider.get('is_active', 0))
+    cdp_is_active = bool(lider.get('cdp_is_active', 0))
+
+    if not is_active:
+        # Intento de reactivación: validar que la CDP asignada esté activa
+        if not cdp_is_active:
+            return (
+                False, 
+                'bloqueada', 
+                f"No se puede reactivar al líder '{nombre_completo}' porque su Casa de Paz asignada ('{cdp_codigo}') se encuentra en pausa o inactiva. Debe reactivar la Casa primero o reasignar al líder a una Casa activa."
+            )
+        cursor.execute("UPDATE lider SET is_active = 1 WHERE id = %s", (lider_id,))
+        return True, 'reactivado', f"El líder '{nombre_completo}' ha sido reactivado exitosamente."
+    else:
+        # Poner en pausa
+        cursor.execute("UPDATE lider SET is_active = 0 WHERE id = %s", (lider_id,))
+        return True, 'pausado', f"El líder '{nombre_completo}' ha sido pausado exitosamente."
+
+
 
 def insertar_usuario(cursor, username, password_hash, nombre, apellido, tipo_usuario):
     """
@@ -1195,6 +1340,33 @@ def insertar_usuario(cursor, username, password_hash, nombre, apellido, tipo_usu
     """
     cursor.execute(query, (nuevo_id, username, password_hash, nombre, apellido, tipo_usuario))
     return nuevo_id
+
+
+def toggle_estado_usuario(cursor: Cursor, usuario_id: str) -> tuple[bool, str, str]:
+    """
+    Alterna el estado is_active de un usuario entre 1 y 0.
+    
+    Retorna: (éxito: bool, acción: 'reactivado' | 'desactivado' | 'error', mensaje: str)
+    """
+    cursor.execute("""
+        SELECT id, username, nombre, apellido, is_active 
+        FROM usuario 
+        WHERE id = %s
+    """, (str(usuario_id),))
+    usuario = cursor.fetchone()
+
+    if not usuario:
+        return False, 'error', "El usuario no existe."
+
+    nombre_display = f"{usuario.get('nombre', '')} {usuario.get('apellido', '')}".strip() or usuario.get('username', '')
+    is_active = bool(usuario.get('is_active', 0))
+
+    if not is_active:
+        cursor.execute("UPDATE usuario SET is_active = 1 WHERE id = %s", (str(usuario_id),))
+        return True, 'reactivado', f"El usuario '{nombre_display}' ha sido reactivado exitosamente."
+    else:
+        cursor.execute("UPDATE usuario SET is_active = 0 WHERE id = %s", (str(usuario_id),))
+        return True, 'desactivado', f"El usuario '{nombre_display}' ha sido desactivado exitosamente."
 
 
 def get_redes_disponibles(cursor, usuario_id=None):
@@ -1429,17 +1601,24 @@ def obtener_cdp_admin(cursor: Cursor, cdp_id: int):
     cursor.execute(query, (cdp_id,))
     return cursor.fetchone()
 
-def actualizar_cdp_admin(cursor: Cursor, cdp_id: int, codigo: str, anfitrion: str, telefono: str, direccion:str, red_id:int):
+def actualizar_cdp_admin(cursor: Cursor, cdp_id: int, codigo: str, anfitrion: str, telefono: str, direccion:str, red_id:int, is_active: int = None):
     """
     Actualiza la información física y organizativa de la Casa de Paz.
     """
-    query = """
-    UPDATE cdp 
-    SET codigo = %s, anfitrion = %s, telefono = %s, direccion = %s, red_id = %s
-    WHERE id = %s
-    """
-
-    cursor.execute(query, (codigo.strip(), anfitrion.strip(), telefono.strip(), direccion.strip(), red_id, cdp_id))
+    if is_active is not None:
+        query = """
+        UPDATE cdp 
+        SET codigo = %s, anfitrion = %s, telefono = %s, direccion = %s, red_id = %s, is_active = %s
+        WHERE id = %s
+        """
+        cursor.execute(query, (codigo.strip(), anfitrion.strip(), telefono.strip(), direccion.strip(), red_id, int(is_active), cdp_id))
+    else:
+        query = """
+        UPDATE cdp 
+        SET codigo = %s, anfitrion = %s, telefono = %s, direccion = %s, red_id = %s
+        WHERE id = %s
+        """
+        cursor.execute(query, (codigo.strip(), anfitrion.strip(), telefono.strip(), direccion.strip(), red_id, cdp_id))
     return cursor.rowcount >= 0
 
 def eliminar_pausar_cdp(cursor: Cursor, cdp_id: int) -> tuple[bool, str, str]:
@@ -1495,3 +1674,48 @@ def eliminar_pausar_cdp(cursor: Cursor, cdp_id: int) -> tuple[bool, str, str]:
             cursor.execute('DELETE FROM usuario WHERE id = %s', (usuario_id,))
 
         return True, 'eliminada', f"La Casa de Paz '{codigo_cdp}' y su cuenta de acceso han sido eliminadas permanentemente."
+
+
+def toggle_estado_cdp(cursor: Cursor, cdp_id: int) -> tuple[bool, str, str]:
+    """
+    Alterna el estado is_active de una Casa de Paz y su cuenta de acceso vinculada.
+    Valida que la Red Ministerial a la que pertenece esté activa antes de permitir la reactivación.
+    
+    Retorna: (éxito: bool, acción: 'bloqueada' | 'reactivada' | 'pausada' | 'error', mensaje: str)
+    """
+    cursor.execute("""
+        SELECT c.id, c.codigo, c.is_active, c.red_id, c.usuario_id, 
+               r.nombre AS red_nombre, r.is_active AS red_is_active 
+        FROM cdp c 
+        JOIN red r ON c.red_id = r.id 
+        WHERE c.id = %s
+    """, (cdp_id,))
+    cdp = cursor.fetchone()
+
+    if not cdp:
+        return False, 'error', "La Casa de Paz no existe o no tiene Red Ministerial asignada."
+
+    codigo = cdp.get('codigo', '')
+    red_nombre = cdp.get('red_nombre', '')
+    usuario_id = cdp.get('usuario_id')
+    is_active = bool(cdp.get('is_active', 0))
+    red_is_active = bool(cdp.get('red_is_active', 0))
+
+    if not is_active:
+        # Intento de reactivación: validar que la red esté activa
+        if not red_is_active:
+            return (
+                False, 
+                'bloqueada', 
+                f"No se puede reactivar la Casa de Paz '{codigo}' porque su Red Ministerial '{red_nombre}' se encuentra en pausa. Debe reactivar la Red primero."
+            )
+        cursor.execute("UPDATE cdp SET is_active = 1 WHERE id = %s", (cdp_id,))
+        if usuario_id:
+            cursor.execute("UPDATE usuario SET is_active = 1 WHERE id = %s", (usuario_id,))
+        return True, 'reactivada', f"La Casa de Paz '{codigo}' y su cuenta de acceso han sido reactivadas exitosamente."
+    else:
+        # Poner en pausa
+        cursor.execute("UPDATE cdp SET is_active = 0 WHERE id = %s", (cdp_id,))
+        if usuario_id:
+            cursor.execute("UPDATE usuario SET is_active = 0 WHERE id = %s", (usuario_id,))
+        return True, 'pausada', f"La Casa de Paz '{codigo}' ha sido puesta en pausa y su cuenta de acceso desactivada."

@@ -21,7 +21,7 @@ class Config:
     PORT = int(os.getenv('APP_PORT', '5000'))
     APP_HOST = HOST
     APP_PORT = PORT
-    DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
     MOCK_MODE = os.getenv('MOCK_MODE', 'False').lower() in ('true', '1', 't', 'yes')
     
     # Flask & Security Hardening

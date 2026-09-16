@@ -83,7 +83,22 @@
                     <span class="input-hint">Casas de Paz sin usuario asignado.{% if is_edit and usuario_data and usuario_data.cdp_codigo %} (Actualmente asignado a: <strong>{{ usuario_data.cdp_codigo }}</strong>){% endif %}{% if not cdps_disponibles %} (No hay Casas de Paz disponibles sin usuario){% endif %}</span>
                 </div>
 
-                <div class="form-group full-width">
+                {% if is_edit or usuario_data %}
+                {% set u_active = usuario_data.is_active if (usuario_data and usuario_data.is_active is defined) else 1 %}
+                <div class="form-group half-width">
+                    <label for="is_active">Estado de la Cuenta</label>
+                    <div class="input-wrapper icon-left icon-right">
+                        <span class="material-symbols-outlined input-icon">toggle_on</span>
+                        <select id="is_active" name="is_active" class="form-control" required>
+                            <option value="1" {% if u_active == 1 or u_active is sameas true or u_active == '1' %}selected{% endif %}>Activo</option>
+                            <option value="0" {% if u_active == 0 or u_active is sameas false or u_active == '0' %}selected{% endif %}>En pausa / Inactivo</option>
+                        </select>
+                        <span class="material-symbols-outlined input-icon">expand_more</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-group {{ 'half-width' if is_edit or usuario_data else 'full-width' }}">
                     <label for="password">Password</label>
                     <div class="input-wrapper both-icons">
                         <span class="material-symbols-outlined input-icon">lock</span>

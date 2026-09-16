@@ -646,7 +646,7 @@ button.red-card {
     flex: 1;
 }
 
-.casa-info-top > div {
+.casa-info-top > div:not(.casa-icon) {
     min-width: 0;
     flex: 1;
 }
@@ -654,7 +654,9 @@ button.red-card {
 .casa-icon {
     width: 2.25rem;
     height: 2.25rem;
-    flex-shrink: 0;
+    min-width: 2.25rem;
+    max-width: 2.25rem;
+    flex: 0 0 2.25rem;
     background-color: #fdf2f2;
     border-radius: 0.6rem;
     display: flex;
@@ -707,6 +709,20 @@ button.red-card {
     border-radius: 99px;
     letter-spacing: 0.04em;
     line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.status .status-dot {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    min-height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    margin-right: 0;
 }
 
 .status-activa,
@@ -766,6 +782,12 @@ button.red-card {
     font-weight: 700;
 }
 
+.detail-row small.text-subtle {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #6e5553;
+}
+
 .casa-footer {
     padding-top: 0.85rem;
     border-top: 1px dashed rgba(137, 114, 111, 0.35);
@@ -774,6 +796,8 @@ button.red-card {
     align-items: center;
     margin-top: auto;
     flex-shrink: 0;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .attendance {
@@ -1328,7 +1352,7 @@ button.red-card {
     }
 
     .casa-footer {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 0.4rem;
     }
@@ -2009,4 +2033,30 @@ button.red-card {
 [data-theme="dark"] .toast-btn-close:hover {
     color: #f8f2f0;
     background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Estado de Casa de Paz en tema oscuro */
+[data-theme="dark"] .detail-row small.text-subtle {
+    color: #d4c2bf;
+}
+
+[data-theme="dark"] .status-activa,
+[data-theme="dark"] .status-active {
+    background-color: rgba(34, 197, 94, 0.16);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+[data-theme="dark"] .status-pausada,
+[data-theme="dark"] .status-paused,
+[data-theme="dark"] .status-inactiva {
+    background-color: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+[data-theme="dark"] .status-pendiente {
+    background-color: rgba(245, 158, 11, 0.16);
+    color: #fde68a;
+    border: 1px solid rgba(245, 158, 11, 0.35);
 }

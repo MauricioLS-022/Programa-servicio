@@ -2,7 +2,7 @@
 {% block title %}Usuarios{% endblock %}
 
 {% block custom_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/usuario.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/usuario.css') }}?v=1789523500">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 {% endblock %}
 {% block content %}
@@ -111,8 +111,16 @@
                             </td>
                             <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon btn-edit" aria-label="Editar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
-                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+                                    {% set u = usuario %}
+                                    {# url_for('admin_routes.usuario_toggle_estado', id=u.id) #}
+                                    <form action="{{ url_for('admin.usuario_toggle_estado', id=usuario.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn-icon btn-toggle" aria-label="{{ 'Desactivar usuario ' ~ (nombre or usuario.username) if usuario.is_active else 'Reactivar usuario ' ~ (nombre or usuario.username) }}" title="{{ 'Desactivar Usuario' if usuario.is_active else 'Reactivar Usuario' }}">
+                                            <span class="material-symbols-outlined text-primary" aria-hidden="true">{{ 'pause_circle' if usuario.is_active else 'play_circle' }}</span>
+                                        </button>
+                                    </form>
+                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon btn-edit" aria-label="Editar usuario {{ nombre or usuario.username }}" title="Editar Usuario"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
+                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar usuario {{ nombre or usuario.username }}" title="Eliminar Usuario"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
                                 </div>
                             </td>
                         </tr>

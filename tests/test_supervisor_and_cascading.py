@@ -188,6 +188,37 @@ class TestSupervisorAndCascading(unittest.TestCase):
         self.assertTrue(any('UPDATE red SET supervisor_id = NULL' in sql for sql in executed_sqls))
         self.assertTrue(any('UPDATE cdp SET usuario_id = NULL' in sql for sql in executed_sqls))
 
+    @patch('routes.admin_routes.actualizar_reporte')
+    def test_admin_reporte_editar_route(self, mock_update):
+        """Admin debe poder editar un reporte vía POST y redirigir con flash."""
+        mock_update.return_value = (True, "Reporte actualizado exitosamente.")
+        with self.client.session_transaction() as sess:
+            sess['usuario'] = 'AdminUser'
+            sess['usuario_id'] = 'mock-admin-id'
+            sess['rol'] = 'admin'
+
+        form_data = {
+            'cdp_id': '1',
+            'fecha': '2026-09-12',
+            'hr_inicio': '19:00',
+            'hr_fin': '20:30',
+            'tema': 'Tema editado por admin',
+            'nro_regulares': '12',
+            'nro_ninos': '4',
+            'nro_visitas': '2',
+            'nro_comprometidos': '1',
+            'reconciliaciones': '1',
+            'confesiones': '2',
+            'ofrendas_usd': '50.00',
+            'ofrendas_bs': '500.00',
+            'cesta_amor': '1',
+            'observaciones': 'Editado por admin'
+        }
+        response = self.client.post('/admin/reporte/rep-999/editar', data=form_data)
+        self.assertEqual(response.status_code, 302)
+        mock_update.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
+

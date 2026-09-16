@@ -41,10 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-        // 3. Estado de envío en botón
+    // 3. Estado de envío en botón
     const form = document.getElementById('loginForm');
     const btn = document.getElementById('btnLogin');
-    const captcha = document.getElementById('g-recaptcha-response')
+    const captcha = document.getElementById('g-recaptcha-response');
     if (form && btn) {
 
         const siteKey = form.getAttribute('data-sitekey');
@@ -52,21 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             btn.disabled = true;
-            btn.querySelector('.btn-text').textContent = 'Ingresando...';
+            const btnText = btn.querySelector('.btn-text');
+            if (btnText) btnText.textContent = 'Ingresando...';
 
-            grecaptcha.ready(() => {
-                grecaptcha.execute(siteKey, { action: 'login' })
-                    .then((token) => {
-                        captcha.value = token;
+            const restoreButton = () => {
+                btn.disabled = false;
+                if (btnText) btnText.textContent = 'Ingresar al Sistema';
+            };
+
+            try {
+                if (typeof grecaptcha === 'undefined' || !siteKey) {
+                    console.warn("reCAPTCHA no está disponible o la clave no está configurada.");
+                    if (!siteKey) {
+                        // Si no hay clave (por ejemplo entorno local sin reCAPTCHA), enviar directamente
                         form.submit();
-                    })
-                    .catch((error) => {
-                        console.error("Error al obtener reCAPTCHA:", error);
-                        btn.disabled = false;
-                        btn.querySelector('.btn-text').textContent = 'Ingresar al Sistema';
-                    });
-            });
+                        return;
+                    }
+                    restoreButton();
+                    return;
+                }
 
+                grecaptcha.ready(() => {
+                    try {
+                        grecaptcha.execute(siteKey, { action: 'login' })
+                            .then((token) => {
+                                captcha.value = token;
+                                form.submit();
+                            })
+                            .catch((error) => {
+                                console.error("Error al obtener reCAPTCHA:", error);
+                                restoreButton();
+                            });
+                    } catch (innerErr) {
+                        console.error("Error síncrono al ejecutar reCAPTCHA:", innerErr);
+                        restoreButton();
+                    }
+                });
+            } catch (err) {
+                console.error("Error inesperado en flujo de autenticación:", err);
+                restoreButton();
+            }
         });
     }
 });
