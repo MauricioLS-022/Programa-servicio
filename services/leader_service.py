@@ -128,6 +128,9 @@ def crear_lider_servicio(form_data: dict) -> tuple[bool, str]:
 
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, f"Líder '{res_nom} {res_ape}' registrado exitosamente (modo demo)."
         return False, "Error de conexión a la base de datos."
 
     try:
@@ -154,6 +157,7 @@ def crear_lider_servicio(form_data: dict) -> tuple[bool, str]:
             invalidate_dashboard_cache()
         except Exception:
             pass
+        return True, f"Líder '{res_nom} {res_ape}' registrado exitosamente."
 
     except Exception as e:
         conn.rollback()

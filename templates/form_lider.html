@@ -121,7 +121,7 @@
     </div>
     
     {% if is_edit %}
-    <button type="button" class="btn-delete-text" onclick="if(confirm('¿Deseas eliminar este líder?')) { document.getElementById('formEliminarLider').submit(); }">
+    <button type="button" class="btn-delete-text" id="btnOpenDeleteModal" onclick="openDeleteModal()">
       <span class="material-symbols-outlined">delete_outline</span>
       Eliminar Líder
     </button>
@@ -130,9 +130,35 @@
 </form>
 
 {% if is_edit %}
-<form id="formEliminarLider" action="{{ url_for('admin.lider_eliminar', id=recurso_id) }}" method="POST" class="hidden-form">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-</form>
+<!-- Modal de Confirmación de Eliminación -->
+<div id="deleteModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-hidden="true">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="material-symbols-outlined modal-icon" aria-hidden="true">warning</span>
+      <h3 id="deleteModalTitle">Confirmar Eliminación</h3>
+    </div>
+    <p class="modal-text">
+      ¿Estás seguro de que deseas eliminar al líder <strong id="deleteLeaderName">{% if lider %}{{ lider.nombre }} {{ lider.apellido }}{% else %}este líder{% endif %}</strong>? Esta acción dará de baja su registro en el sistema.
+    </p>
+    <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
+    <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la baja del líder">
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+      <form id="formEliminarLider" method="POST" action="{{ url_for('admin.lider_eliminar', id=recurso_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn-confirm-delete" id="btnConfirmDelete" disabled>
+          <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+          Eliminar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 {% endif %}
+{% endblock %}
 
+{% block custom_scripts %}
+{% if is_edit %}
+<script src="{{ url_for('static', filename='scripts/admin/form_lider.js') }}" defer></script>
+{% endif %}
 {% endblock %}
