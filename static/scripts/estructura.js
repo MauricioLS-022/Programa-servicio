@@ -273,7 +273,42 @@
     // Disparar toast tras breve retardo para que la página renderice suavemente
     setTimeout(initReportesToast, 400);
 
-    function toggleFiltroPendientes(filtrar) {
+    function syncUrlParams() {
+        if (!window.history || !window.history.replaceState) return;
+        const url = new URL(window.location);
+
+        if (currentRedFilter && currentRedFilter !== 'all') {
+            const cleanId = currentRedFilter.replace(/^red-/, '');
+            url.searchParams.set('red_id', cleanId);
+            url.searchParams.delete('red');
+        } else {
+            url.searchParams.delete('red_id');
+            url.searchParams.delete('red');
+        }
+
+        // Siempre limpiar cdp_id y casa_id cuando el usuario cambia o sincroniza los filtros
+        url.searchParams.delete('cdp_id');
+        url.searchParams.delete('casa_id');
+
+        if (currentReporteFilter === 'pendientes') {
+            url.searchParams.set('filtro', 'pendientes');
+        } else {
+            url.searchParams.delete('filtro');
+        }
+
+        if (currentSearchTerm) {
+            url.searchParams.set('q', currentSearchTerm);
+        } else {
+            url.searchParams.delete('q');
+        }
+
+        const queryString = url.searchParams.toString();
+        const cleanUrl = queryString ? `${url.pathname}?${queryString}` : url.pathname;
+        window.history.replaceState(null, '', cleanUrl);
+    }
+
+    function toggleFiltroPendientes(filtrar, options = {}) {
+        const { updateUrl = true } = options;
         currentReporteFilter = filtrar ? 'pendientes' : 'all';
 
         if (btnFiltrarPendientes && btnVerTodasCasas) {
@@ -300,22 +335,32 @@
                 sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
+
+        if (updateUrl) {
+            syncUrlParams();
+        }
     }
 
-    function applyRedFilter(selectedFilter) {
+    function applyRedFilter(selectedFilter, options = {}) {
+        const { updateUrl = true, scrollSidebar = true } = options;
         currentRedFilter = selectedFilter;
         filterButtons.forEach(button => {
             const isSelected = button.dataset.redFilter === selectedFilter;
             const card = button.closest('.red-card');
             button.classList.toggle('active', isSelected);
             button.setAttribute('aria-pressed', String(isSelected));
-            if (card) card.classList.toggle('active', isSelected);
+            if (card) {
+                card.classList.toggle('active', isSelected);
+                if (isSelected && scrollSidebar) {
+                    card.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                }
+            }
         });
 
         // Comprobar si la red seleccionada tiene pendientes; si no tiene, resetear filtro de pendientes a 'all'
         const { totalAll, redCounts } = getPendingCounts();
         const countInSelected = selectedFilter === 'all' ? totalAll : (redCounts[selectedFilter] || 0);
-        if (countInSelected === 0) {
+        if (countInSelected === 0 && currentReporteFilter === 'pendientes') {
             currentReporteFilter = 'all';
         }
 
@@ -331,6 +376,10 @@
 
         updateBannerState();
         updateCasasVisibility();
+
+        if (updateUrl) {
+            syncUrlParams();
+        }
     }
 
     if (btnFiltrarPendientes) {
@@ -366,9 +415,14 @@
     }
 
     if (searchInput) {
+        let searchTimeout = null;
         searchInput.addEventListener('input', function() {
             currentSearchTerm = this.value;
             updateCasasVisibility();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                syncUrlParams();
+            }, 300);
         });
     }
 
@@ -382,7 +436,79 @@
         });
     });
 
-    applyRedFilter(document.querySelector('[data-red-filter].active')?.dataset.redFilter || 'all');
+    function initFromUrlAndContext() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mainElem = document.querySelector('main.estructura-main');
+
+        const paramRed = urlParams.get('red_id') || urlParams.get('red') || mainElem?.dataset.initialRed || '';
+        const paramCdp = urlParams.get('cdp_id') || urlParams.get('casa_id') || mainElem?.dataset.initialCdp || '';
+        const paramFiltro = urlParams.get('filtro') || mainElem?.dataset.initialFiltro || '';
+        const paramQ = urlParams.get('q') || mainElem?.dataset.initialQ || '';
+
+        // 1. Manejo de búsqueda por texto
+        if (paramQ) {
+            currentSearchTerm = paramQ;
+            if (searchInput) searchInput.value = paramQ;
+        }
+
+        // 2. Si vino cdp_id, ubicar tarjeta y asegurar que inferredRed sea la red exacta de la tarjeta
+        let targetCdpCard = null;
+        let inferredRed = paramRed;
+        if (paramCdp) {
+            targetCdpCard = document.querySelector(`.casa-card[data-cdp-id="${paramCdp}"]`) || document.getElementById(`cdp-${paramCdp}`);
+            if (targetCdpCard) {
+                targetCdpCard.style.opacity = '1';
+                if (targetCdpCard.dataset.red) {
+                    inferredRed = targetCdpCard.dataset.red;
+                }
+            }
+        }
+
+        // 3. Resolver filtro de red (número '2', slug 'red-2' o 'all')
+        let resolvedRedFilter = 'all';
+        if (inferredRed && inferredRed !== 'all') {
+            const slug = inferredRed.startsWith('red-') ? inferredRed : `red-${inferredRed}`;
+            if (document.querySelector(`[data-red-filter="${slug}"]`)) {
+                resolvedRedFilter = slug;
+            } else if (document.querySelector(`[data-red-filter="${inferredRed}"]`)) {
+                resolvedRedFilter = inferredRed;
+            }
+        } else if (!inferredRed) {
+            const activeBtn = document.querySelector('[data-red-filter].active');
+            if (activeBtn) {
+                resolvedRedFilter = activeBtn.dataset.redFilter;
+            }
+        }
+
+        // Aplicar filtro de red inicial
+        applyRedFilter(resolvedRedFilter, { updateUrl: false, scrollSidebar: true });
+
+        // 4. Filtro de pendientes si vino en la URL
+        if (paramFiltro === 'pendientes' || paramFiltro === '1' || paramFiltro === 'true') {
+            toggleFiltroPendientes(true, { updateUrl: false });
+        }
+
+        // 5. Enfocar y resaltar Casa de Paz específica si vino cdp_id
+        if (paramCdp) {
+            if (!targetCdpCard) {
+                targetCdpCard = document.querySelector(`.casa-card[data-cdp-id="${paramCdp}"]`) || document.getElementById(`cdp-${paramCdp}`);
+            }
+            if (targetCdpCard) {
+                targetCdpCard.classList.remove('is-filtered-out');
+                targetCdpCard.style.opacity = '1';
+                setTimeout(() => {
+                    targetCdpCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetCdpCard.classList.add('casa-card-highlighted');
+                    setTimeout(() => {
+                        targetCdpCard.classList.remove('casa-card-highlighted');
+                        targetCdpCard.style.opacity = '1';
+                    }, 3500);
+                }, 350);
+            }
+        }
+    }
+
+    initFromUrlAndContext();
     updateSidebarPendingBadges();
     updateBannerState();
 

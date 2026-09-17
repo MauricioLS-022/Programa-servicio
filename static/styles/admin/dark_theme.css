@@ -1638,6 +1638,12 @@ html[data-theme="dark"],
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
 }
 
+[data-theme="dark"] .casa-card.casa-card-highlighted {
+    opacity: 1 !important;
+    border-color: #f8deda !important;
+    box-shadow: 0 0 0 3px rgba(248, 222, 218, 0.35), 0 16px 36px rgba(0, 0, 0, 0.85) !important;
+}
+
 [data-theme="dark"] .casa-name {
     color: #ffffff;
 }

@@ -24,7 +24,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1.25rem;
-  padding: 1.25rem 1.75rem;
+  padding: 1.15rem 1.5rem;
   background: linear-gradient(135deg, #700204 0%, #390002 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.25rem;
@@ -38,7 +38,7 @@
   align-items: center;
   gap: 1rem;
   min-width: 0;
-  flex: 1 1 300px;
+  flex: 1 1 auto;
 }
 
 .detail-icon-badge {
@@ -1024,13 +1024,14 @@
   .detail-header {
     flex-direction: column;
     align-items: stretch;
-    padding: 1.25rem;
-    gap: 1.25rem;
+    padding: 1.1rem 1.25rem;
+    gap: 1rem;
   }
 
   .detail-title-group {
     width: 100%;
     min-width: 0;
+    flex: 0 0 auto;
   }
 
   .detail-actions {
@@ -1049,6 +1050,12 @@
 }
 
 @media (max-width: 768px) {
+  .detail-header {
+    padding: 0.95rem 1rem;
+    gap: 0.85rem;
+    border-radius: 1rem;
+  }
+
   .metrics-grid {
     grid-template-columns: 1fr;
   }

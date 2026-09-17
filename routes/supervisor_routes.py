@@ -29,7 +29,31 @@ def estructura():
     usuario_id = session.get("usuario_id")
     usuario = session.get("usuario")
     context = get_estructura_context(usuario_id, is_supervisor=True)
-    return render_template('estructura_admin.html', usuario=usuario, **context)
+
+    red_id = (request.args.get('red_id', '').strip() or request.args.get('red', '').strip())
+    cdp_id = (request.args.get('cdp_id', '').strip() or request.args.get('casa_id', '').strip())
+    filtro = request.args.get('filtro', '').strip().lower()
+    search = request.args.get('q', '').strip()
+    # Si se pasa cdp_id, garantizar que red_id coincida con la red real de esa Casa de Paz
+    if cdp_id:
+        try:
+            cid_int = int(cdp_id)
+            for c in context.get('casas_estructura', []):
+                if c.get('id') == cid_int:
+                    red_id = str(c.get('red_id'))
+                    break
+        except (ValueError, TypeError):
+            pass
+
+    return render_template(
+        'estructura_admin.html',
+        usuario=usuario,
+        selected_red_id=red_id,
+        selected_cdp_id=cdp_id,
+        selected_filtro=filtro,
+        search_q=search,
+        **context
+    )
 
 
 @supervisor_bp.route('/reportes')

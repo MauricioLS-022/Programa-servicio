@@ -487,7 +487,7 @@
                     <span class="material-symbols-outlined">table_chart</span>
                     <span>Ver Reportes</span>
                 </a>
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
                     <span class="material-symbols-outlined">account_tree</span>
                     <span>Estructura y Redes</span>
                 </a>
@@ -859,7 +859,7 @@
                     <span class="material-symbols-outlined" style="font-size: 1.1rem;">arrow_back</span>
                     Ver Vista Zonal
                 </a>
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="btn-full-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; background: var(--primary, #780204); color: #fff;">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="btn-full-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; background: var(--primary, #780204); color: #fff;">
                     <span class="material-symbols-outlined" style="font-size: 1.1rem;">account_tree</span>
                     Estructura y Redes
                 </a>
@@ -887,7 +887,7 @@
                     <span class="material-symbols-outlined">table_chart</span>
                     <span>Ver Reportes</span>
                 </a>
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id, cdp_id=cdp_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id, cdp_id=cdp_id) }}{% endif %}" class="quick-action-btn">
                     <span class="material-symbols-outlined">account_tree</span>
                     <span>Estructura y Redes</span>
                 </a>

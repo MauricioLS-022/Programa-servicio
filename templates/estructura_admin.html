@@ -1,11 +1,15 @@
 {% extends "admin_layout.html" %} {% block title %}- Estructura{% endblock %}
 
 {% block custom_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/estructura.css') }}?v=1789287500">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/estructura.css') }}?v=1789287501">
 {% endblock %}
 
 {% block content %}
-<main class="estructura-main {% if has_role("supervisor") %}supervisor-mode{% endif %}">
+<main class="estructura-main {% if has_role("supervisor") %}supervisor-mode{% endif %}"
+    data-initial-red="{{ selected_red_id or '' }}"
+    data-initial-cdp="{{ selected_cdp_id or '' }}"
+    data-initial-filtro="{{ selected_filtro or '' }}"
+    data-initial-q="{{ search_q or '' }}">
     <header class="page-header">
         <div class="header-text">
             {% if has_role("supervisor") %}
@@ -49,8 +53,9 @@
 
                 <div class="redes-list">
                     {% if not has_role("supervisor") and redes_estructura %}
-                    <div class="red-card red-card-all active">
-                        <button class="red-filter-trigger active" type="button" data-red-filter="all" data-red-name="todas las redes" aria-pressed="true">
+                    {% set is_all_active = not selected_red_id or selected_red_id == 'all' %}
+                    <div class="red-card red-card-all {% if is_all_active %}active{% endif %}">
+                        <button class="red-filter-trigger {% if is_all_active %}active{% endif %}" type="button" data-red-filter="all" data-red-name="todas las redes" aria-pressed="{{ 'true' if is_all_active else 'false' }}">
                             <div class="red-header">
                                 <span class="red-name">Todas las redes</span>
                             </div>
@@ -63,8 +68,9 @@
                     {% endif %}
 
                     {% for red in redes_estructura %}
-                    <div class="red-card {% if has_role("supervisor") and loop.first %}active{% endif %} {% if not red.is_active %}red-card-paused{% endif %}">
-                        <button class="red-filter-trigger {% if has_role("supervisor") and loop.first %}active{% endif %}" type="button" data-red-filter="{{ red.slug }}" data-red-name="{{ red.nombre }}" aria-pressed="{{ 'true' if has_role("supervisor") and loop.first else 'false' }}">
+                    {% set is_red_selected = (selected_red_id and (selected_red_id|string == red.id|string or selected_red_id == red.slug or selected_red_id == ('red-' ~ red.id|string))) or (has_role("supervisor") and not selected_red_id and loop.first) %}
+                    <div class="red-card {% if is_red_selected %}active{% endif %} {% if not red.is_active %}red-card-paused{% endif %}">
+                        <button class="red-filter-trigger {% if is_red_selected %}active{% endif %}" type="button" data-red-filter="{{ red.slug }}" data-red-name="{{ red.nombre }}" aria-pressed="{{ 'true' if is_red_selected else 'false' }}">
                             <div class="red-header">
                                 <span class="red-name">Red {{ red.nombre }}</span>
                                 {% if not red.is_active %}
@@ -134,11 +140,11 @@
             <div class="casas-header">
                 <div>
                     <h3 class="section-title">Casas de Paz</h3>
-                    <p class="section-subtitle">Mostrando las casas de <strong id="casasFilterLabel">{% if has_role("supervisor") and redes_estructura %}{{ redes_estructura[0].nombre }}{% else %}todas las redes{% endif %}</strong></p>
+                    <p class="section-subtitle">Mostrando las casas de <strong id="casasFilterLabel">{% if selected_red_id and selected_red_id != 'all' %}{% set ns = namespace(found=false) %}{% for r in redes_estructura %}{% if (r.id|string == selected_red_id|string or r.slug == selected_red_id or ('red-' ~ r.id|string) == selected_red_id) and not ns.found %}{{ r.nombre }}{% set ns.found = true %}{% endif %}{% endfor %}{% if not ns.found %}todas las redes{% endif %}{% elif has_role("supervisor") and redes_estructura %}{{ redes_estructura[0].nombre }}{% else %}todas las redes{% endif %}</strong></p>
                 </div>
                 <div class="search-bar">
                     <span class="material-symbols-outlined icon-search">search</span>
-                    <input type="text" id="casasSearchInput" placeholder="Buscar por código, líder, anfitrión o zona..." aria-label="Buscar Casas de Paz">
+                    <input type="text" id="casasSearchInput" value="{{ search_q or '' }}" placeholder="Buscar por código, líder, anfitrión o zona..." aria-label="Buscar Casas de Paz">
                 </div>
             </div>
 
@@ -166,7 +172,7 @@
 
             <div class="casas-grid">
                 {% for casa in casas_estructura %}
-                <article class="casa-card" data-red="{{ casa.red_slug }}" data-search="{{ casa.codigo }} {{ casa.anfitrion }} {{ casa.lider }} {{ casa.zona }} {{ casa.usuario_username or '' }} {{ casa.usuario_nombre or '' }}" data-pendiente="{{ '1' if casa.pendiente_7d else '0' }}" data-activa="{{ '1' if casa.is_active else '0' }}" data-reporte-reciente="{{ '1' if casa.tiene_reporte_7d else '0' }}" data-pendiente-7d="{{ '1' if casa.pendiente_7d else '0' }}" data-is-active="{{ '1' if casa.is_active else '0' }}">
+                <article class="casa-card" id="cdp-{{ casa.id }}" data-cdp-id="{{ casa.id }}" data-red="{{ casa.red_slug }}" data-search="{{ casa.codigo }} {{ casa.anfitrion }} {{ casa.lider }} {{ casa.zona }} {{ casa.usuario_username or '' }} {{ casa.usuario_nombre or '' }}" data-pendiente="{{ '1' if casa.pendiente_7d else '0' }}" data-activa="{{ '1' if casa.is_active else '0' }}" data-reporte-reciente="{{ '1' if casa.tiene_reporte_7d else '0' }}" data-pendiente-7d="{{ '1' if casa.pendiente_7d else '0' }}" data-is-active="{{ '1' if casa.is_active else '0' }}">
                     <div class="casa-header">
                         <div class="casa-info-top">
                             <div class="casa-icon"><span class="material-symbols-outlined filled">home</span></div>
@@ -235,5 +241,5 @@
     </div>
 </main>
 
-<script src="{{ url_for('static', filename='scripts/estructura.js') }}?v=1789287500" defer></script>
+<script src="{{ url_for('static', filename='scripts/estructura.js') }}?v=1789287501" defer></script>
 {% endblock %}
