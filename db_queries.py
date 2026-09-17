@@ -668,12 +668,17 @@ def get_metricas_red(conn, red_id):
         JOIN cdp c ON rep.cdp_id = c.id
         WHERE c.red_id = %s AND c.is_active = 1
         ORDER BY rep.fecha DESC, rep.id DESC
-        LIMIT 5
+        LIMIT 25
     """, (red_id,))
     actividad_rows = cur.fetchall() or []
     actividad_reciente = []
+    vistos = set()
     avatar_classes = ['bg-primary-light text-primary', 'bg-secondary-light text-secondary']
-    for idx, act in enumerate(actividad_rows):
+    for act in actividad_rows:
+        clave = (act.get('cdp_codigo'), str(act.get('fecha')))
+        if clave in vistos:
+            continue
+        vistos.add(clave)
         lider_nom = act.get('lider_nombre') or 'Líder'
         partes_nom = lider_nom.split()
         ini = (partes_nom[0][0] + (partes_nom[-1][0] if len(partes_nom) > 1 else '')).upper() if partes_nom else 'LD'
@@ -687,13 +692,15 @@ def get_metricas_red(conn, red_id):
         actividad_reciente.append({
             'lider': lider_nom,
             'iniciales': ini,
-            'avatar_class': avatar_classes[idx % len(avatar_classes)],
+            'avatar_class': avatar_classes[len(actividad_reciente) % len(avatar_classes)],
             'cdp_nombre': act.get('cdp_nombre') or f"Casa {act.get('cdp_codigo')}",
             'cdp_codigo': act.get('cdp_codigo') or '',
             'fecha_formateada': f_fmt,
             'asistencia': int(act.get('asistencia') or 0),
             'tema': act.get('tema') or '',
         })
+        if len(actividad_reciente) >= 10:
+            break
 
     cur.close()
 

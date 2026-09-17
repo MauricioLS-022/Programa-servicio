@@ -14,7 +14,12 @@ from utils.cache import get_cached_value, set_cached_value
 
 
 def mock_mode_enabled():
-    """Indica si los datos demo están explícitamente habilitados."""
+    """Indica si los datos demo están explícitamente habilitados. En producción siempre es False."""
+    try:
+        if current_app and current_app.config.get('FLASK_ENV') == 'production':
+            return False
+    except Exception:
+        pass
     try:
         from database import is_mock_mode
         return is_mock_mode()
@@ -494,11 +499,14 @@ def get_casas_sin_reporte_7d(red_id=None):
             conn.close()
 
     # Mock fallback
-    casas = get_casas_demo()
-    pendientes = [c for c in casas if c.get('is_active', 1) and not c.get('tiene_reporte_7d', True)]
-    if red_id is not None:
-        pendientes = [c for c in pendientes if c.get('red_id') == red_id]
-    return pendientes
+    if mock_mode_enabled():
+        casas = get_casas_demo()
+        pendientes = [c for c in casas if c.get('is_active', 1) and not c.get('tiene_reporte_7d', True)]
+        if red_id is not None:
+            pendientes = [c for c in pendientes if c.get('red_id') == red_id]
+        return pendientes
+
+    return []
 
 
 def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, supervisor_red_id=None):
@@ -537,8 +545,10 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
                 metricas = get_empty_generales()
         
         elif nivel == 'red':
-            rid = red_id or supervisor_red_id or 1
-            if db_connected:
+            rid = red_id or supervisor_red_id
+            if not rid:
+                metricas = get_empty_red(None)
+            elif db_connected:
                 result = get_metricas_red(conn, rid)
                 metricas = result if result else get_empty_red(rid)
             elif mock_mode_enabled():
@@ -562,7 +572,12 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
                     metricas = get_empty_cdp(cid)
     except Exception as e:
         print(f"[Service] Error obteniendo métricas: {e}")
-        metricas = get_empty_generales()
+        if nivel == 'red':
+            metricas = get_empty_red(red_id or supervisor_red_id)
+        elif nivel == 'cdp':
+            metricas = get_empty_cdp(cdp_id)
+        else:
+            metricas = get_empty_generales()
     finally:
         if conn:
             conn.close()

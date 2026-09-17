@@ -610,7 +610,7 @@
                             <h2 id="actividad-red-title" class="section-title">Actividad Reciente</h2>
                             <p class="section-subtitle">Últimos reportes enviados en {{ metricas.nombre_red }}</p>
                         </div>
-                        <div class="activity-feed">
+                        <div class="activity-feed" tabindex="0" role="region" aria-label="Historial de actividad reciente">
                             {% if metricas.actividad_reciente %}
                             {% for act in metricas.actividad_reciente %}
                             <article class="activity-item">
@@ -1005,7 +1005,7 @@
                             <h2 id="historial-title" class="section-title">Historial de Reportes</h2>
                             <p class="section-subtitle">Últimos reportes registrados de la Casa de Paz</p>
                         </div>
-                        <div class="table-scroll">
+                        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de historial de reportes">
                             <table class="cdp-table">
                                 <thead>
                                     <tr>

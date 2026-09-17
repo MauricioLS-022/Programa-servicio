@@ -292,5 +292,108 @@ class TestNavigationWithoutDatabase(unittest.TestCase):
         self.assertIn('Casa de Oración Sur', html_red2)
 
 
+class TestProductionFallbacksAndDataIntegrity(unittest.TestCase):
+    """Verifica que los fallbacks corregidos protejan la consistencia y seguridad en producción."""
+
+    def setUp(self):
+        self.app = app
+        self.client = app.test_client()
+        self.app.config['TESTING'] = True
+        self.app.config['WTF_CSRF_ENABLED'] = False
+
+    def test_get_cdp_detalle_nonexistent_returns_none_in_db_mode(self):
+        """Con BD activa, si una CDP no existe en la BD, no debe hacer fallback a mock data."""
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+        mock_cur.fetchone.return_value = None  # No existe en MySQL
+
+        with patch('services.cdp_service.get_db_connection', return_value=mock_conn):
+            from services.cdp_service import get_cdp_detalle
+            detalle = get_cdp_detalle(99999)
+            self.assertIsNone(detalle, "Debe retornar None cuando no existe en la base de datos")
+
+    def test_get_cdp_detalle_nonexistent_returns_none_in_demo_mode(self):
+        """Sin conexión, si el ID no existe en el catálogo demo, debe retornar None."""
+        with patch('services.cdp_service.get_db_connection', return_value=None):
+            from services.cdp_service import get_cdp_detalle
+            detalle = get_cdp_detalle(99999)
+            self.assertIsNone(detalle, "Debe retornar None para ID inexistente en demo")
+
+    def test_mock_red_and_cdp_nonexistent_return_empty_objects(self):
+        """get_mock_red y get_mock_cdp con ID inexistente deben retornar estructuras vacías y no la entidad 1."""
+        from mock_data import get_mock_red, get_mock_cdp
+        red_vacia = get_mock_red(99999)
+        self.assertEqual(red_vacia['nombre_red'], 'Red sin datos')
+        self.assertEqual(red_vacia['asistencia_total'], 0)
+
+        cdp_vacia = get_mock_cdp(99999)
+        self.assertEqual(cdp_vacia['codigo'], '')
+        self.assertEqual(cdp_vacia['total_asistencia'], 0)
+
+    def test_actualizar_reporte_rejects_missing_cdp_id(self):
+        """actualizar_reporte debe rechazar peticiones con cdp_id nulo o cero (prevención bypass IDOR)."""
+        from services.cdp_service import actualizar_reporte
+        ok, msg = actualizar_reporte('rep-1', None, {})
+        self.assertFalse(ok)
+        self.assertIn("Identificador de Casa de Paz no válido", msg)
+
+        ok2, msg2 = actualizar_reporte('rep-1', 0, {})
+        self.assertFalse(ok2)
+        self.assertIn("Identificador de Casa de Paz no válido", msg2)
+
+    def test_get_casas_sin_reporte_7d_returns_empty_when_mock_disabled(self):
+        """Si la conexión a BD falla y MOCK_MODE=False, debe retornar lista vacía (no datos demo)."""
+        from services.dashboard_service import get_casas_sin_reporte_7d
+        with patch('services.dashboard_service.get_db_connection', return_value=None), \
+             patch('services.dashboard_service.mock_mode_enabled', return_value=False):
+            casas = get_casas_sin_reporte_7d()
+            self.assertEqual(casas, [], "Debe retornar lista vacía cuando mock_mode está deshabilitado")
+
+    def test_get_metricas_exception_returns_level_appropriate_empty_data(self):
+        """Ante excepción SQL, get_metricas debe retornar el empty del nivel correspondiente."""
+        from services.dashboard_service import get_metricas
+        mock_conn = MagicMock()
+        mock_conn.cursor.side_effect = Exception("Crash simulado en BD")
+
+        with patch('services.dashboard_service.get_db_connection', return_value=mock_conn):
+            metricas_red = get_metricas('red', red_id=2)
+            self.assertEqual(metricas_red.get('nombre_red'), 'Red sin datos')
+
+            metricas_cdp = get_metricas('cdp', cdp_id=3)
+            self.assertEqual(metricas_cdp.get('codigo'), '')
+            self.assertIn('promedio_historico', metricas_cdp)
+
+    def test_api_supervisor_allows_cdp_level_in_own_red(self):
+        """Supervisor puede consultar nivel 'cdp' para una casa de su propia red vía API."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'sup-user-id'
+            sess['usuario'] = 'supervisor1'
+            sess['rol'] = 'supervisor'
+
+        mock_casas = [{'id': 1, 'codigo': 'HEB-001', 'red_id': 1}, {'id': 2, 'codigo': 'SUR-001', 'red_id': 2}]
+        with patch('routes.api_routes.get_supervisor_red_id', return_value=1), \
+             patch('services.dashboard_service.get_selectores', return_value=([], mock_casas)), \
+             patch('routes.api_routes.get_metricas', return_value={'codigo': 'HEB-001', 'asistencia': 20}) as mock_m:
+            
+            resp = self.client.get('/api/dashboard/datos?nivel=cdp&cdp_id=1')
+            self.assertEqual(resp.status_code, 200)
+            mock_m.assert_called_once_with('cdp', 1, 1)
+
+    def test_api_supervisor_blocks_cdp_level_in_other_red(self):
+        """Supervisor recibe 403 si intenta consultar una casa de otra red vía API."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'sup-user-id'
+            sess['usuario'] = 'supervisor1'
+            sess['rol'] = 'supervisor'
+
+        mock_casas = [{'id': 1, 'codigo': 'HEB-001', 'red_id': 1}, {'id': 2, 'codigo': 'SUR-001', 'red_id': 2}]
+        with patch('routes.api_routes.get_supervisor_red_id', return_value=1), \
+             patch('services.dashboard_service.get_selectores', return_value=([], mock_casas)):
+            
+            resp = self.client.get('/api/dashboard/datos?nivel=cdp&cdp_id=2')
+            self.assertEqual(resp.status_code, 403)
+
+
 if __name__ == '__main__':
     unittest.main()

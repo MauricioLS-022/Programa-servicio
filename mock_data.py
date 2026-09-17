@@ -569,7 +569,9 @@ def get_mock_red(red_id):
     hace_7_dias = hoy - timedelta(days=7)
 
     redes = get_redes_demo()
-    red = next((r for r in redes if str(r['id']) == str(red_id)), redes[0])
+    red = next((r for r in redes if str(r['id']) == str(red_id)), None)
+    if not red:
+        return get_empty_red(red_id)
     rid = red['id']
 
     casas_red = [c for c in get_casas_demo() if c['red_id'] == rid]
@@ -686,19 +688,27 @@ def get_mock_red(red_id):
     promedio_tendencia_red = round(sum(t['asistencia'] for t in tendencia_raw_red) / len(tendencia_raw_red)) if tendencia_raw_red else 0
 
     # Actividad reciente: últimos reportes de la red ordenados por fecha desc
-    reportes_ordenados = sorted(reportes_red, key=lambda r: r.get('fecha', ''), reverse=True)[:5]
+    reportes_ordenados = sorted(reportes_red, key=lambda r: r.get('fecha', ''), reverse=True)
     actividad_reciente = []
+    vistos_mock = set()
     for rep in reportes_ordenados:
+        cdp_cod = next((c['codigo'] for c in casas_red if c['id'] == rep.get('cdp_id')), '')
+        clave = (cdp_cod, str(rep.get('fecha', ''))[:10])
+        if clave in vistos_mock:
+            continue
+        vistos_mock.add(clave)
         actividad_reciente.append({
             'lider': rep.get('lider_nombre', 'Líder'),
             'iniciales': rep.get('iniciales', 'NN'),
             'avatar_class': rep.get('avatar_class', 'bg-primary-light text-primary'),
             'cdp_nombre': rep.get('cdp_nombre', 'Casa de Paz'),
-            'cdp_codigo': next((c['codigo'] for c in casas_red if c['id'] == rep.get('cdp_id')), ''),
+            'cdp_codigo': cdp_cod,
             'fecha_formateada': rep.get('fecha_formateada', ''),
             'asistencia': rep.get('asistencia', 0),
             'tema': rep.get('tema', ''),
         })
+        if len(actividad_reciente) >= 10:
+            break
 
     return {
         'nombre_red': red['nombre'],
@@ -736,7 +746,9 @@ def get_mock_red(red_id):
 def get_mock_cdp(cdp_id):
     """Métricas mock para la vista de una Casa de Paz específica."""
     casas = get_casas_demo()
-    cdp = next((c for c in casas if str(c['id']) == str(cdp_id)), casas[0])
+    cdp = next((c for c in casas if str(c['id']) == str(cdp_id)), None)
+    if not cdp:
+        return get_empty_cdp(cdp_id)
     cid = cdp['id']
 
     reps = [r for r in get_mock_reportes() if r['cdp_id'] == cid]
@@ -818,7 +830,9 @@ def get_mock_cdp_detalle(cdp_id):
     (templates/detalles_cdp.html) asegurando total coherencia con mock_data.
     """
     casas = get_casas_demo()
-    cdp = next((c for c in casas if str(c['id']) == str(cdp_id)), casas[0])
+    cdp = next((c for c in casas if str(c['id']) == str(cdp_id)), None)
+    if not cdp:
+        return None
     cid = cdp['id']
 
     lideres = [l for l in get_mock_lideres() if l['cdp_id'] == cid]

@@ -349,6 +349,9 @@ def casa_de_paz_crear():
 def casa_de_paz(id):
     from services.cdp_service import get_cdp_detalle
     cdp = get_cdp_detalle(id)
+    if not cdp:
+        flash("La Casa de Paz no existe.", "danger")
+        return redirect(url_for('admin.estructura'))
     return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id, cdp=cdp)
 
 

@@ -51,6 +51,24 @@ def process_reporte(cdp_id, form_data):
 
     try:
         with conn.cursor() as cursor:
+            # Candado de unicidad e idempotencia: Comprobar si ya existe un reporte para esta Casa de Paz en la misma fecha
+            cursor.execute(
+                "SELECT id FROM reporte WHERE cdp_id = %s AND fecha = %s LIMIT 1",
+                (datos_reporte['cdp_id'], datos_reporte['fecha'])
+            )
+            reporte_existente = cursor.fetchone()
+            if reporte_existente:
+                fecha_str = str(datos_reporte['fecha'])
+                try:
+                    from utils.date_helpers import formatear_fecha_corta
+                    fecha_fmt = formatear_fecha_corta(datos_reporte['fecha'])
+                except Exception:
+                    fecha_fmt = fecha_str
+                return ProcessReporteResult((
+                    False,
+                    f"Ya existe un reporte registrado para esta Casa de Paz en la fecha {fecha_fmt}. Puedes consultarlo o editarlo en el historial."
+                ))
+
             db_queries.insertar_reporte(cursor, datos_reporte)
         conn.commit()  # Confirmar la transacción
         
@@ -530,27 +548,20 @@ def actualizar_reporte(reporte_id, cdp_id, form_data):
     if not reporte_id:
         return False, "Identificador de reporte no válido."
 
+    try:
+        cdp_id = int(cdp_id) if cdp_id else 0
+    except (ValueError, TypeError):
+        cdp_id = 0
+
+    if not cdp_id:
+        return False, "Identificador de Casa de Paz no válido."
+
     conn = get_db_connection()
     if not conn:
         from services.dashboard_service import mock_mode_enabled
         if mock_mode_enabled():
             return True, "Reporte actualizado exitosamente."
         return False, "No se pudo conectar a la base de datos."
-
-    if not cdp_id:
-        try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT cdp_id FROM reporte WHERE id = %s", (reporte_id,))
-                row = cur.fetchone()
-                if row:
-                    cdp_id = row['cdp_id'] if isinstance(row, dict) else row[0]
-        except Exception:
-            pass
-
-    try:
-        cdp_id = int(cdp_id) if cdp_id else 0
-    except (ValueError, TypeError):
-        cdp_id = 0
 
     from utils.validators import validate_report_form
     valido, error_msg, datos_reporte = validate_report_form(form_data, cdp_id)
@@ -786,10 +797,16 @@ def get_cdp_detalle(cdp_id):
                     }
         except Exception as e:
             print(f"[DB] Error al obtener detalles de CDP {cdp_id}: {e}")
+            return None
         finally:
             conn.close()
+        return None
             
-    # Mock / Demo fallback cuando DB no está conectada o no existe el id
+    # En producción, NUNCA se hace fallback a datos mock bajo ninguna circunstancia
+    if current_app and current_app.config.get('FLASK_ENV') == 'production':
+        return None
+
+    # Fallback demo para desarrollo offline y pruebas automáticas cuando no hay BD
     from mock_data import get_mock_cdp_detalle
     return get_mock_cdp_detalle(cdp_id)
 
@@ -1276,14 +1293,19 @@ def check_cdp_reporte_7d(cdp_id) -> dict:
             conn.close()
 
     # Demo fallback
-    detalle = get_cdp_detalle(cdp_id)
-    return {
-        'cdp_id': detalle.get('id'),
-        'codigo': detalle.get('codigo'),
-        'tiene_reporte': bool(detalle.get('reporte_reciente_7d', False)),
-        'is_active': bool(detalle.get('is_active', True)),
-        'estado': detalle.get('estado_reporte_7d', 'pendiente')
-    }
+    from services.dashboard_service import mock_mode_enabled
+    if mock_mode_enabled():
+        detalle = get_cdp_detalle(cdp_id)
+        if detalle:
+            return {
+                'cdp_id': detalle.get('id', cdp_id),
+                'codigo': detalle.get('codigo', ''),
+                'tiene_reporte': bool(detalle.get('reporte_reciente_7d', False)),
+                'is_active': bool(detalle.get('is_active', True)),
+                'estado': detalle.get('estado_reporte_7d', 'pendiente')
+            }
+
+    return {'cdp_id': cdp_id, 'tiene_reporte': False, 'is_active': False, 'estado': 'inactiva'}
 
 
 def get_casas_sin_reporte_7d(red_id=None):

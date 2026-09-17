@@ -37,8 +37,16 @@ def api_dashboard_datos():
         sup_red = get_supervisor_red_id(usuario_id)
         if not sup_red:
             return jsonify({})
-        nivel = 'red'
+        if nivel not in ('red', 'cdp'):
+            nivel = 'red'
         red_id = sup_red
+
+        if nivel == 'cdp' and cdp_id:
+            from services.dashboard_service import get_selectores
+            _, casas = get_selectores()
+            casas_de_red = [c['id'] for c in casas if c.get('red_id') == sup_red]
+            if cdp_id not in casas_de_red:
+                return jsonify({}), 403
 
     cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{mock_mode_enabled()}'
 

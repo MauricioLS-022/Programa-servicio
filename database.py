@@ -34,12 +34,17 @@ def is_mock_mode():
     """
     Determina si el modo mock está activado en la app o por entorno.
     Permite omitir cualquier intento de conexión hacia la BD.
+    En entornos de producción, el modo mock está estrictamente desactivado (retorna False).
     """
     if has_request_context() or current_app:
         try:
+            if current_app.config.get('FLASK_ENV') == 'production':
+                return False
             return bool(current_app.config.get('MOCK_MODE', False))
         except RuntimeError:
             pass
+    if os.getenv('FLASK_ENV', '').lower() == 'production':
+        return False
     return os.getenv('MOCK_MODE', 'False').lower() in ('true', '1', 't', 'yes')
 
 
