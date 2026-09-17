@@ -62,7 +62,10 @@ def login():
                 captcha_valido = resultado.get("success", False)
                 puntaje = resultado.get("score", 0.0)
                 accion = resultado.get("action", "")
-                current_app.logger.info(f"reCAPTCHA -> Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion}")
+                error_codes = resultado.get("error-codes", [])
+                current_app.logger.info(
+                    f"reCAPTCHA -> Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion} | Errores: {error_codes}"
+                )
             except Exception as e:
                 current_app.logger.error(f"[reCAPTCHA] Error de conexión: {e}")
                 captcha_valido = False

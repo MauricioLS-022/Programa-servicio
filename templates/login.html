@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='logo2.webp') }}" type="image/webp">
 
-    <script src="https://google.com/recaptcha/api.js?render={{ site_key }}"></script>
+    <script src="https://www.google.com/recaptcha/api.js?render={{ site_key }}"></script>
     
     <!-- Script de detección temprana de tema oscuro (anti-FOUC) -->
     <script src="{{ url_for('static', filename='scripts/theme_init.js') }}"></script>
@@ -38,25 +38,28 @@
         </div>
 
         <!-- Mensajes de Alerta / Error -->
-        {% if p %}
-        <div class="login-alert" role="alert">
-            <span class="material-symbols-outlined" aria-hidden="true">error</span>
-            <span>{{ p }}</span>
-        </div>
-        {% endif %}
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="login-alert" role="alert">
-                    <span class="material-symbols-outlined" aria-hidden="true">
-                        {% if category == 'success' %}check_circle{% else %}info{% endif %}
-                    </span>
-                    <span>{{ message }}</span>
-                </div>
-                {% endfor %}
+        <div id="loginAlertContainer">
+            {% if p %}
+            <div class="login-alert" role="alert">
+                <span class="material-symbols-outlined" aria-hidden="true">error</span>
+                <span>{{ p }}</span>
+            </div>
             {% endif %}
-        {% endwith %}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="login-alert" role="alert">
+                        <span class="material-symbols-outlined" aria-hidden="true">
+                            {% if category == 'success' %}check_circle{% else %}info{% endif %}
+                        </span>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
 
         <!-- Formulario de Acceso -->
         <form class="login-form" method="POST" id="loginForm" data-sitekey="{{ site_key }}">
