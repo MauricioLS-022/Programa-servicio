@@ -980,10 +980,49 @@ tbody tr:hover {
     cursor: default;
 }
 
+.modal-field select {
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid rgba(137, 114, 111, 0.25);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.88rem;
+    color: var(--on-surface);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.modal-field select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(57, 0, 2, 0.08);
+}
+
 .modal-field input:not([readonly]),
+.modal-field select:not([readonly]),
 .modal-field textarea:not([readonly]) {
     background-color: #ffffff;
     border-color: rgba(137, 114, 111, 0.35);
+}
+
+.asistencia-total-pill {
+    background: #fbf2f2;
+    border: 1px dashed var(--primary, #700204);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    color: var(--primary, #700204);
+    margin-top: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.modal-field-total {
+    grid-column: span 4;
 }
 
 .modal-field-total input {
@@ -995,6 +1034,16 @@ tbody tr:hover {
     text-align: center;
     border-radius: 0.5rem;
     padding: 0.65rem 1rem;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
 }
 
 .modal-footer {
@@ -1208,6 +1257,7 @@ tbody tr:hover {
 }
 
 [data-theme="dark"] .modal-field input,
+[data-theme="dark"] .modal-field select,
 [data-theme="dark"] .modal-field textarea,
 [data-theme="dark"] .filter-group input,
 [data-theme="dark"] .filter-group select {
@@ -1217,6 +1267,12 @@ tbody tr:hover {
     outline: none;
     color: var(--text-main, #f8f2f0);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .asistencia-total-pill {
+    background-color: rgba(112, 2, 4, 0.25);
+    border-color: rgba(248, 222, 218, 0.4);
+    color: var(--primary, #f8deda);
 }
 
 [data-theme="dark"] .search-input input {

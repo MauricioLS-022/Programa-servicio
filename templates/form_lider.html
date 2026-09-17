@@ -81,7 +81,7 @@
   </div>
   
   <div class="form-grid">
-    <div class="form-group full-width">
+    <div class="form-group {{ 'half-width' if is_edit or lider else 'full-width' }}">
       <label for="cdp_id">Casa de Paz a la que pertenece</label>
       <div class="input-wrapper icon-right">
         <select id="cdp_id" name="cdp_id" required>
@@ -95,6 +95,20 @@
         <span class="material-symbols-outlined input-icon">expand_more</span>
       </div>
     </div>
+    {% if is_edit or lider %}
+    {% set lider_active = lider.is_active if (lider and lider.is_active is defined) else 1 %}
+    <div class="form-group half-width">
+      <label for="is_active">Estado del Líder</label>
+      <div class="input-wrapper icon-left icon-right">
+        <span class="material-symbols-outlined input-icon">toggle_on</span>
+        <select id="is_active" name="is_active" class="form-control" required>
+          <option value="1" {% if lider_active == 1 or lider_active is sameas true or lider_active == '1' %}selected{% endif %}>Activo</option>
+          <option value="0" {% if lider_active == 0 or lider_active is sameas false or lider_active == '0' %}selected{% endif %}>En pausa / Inactivo</option>
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+    {% endif %}
   </div>
 
   <div class="form-actions">

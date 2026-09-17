@@ -5,7 +5,8 @@ from database import get_db_connection
 from db_queries import (
     get_usuarios,
     asignar_supervisor_a_red,
-    asignar_usuario_a_cdp
+    asignar_usuario_a_cdp,
+    toggle_estado_usuario
 )
 from mock_data import get_mock_usuarios, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
@@ -25,6 +26,13 @@ def get_usuarios_context(search='', rol='', page=1, per_page=5):
             conn.close()
     elif mock_mode_enabled():
         usuarios = get_mock_usuarios()
+        redes = get_redes_demo()
+        casas = get_casas_demo()
+        for u in usuarios:
+            red_asig = next((r for r in redes if str(r.get('supervisor_id')) == str(u.get('id'))), None)
+            u['red_nombre'] = red_asig['nombre'] if red_asig else None
+            cdp_asig = next((c for c in casas if str(c.get('lider_id')) == str(u.get('id')) or str(c.get('usuario_id')) == str(u.get('id'))), None)
+            u['cdp_codigo'] = cdp_asig['codigo'] if cdp_asig else None
         if search:
             search_lower = search.lower()
             usuarios = [
@@ -139,22 +147,41 @@ def actualizar_usuario_admin(usuario_id, form_data):
             if cursor.fetchone():
                 return False, f"El nombre de usuario '{res_user}' ya está en uso."
 
+            is_active_raw = form_data.get('is_active')
+            is_active_val = None
+            if is_active_raw is not None and str(is_active_raw).strip() != '':
+                is_active_val = 1 if str(is_active_raw).strip().lower() in ('1', 'true', 'on', 'si', 'sí') or is_active_raw is True or is_active_raw == 1 else 0
+
             if password_raw:
                 ok_pass, res_pass = validate_password_strength(password_raw)
                 if not ok_pass:
                     return False, res_pass
                 pass_hash = generate_password_hash(password_raw)
-                cursor.execute("""
-                    UPDATE usuario
-                    SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s, password = %s
-                    WHERE id = %s
-                """, (res_nom, res_ape, res_user, tipo_usuario, pass_hash, str(usuario_id)))
+                if is_active_val is not None:
+                    cursor.execute("""
+                        UPDATE usuario
+                        SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s, password = %s, is_active = %s
+                        WHERE id = %s
+                    """, (res_nom, res_ape, res_user, tipo_usuario, pass_hash, is_active_val, str(usuario_id)))
+                else:
+                    cursor.execute("""
+                        UPDATE usuario
+                        SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s, password = %s
+                        WHERE id = %s
+                    """, (res_nom, res_ape, res_user, tipo_usuario, pass_hash, str(usuario_id)))
             else:
-                cursor.execute("""
-                    UPDATE usuario
-                    SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s
-                    WHERE id = %s
-                """, (res_nom, res_ape, res_user, tipo_usuario, str(usuario_id)))
+                if is_active_val is not None:
+                    cursor.execute("""
+                        UPDATE usuario
+                        SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s, is_active = %s
+                        WHERE id = %s
+                    """, (res_nom, res_ape, res_user, tipo_usuario, is_active_val, str(usuario_id)))
+                else:
+                    cursor.execute("""
+                        UPDATE usuario
+                        SET nombre = %s, apellido = %s, username = %s, tipo_usuario = %s
+                        WHERE id = %s
+                    """, (res_nom, res_ape, res_user, tipo_usuario, str(usuario_id)))
 
             # Gestión de asignaciones ministeriales según el rol
             red_id_raw = form_data.get('red_id', '').strip()
@@ -200,5 +227,98 @@ def actualizar_usuario_admin(usuario_id, form_data):
         conn.rollback()
         current_app.logger.error("Error actualizando usuario %s: %s", usuario_id, e)
         return False, "Ocurrió un error al actualizar el usuario."
+    finally:
+        conn.close()
+
+
+def toggle_usuario_servicio(usuario_id: str) -> tuple[bool, str, str]:
+    """
+    Alterna el estado is_active de una cuenta de usuario.
+    Retorna: (ok: bool, status: str, message: str)
+    status: 'reactivado' | 'desactivado' | 'error'
+    """
+    if not usuario_id:
+        return False, 'error', "Identificador de usuario no proporcionado."
+
+    conn = get_db_connection()
+    if not conn:
+        return False, 'error', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            ok, status, mensaje = toggle_estado_usuario(cursor, usuario_id)
+            if ok:
+                conn.commit()
+                try:
+                    invalidate_dashboard_cache()
+                except Exception:
+                    pass
+                return True, status, mensaje
+            else:
+                conn.rollback()
+                return False, status, mensaje
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al alternar estado de usuario %s: %s", usuario_id, e)
+        return False, 'error', f"Error interno al alternar el estado del usuario: {e}"
+    finally:
+        conn.close()
+
+def eliminar_usuario_servicio(usuario_id:str, usuario_session_id:str) -> tuple[bool, str,str]:
+    """
+    Permite eliminar un usuario solo si no es la cuenta en sesión 
+    y no tiene redes o casas de paz vinculadas.
+    """
+    if str(usuario_id) == str(usuario_session_id):
+        return False, "danger", "No puedes eliminar tu propia cuenta de usuario en sesión."
+
+    conn = get_db_connection()
+
+    if not conn:
+        if mock_mode_enabled():
+            redes = get_redes_demo()
+            red_vinculada = next((r for r in redes if str(r.get('supervisor_id')) == str(usuario_id)), None)
+            if red_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario es supervisor de la red '{red_vinculada.get('nombre')}'. Desvincula o reasigna la red primero."
+
+            casas = get_casas_demo()
+            cdp_vinculada = next((c for c in casas if str(c.get('lider_id')) == str(usuario_id) or str(c.get('usuario_id')) == str(usuario_id)), None)
+            if cdp_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario tiene acceso a la Casa de Paz '{cdp_vinculada.get('codigo')}'. Desvincula la cuenta de la Casa primero."
+
+            return True, 'success', "Usuario eliminado exitosamente del sistema."
+        return False, 'danger', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            # Candado 1: Verificar si es supervisor de alguna red
+            cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s", (usuario_id,))
+            red_vinculada = cursor.fetchone()
+
+            if red_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario es supervisor de la red '{red_vinculada['nombre']}'. Desvincula o reasigna la red primero."
+
+            # Candado 2: Verificar si tiene CDP asignada
+            cursor.execute("SELECT id, codigo FROM cdp WHERE usuario_id = %s", (usuario_id,))
+            cdp_vinculada = cursor.fetchone()
+
+            if cdp_vinculada:
+                return False, 'danger', f"No se puede eliminar: el usuario tiene acceso a la Casa de Paz '{cdp_vinculada['codigo']}'. Desvincula la cuenta de la Casa primero."
+
+            # Eliminación segura
+            cursor.execute("DELETE FROM usuario WHERE id = %s", (usuario_id,))
+            conn.commit()
+
+            try:
+                invalidate_dashboard_cache()
+            except Exception:
+                pass
+
+            return True, 'success', "Usuario eliminado exitosamente del sistema."
+        
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al eliminar usuario %s: %s", usuario_id, e)
+        return False, 'danger', f"Error interno al eliminar el usuario: {e}"
     finally:
         conn.close()

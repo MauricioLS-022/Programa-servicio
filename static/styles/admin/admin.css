@@ -651,6 +651,7 @@ textarea:focus {
     .dashboard-main,
     .estructura-main,
     .leadership-page,
+    .perfil-page,
     .container {
         padding-top: 60px !important;
         padding-bottom: 80px !important;

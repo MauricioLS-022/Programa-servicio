@@ -466,3 +466,28 @@
         grid-template-columns: 1fr; 
     }
 }
+
+/* =========================================
+   ESTADO DE CARGA / PROTECCIÓN ANTI-DOBLE ENVÍO
+   ========================================= */
+.is-submitting {
+    opacity: 0.75 !important;
+    cursor: wait !important;
+    pointer-events: none !important;
+}
+
+.form-guard-spinner {
+    display: inline-block;
+    animation: formGuardSpin 1s linear infinite;
+    font-size: 1.1rem !important;
+    vertical-align: middle;
+}
+
+@keyframes formGuardSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

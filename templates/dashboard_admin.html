@@ -73,7 +73,19 @@
             <div id="groupCdp" class="filter-group {% if nivel != 'cdp' %}hidden{% endif %}">
                 <label for="selectCdp" class="filter-label">Casa de Paz</label>
                 <select id="selectCdp" name="cdp_id" class="filter-select" aria-label="Seleccionar casa de paz" data-search-placeholder="Buscar por código, nombre o líder...">
-                    {% if not casas %}<option value="">No hay Casas de Paz disponibles</option>{% endif %}
+                    {% set casas_de_esta_red = [] %}
+                    {% if red_id %}
+                        {% for c in casas if c.red_id == red_id %}
+                            {% set _ = casas_de_esta_red.append(c) %}
+                        {% endfor %}
+                    {% else %}
+                        {% set casas_de_esta_red = casas %}
+                    {% endif %}
+                    {% if not casas %}
+                    <option value="" class="no-cdp-option">No hay Casas de Paz disponibles</option>
+                    {% elif red_id and casas_de_esta_red|length == 0 %}
+                    <option value="" class="no-cdp-option" selected>Sin Casas de Paz en esta red</option>
+                    {% endif %}
                     {% for cdp in casas %}
                     <option value="{{ cdp.id }}" {% if cdp_id == cdp.id %}selected{% endif %} data-red-id="{{ cdp.red_id }}" data-search="{{ cdp.nombre|lower }} {{ cdp.codigo|lower }} {{ cdp.anfitrion|default('')|lower }} {{ cdp.lider|default('')|lower }}">{{ cdp.codigo }}{% if cdp.anfitrion %} · {{ cdp.anfitrion }}{% endif %} (Líder: {{ cdp.lider|default('Sin líder') }})</option>
                     {% endfor %}
@@ -133,7 +145,7 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Total Asistencia</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.total_asistencia|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0, true) %}{{ metricas.total_asistencia|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
@@ -141,9 +153,9 @@
                     <span class="material-symbols-outlined card-icon text-secondary">check_circle</span>
                     <h3 class="card-title">Cumplimiento Semanal</h3>
                     <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
-                        {% if metricas.total_casas|default(0) %}
-                            <div>{{ metricas.cumplimiento|default(0) }}%</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">{{ metricas.casas_con_reporte|default(metricas.reportes_enviados|default(0)) }} de {{ metricas.total_casas }} CDP</div>
+                        {% if metricas.total_casas|default(0, true) %}
+                            <div>{{ metricas.cumplimiento|default(0, true) }}%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">{{ metricas.casas_con_reporte|default(metricas.reportes_enviados|default(0, true), true) }} de {{ metricas.total_casas|default(0, true) }} CDP</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -155,9 +167,9 @@
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
                     <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
-                        {% if metricas.total_casas|default(0) %}
-                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(0)) }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(0)) }}</div>
+                        {% if metricas.total_casas|default(0, true) %}
+                            <div>${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -168,7 +180,7 @@
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">trending_up</span>
                     <h3 class="card-title">Confesiones de Fe</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0) %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.total_casas|default(0, true) %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">trending_up</span>
                 </article>
             </section>
@@ -182,29 +194,58 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Tendencia de Asistencia Semanal</h2>
-                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length }} mediciones</p>
+                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length if metricas.tendencia_semanas else 0 }} mediciones</p>
                             </div>
-                            {% if metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[0].asistencia > 0 %}
-                            {% set variacion = ((metricas.tendencia_semanas[-1].asistencia - metricas.tendencia_semanas[0].asistencia) / metricas.tendencia_semanas[0].asistencia * 100)|round(1) %}
-                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}">
+                            {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
+                            {% set asist_prev = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
+                            {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
+                            {% set variacion = ((asist_curr - asist_prev) / asist_prev * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion) }}% respecto a la semana anterior">
+                                <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+                                <span>{{ '%+.1f'|format(variacion) }}% vs semana anterior</span>
+                            </div>
+                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.promedio_tendencia is defined and metricas.promedio_tendencia|default(0, true) > 0 %}
+                            {% set prom = metricas.promedio_tendencia|default(0, true) %}
+                            {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
+                            {% set variacion = ((asist_curr - prom) / prom * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion) }}% respecto al promedio del periodo">
+                                <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+                                <span>{{ '%+.1f'|format(variacion) }}% vs promedio</span>
+                            </div>
+                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[0].asistencia|default(0, true) > 0 %}
+                            {% set asist_first = metricas.tendencia_semanas[0].asistencia|default(0, true) %}
+                            {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
+                            {% set variacion = ((asist_curr - asist_first) / asist_first * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación: {{ '%+.1f'|format(variacion) }}% respecto a la primera medición">
                                 <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
                                 <span>{{ '%+.1f'|format(variacion) }}% vs primera medición</span>
+                            </div>
+                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 %}
+                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0% respecto a la semana anterior">
+                                <span class="material-symbols-outlined">trending_flat</span>
+                                <span>0.0% vs semana anterior</span>
                             </div>
                             {% endif %}
                         </div>
 
                         <!-- Gráfico de barras de tendencia -->
                         <div class="trend-chart-area">
-                            <div class="trend-bars-container">
+                            <div class="trend-bars-container" role="region" aria-label="Gráfica de tendencia semanal de asistencia">
                                 {% if metricas.tendencia_semanas %}
                                 {% for item in metricas.tendencia_semanas %}
-                                <div class="trend-bar-col">
+                                {% set tip_id = 'trend-tip-' ~ loop.index %}
+                                <div class="trend-bar-col" tabindex="0" role="graphics-symbol" aria-roledescription="barra de asistencia" aria-describedby="{{ tip_id }}" aria-label="{{ item.semana }}: {{ item.asistencia|default(0, true) }} asistentes, {{ item.porcentaje|default(0, true) }}% del pico">
                                     <div class="trend-bar-track">
-                                        <div class="trend-bar-fill" style="--bar-height: {{ item.porcentaje }}%;" title="{{ item.semana }}: {{ item.asistencia }} asistentes">
-                                            <span class="trend-bar-val">{{ item.asistencia }}</span>
+                                        <div class="trend-bar-fill" style="--bar-height: {{ item.porcentaje|default(0, true) }}%;">
+                                            <span class="trend-bar-val">{{ item.asistencia|default(0, true) }}</span>
                                         </div>
                                     </div>
                                     <span class="trend-bar-lbl">{{ item.semana }}</span>
+                                    <div class="trend-tooltip" id="{{ tip_id }}" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-date">{{ item.fecha_completa|default(item.semana) }}</span>
+                                        <span class="tooltip-val"><strong>{{ item.asistencia|default(0, true) }}</strong> asistentes</span>
+                                        <span class="tooltip-pct">{{ item.porcentaje|default(0, true) }}% del pico</span>
+                                    </div>
                                 </div>
                                 {% endfor %}
                                 {% else %}
@@ -222,23 +263,59 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Distribución por Categoría</h2>
-                                <p class="section-subtitle">Composición de membresía y consolidación general</p>
+                                <p class="section-subtitle">Composición de membresía y consolidación de la semana activa</p>
                             </div>
                         </div>
 
                         <div class="chart-area">
-                            <ul class="chart-legend" aria-hidden="true">
-                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
-                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
-                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
-                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos }})</li>
+                            {% set d_reg = ((metricas.distribucion.regulares if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_nin = ((metricas.distribucion.ninos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_vis = ((metricas.distribucion.visitas if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_com = ((metricas.distribucion.comprometidos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set sum_dist = (d_reg + d_nin + d_vis + d_com) %}
+                            {% set pct_base = sum_dist if sum_dist > 0 else 1 %}
+                            <ul class="chart-legend" role="list" aria-label="Leyenda de distribución de asistencia de la semana">
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-gen" data-category="regular" data-count="{{ d_reg }}" data-percent="{{ (d_reg / pct_base * 100)|round|int }}" aria-label="Regulares: {{ d_reg }} personas ({{ (d_reg / pct_base * 100)|round|int }}%)">
+                                    <span class="dot regular"></span> Regulares ({{ d_reg }})
+                                    <div class="legend-tooltip" id="legend-tip-reg-gen" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Regulares</span>
+                                        <span class="tooltip-val"><strong>{{ d_reg }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_reg / pct_base * 100)|round|int }}% de la semana</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-gen" data-category="ninos" data-count="{{ d_nin }}" data-percent="{{ (d_nin / pct_base * 100)|round|int }}" aria-label="Niños: {{ d_nin }} personas ({{ (d_nin / pct_base * 100)|round|int }}%)">
+                                    <span class="dot ninos"></span> Niños ({{ d_nin }})
+                                    <div class="legend-tooltip" id="legend-tip-nin-gen" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Niños</span>
+                                        <span class="tooltip-val"><strong>{{ d_nin }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_nin / pct_base * 100)|round|int }}% de la semana</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-gen" data-category="visitas" data-count="{{ d_vis }}" data-percent="{{ (d_vis / pct_base * 100)|round|int }}" aria-label="Visitas: {{ d_vis }} personas ({{ (d_vis / pct_base * 100)|round|int }}%)">
+                                    <span class="dot visitas"></span> Visitas ({{ d_vis }})
+                                    <div class="legend-tooltip" id="legend-tip-vis-gen" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Visitas</span>
+                                        <span class="tooltip-val"><strong>{{ d_vis }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_vis / pct_base * 100)|round|int }}% de la semana</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-com-gen" data-category="comprometidos" data-count="{{ d_com }}" data-percent="{{ (d_com / pct_base * 100)|round|int }}" aria-label="Comprometidos: {{ d_com }} personas ({{ (d_com / pct_base * 100)|round|int }}%)">
+                                    <span class="dot comprometidos"></span> Comprometidos ({{ d_com }})
+                                    <div class="legend-tooltip" id="legend-tip-com-gen" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Comprometidos</span>
+                                        <span class="tooltip-val"><strong>{{ d_com }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_com / pct_base * 100)|round|int }}% de la semana</span>
+                                    </div>
+                                </li>
                             </ul>
-                            <div class="donut-wrapper" role="img" aria-label="Gráfico de distribución total de asistencia">
-                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
-                                <div class="donut-center">
-                                    <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.total_asistencia|default(0, true) }}</span>
+                            <div class="donut-wrapper" role="region" aria-label="Gráfico de distribución total de asistencia" style="position: relative; width: 220px; height: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0;">
+                                <div class="donut-ring" data-regular="{{ d_reg }}" data-ninos="{{ d_nin }}" data-visitas="{{ d_vis }}" data-comprometidos="{{ d_com }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <div class="donut-center" aria-live="polite" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 10; width: 100px; height: 100px; margin: 0; padding: 0; box-sizing: border-box;">
+                                        <span class="donut-label" style="display: block; font-size: 0.8rem; margin-bottom: 0.2rem; line-height: 1.2;">TOTAL</span>
+                                        <span class="donut-number" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.total_asistencia|default(0, true) }}</span>
+                                    </div>
                                 </div>
+                                <div class="donut-tooltip" id="donut-tooltip-gen" role="tooltip" aria-hidden="true"></div>
                             </div>
                         </div>
                     </section>
@@ -248,9 +325,21 @@
                 <aside class="sidebar-column fade-in-6">
                     <!-- Bloque 1: Alertas de Seguimiento -->
                     <article class="warning-card" role="region" aria-labelledby="alertas-seguimiento-title">
+                        {% set total_alt = (metricas.alertas|default([], true))|length %}
                         <div class="status-card-header">
-                            <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
-                            <p class="section-subtitle">Casas con &gt;2 semanas sin reporte</p>
+                            <div class="status-header-title-wrap">
+                                <h2 id="alertas-seguimiento-title" class="section-title">Alertas de Seguimiento</h2>
+                                {% if total_alt > 0 %}
+                                <span class="alert-header-badge" title="{% if total_alt == 1 %}1 casa falta por reporte{% else %}{{ total_alt }} casas faltan por reporte{% endif %}">{{ total_alt }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="section-subtitle">
+                                {% if total_alt > 0 %}
+                                {% if total_alt == 1 %}Falta 1 por reporte (&gt;2 sem){% else %}Faltan {{ total_alt }} por reporte (&gt;2 sem){% endif %}
+                                {% else %}
+                                Todas al día
+                                {% endif %}
+                            </p>
                         </div>
 
                         <div class="alert-list">
@@ -262,7 +351,7 @@
                                         <p class="alert-meta">{{ alerta.red }} · Supervisor: {{ alerta.lider }}</p>
                                         <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">schedule</span> {{ alerta.dias_sin_reporte }} días sin reporte</p>
                                     </div>
-                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Contactar a {{ alerta.lider }} por WhatsApp" title="Contactar por WhatsApp">
+                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Contactar a {{ alerta.lider }} por WhatsApp" title="Contactar por WhatsApp">
                                         <span class="material-symbols-outlined">chat</span>
                                         Contactar
                                     </a>{% endif %}
@@ -294,21 +383,26 @@
                         
                         <div class="network-ranking-list">
                             {% if metricas.ranking_redes %}
-                            {% for red_item in metricas.ranking_redes %}
-                            <div class="ranking-item">
+                            {% for red_item in metricas.ranking_redes[:3] %}
+                            {% set red_cumpl = (red_item.cumplimiento|default(0, true))|int %}
+                            {% set red_asist = (red_item.asistencia|default(0, true))|int %}
+                            {% set red_asist_tot = (red_item.asistencia_total|default(0, true))|int %}
+                            {% set red_tot_casas = (red_item.total_casas|default(0, true))|int %}
+                            {% set red_casas_rep = (red_item.casas_reportadas|default(0, true))|int %}
+                            <div class="ranking-item podium-{{ loop.index }}">
                                 <div class="ranking-row">
                                     <div class="ranking-name-box">
-                                        <span class="ranking-pos">#{{ loop.index }}</span>
+                                        <span class="ranking-pos pos-{{ loop.index }}" title="Puesto #{{ loop.index }} del podio ministerial">#{{ loop.index }}</span>
                                         <strong>{{ red_item.nombre }}</strong>
                                         <span class="ranking-sup">({{ red_item.supervisor }})</span>
                                     </div>
                                     <div class="ranking-stats">
-                                        <span class="ranking-asist" title="{% if red_item.asistencia_total is defined and red_item.asistencia_total %}{{ red_item.asistencia_total }} asistencias históricas acumuladas{% else %}Asistencia de la semana actual{% endif %}">{{ red_item.asistencia }} asists. sem.</span>
-                                        <span class="ranking-percent" title="{% if red_item.total_casas is defined and red_item.total_casas > 0 %}{{ red_item.casas_reportadas|default(0) }} de {{ red_item.total_casas }} Casas de Paz han reportado esta semana ({{ red_item.cumplimiento }}%){% else %}{{ red_item.cumplimiento }}% de Casas de Paz con reporte esta semana{% endif %}">{{ red_item.cumplimiento }}% cumpl. sem.</span>
+                                        <span class="ranking-asist" title="{% if red_asist_tot > 0 %}{{ red_asist_tot }} asistencias históricas acumuladas{% else %}Asistencia de la semana actual{% endif %}">{{ red_asist }} asists. sem.</span>
+                                        <span class="ranking-percent" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz han reportado esta semana ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de Casas de Paz con reporte esta semana{% endif %}">{{ red_cumpl }}% cumpl. sem.</span>
                                     </div>
                                 </div>
-                                <div class="progress-bar" title="{% if red_item.total_casas is defined and red_item.total_casas > 0 %}{{ red_item.casas_reportadas|default(0) }} de {{ red_item.total_casas }} Casas de Paz con reporte esta semana ({{ red_item.cumplimiento }}%){% else %}{{ red_item.cumplimiento }}% de cumplimiento semanal{% endif %}">
-                                    <div class="progress-fill fill-{{ red_item.color_class }}" style="--bar-width: {{ red_item.cumplimiento }}%;"></div>
+                                <div class="progress-bar" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz con reporte esta semana ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de cumplimiento semanal{% endif %}">
+                                    <div class="progress-fill fill-{{ red_item.color_class }}" style="--bar-width: {{ red_cumpl }}%;"></div>
                                 </div>
                             </div>
                             {% endfor %}
@@ -333,7 +427,7 @@
                                     <span class="material-symbols-outlined text-success">person_add</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.conversiones|default(0) }}</span>
+                                    <span class="fruto-number">{{ metricas.conversiones|default(0, true) }}</span>
                                     <span class="fruto-label">Confesiones de Fe</span>
                                 </div>
                             </div>
@@ -342,7 +436,7 @@
                                     <span class="material-symbols-outlined text-primary">handshake</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.reconciliaciones|default(0) }}</span>
+                                    <span class="fruto-number">{{ metricas.reconciliaciones|default(0, true) }}</span>
                                     <span class="fruto-label">Reconciliaciones</span>
                                 </div>
                             </div>
@@ -351,7 +445,7 @@
                                     <span class="material-symbols-outlined text-primary-container">favorite</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.cestas_amor|default(0) }}</span>
+                                    <span class="fruto-number">{{ metricas.cestas_amor|default(0, true) }}</span>
                                     <span class="fruto-label">Cestas de Amor</span>
                                 </div>
                             </div>
@@ -383,7 +477,7 @@
                     </p>
                 </div>
                 <div class="header-action-group">
-                    <span class="badge-status badge-info">{{ metricas.casas_activas }} Casas Activas</span>
+                    <span class="badge-status badge-info">{{ metricas.casas_activas|default(0, true) }} Casas Activas</span>
                 </div>
             </div>
 
@@ -393,7 +487,7 @@
                     <span class="material-symbols-outlined">table_chart</span>
                     <span>Ver Reportes</span>
                 </a>
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
                     <span class="material-symbols-outlined">account_tree</span>
                     <span>Estructura y Redes</span>
                 </a>
@@ -412,21 +506,21 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Asistencia Total</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.asistencia_total }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.asistencia_total|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">home_work</span>
                     <h3 class="card-title">Promedio por Casa</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.promedio_casa }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.promedio_casa|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">home_work</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
                     <h3 class="card-title">Confesiones de Fe</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.conversiones|default(0) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.casas %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">person_add</span>
                 </article>
 
@@ -435,8 +529,8 @@
                     <h3 class="card-title">Ofrendas de Red</h3>
                     <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.casas %}
-                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(0)) }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(0)) }}</div>
+                            <div>${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -449,37 +543,111 @@
             <div class="dashboard-grid">
                 <!-- Columna Izquierda: Semáforo y Distribución -->
                 <div class="main-column">
-                    <!-- Semáforo de Cumplimiento -->
-                    <article class="status-card fade-in-5" role="region" aria-labelledby="semaforo-title">
-                        <div class="status-card-header">
-                            <h2 id="semaforo-title" class="section-title">Semáforo de Cumplimiento Zonal</h2>
-                            <p class="section-subtitle">Estado de reporte semanal de cada Casa de Paz en {{ metricas.nombre_red }}</p>
+                    <!-- Tendencia de Asistencia de la Red -->
+                    <section class="chart-card fade-in-5">
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="section-title">Tendencia de Asistencia</h2>
+                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length if metricas.tendencia_semanas else 0 }} mediciones en {{ metricas.nombre_red }}</p>
+                            </div>
+                            {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
+                            {% set asist_prev_red = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
+                            {% set asist_curr_red = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
+                            {% set variacion_red = ((asist_curr_red - asist_prev_red) / asist_prev_red * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion_red < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion_red) }}% respecto a la semana anterior">
+                                <span class="material-symbols-outlined">{% if variacion_red >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+                                <span>{{ '%+.1f'|format(variacion_red) }}% vs semana anterior</span>
+                            </div>
+                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.promedio_tendencia is defined and metricas.promedio_tendencia|default(0, true) > 0 %}
+                            {% set prom_red = metricas.promedio_tendencia|default(0, true) %}
+                            {% set asist_curr_red = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
+                            {% set variacion_red = ((asist_curr_red - prom_red) / prom_red * 100)|round(1) %}
+                            <div class="trend-badge-pill {% if variacion_red < 0 %}negative{% endif %}" role="status" aria-label="Variación: {{ '%+.1f'|format(variacion_red) }}% respecto al promedio">
+                                <span class="material-symbols-outlined">{% if variacion_red >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+                                <span>{{ '%+.1f'|format(variacion_red) }}% vs promedio</span>
+                            </div>
+                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 %}
+                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0% respecto a la semana anterior">
+                                <span class="material-symbols-outlined">trending_flat</span>
+                                <span>0.0% vs semana anterior</span>
+                            </div>
+                            {% endif %}
                         </div>
-                        <div class="semaforo-grid">
-                            {% if metricas.casas %}
-                            {% for casa in metricas.casas %}
-                            <article class="semaforo-item">
-                                <span class="semaforo-dot {{ casa.estado }}"></span>
-                                <div class="semaforo-info">
-                                    <div class="semaforo-name-row">
-                                        <h4>{{ casa.nombre }}</h4>
-                                        <span class="badge-code">{{ casa.codigo }}</span>
+
+                        <!-- Gráfico de barras de tendencia de la red -->
+                        <div class="trend-chart-area">
+                            <div class="trend-bars-container" role="region" aria-label="Gráfica de tendencia semanal de asistencia de la red">
+                                {% if metricas.tendencia_semanas %}
+                                {% for item in metricas.tendencia_semanas %}
+                                {% set tip_id = 'trend-tip-red-' ~ loop.index %}
+                                <div class="trend-bar-col" tabindex="0" role="graphics-symbol" aria-roledescription="barra de asistencia" aria-describedby="{{ tip_id }}" aria-label="{{ item.semana }}: {{ item.asistencia|default(0, true) }} asistentes, {{ item.porcentaje|default(0, true) }}% del pico">
+                                    <div class="trend-bar-track">
+                                        <div class="trend-bar-fill" style="--bar-height: {{ item.porcentaje|default(0, true) }}%;">
+                                            <span class="trend-bar-val">{{ item.asistencia|default(0, true) }}</span>
+                                        </div>
                                     </div>
-                                    <span class="asistencia-num">Líder: {{ casa.lider }} · {{ casa.asistencia }} asistentes ({{ casa.visitas }} visitas)</span>
+                                    <span class="trend-bar-lbl">{{ item.semana }}</span>
+                                    <div class="trend-tooltip" id="{{ tip_id }}" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-date">{{ item.fecha_completa|default(item.semana) }}</span>
+                                        <span class="tooltip-val"><strong>{{ item.asistencia|default(0, true) }}</strong> asistentes</span>
+                                        <span class="tooltip-pct">{{ item.porcentaje|default(0, true) }}% del pico</span>
+                                    </div>
                                 </div>
-                                <span class="badge-status {% if casa.estado == 'verde' %}badge-success{% elif casa.estado == 'amarillo' %}badge-warning{% else %}badge-danger{% endif %}">
-                                    {% if casa.estado == 'verde' %}Enviado / OK{% elif casa.estado == 'amarillo' %}Caída ≥30%{% else %}Pendiente{% endif %}
-                                </span>
+                                {% endfor %}
+                                {% else %}
+                                <div class="empty-state">
+                                    <span class="material-symbols-outlined empty-icon">monitoring</span>
+                                    <p class="empty-message">Aún no hay reportes para mostrar una tendencia.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Actividad Reciente de la Red -->
+                    <article class="status-card fade-in-5" role="region" aria-labelledby="actividad-red-title" style="margin-top: 1rem;">
+                        <div class="status-card-header">
+                            <h2 id="actividad-red-title" class="section-title">Actividad Reciente</h2>
+                            <p class="section-subtitle">Últimos reportes enviados en {{ metricas.nombre_red }}</p>
+                        </div>
+                        <div class="activity-feed" tabindex="0" role="region" aria-label="Historial de actividad reciente">
+                            {% if metricas.actividad_reciente %}
+                            {% for act in metricas.actividad_reciente %}
+                            <article class="activity-item">
+                                <div class="activity-avatar {{ act.avatar_class }}">
+                                    {{ act.iniciales }}
+                                </div>
+                                <div class="activity-info">
+                                    <div class="activity-name-row">
+                                        <h4>{{ act.lider }}</h4>
+                                        <span class="badge-code">{{ act.cdp_codigo }}</span>
+                                    </div>
+                                    <span class="activity-meta">
+                                        <span class="material-symbols-outlined" style="font-size: 0.8rem; vertical-align: middle;">calendar_today</span>
+                                        {{ act.fecha_formateada }} · {{ act.cdp_nombre }}
+                                    </span>
+                                    {% if act.tema %}
+                                    <span class="activity-tema">
+                                        <span class="material-symbols-outlined" style="font-size: 0.8rem; vertical-align: middle;">menu_book</span>
+                                        {{ act.tema }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="activity-badge">
+                                    <span class="activity-asist-number">{{ act.asistencia }}</span>
+                                    <span class="activity-asist-label">asist.</span>
+                                </div>
                             </article>
                             {% endfor %}
                             {% else %}
                             <div class="empty-state">
-                                <span class="material-symbols-outlined empty-icon">home_work</span>
-                                <p class="empty-message">Esta red todavía no tiene Casas de Paz registradas.</p>
+                                <span class="material-symbols-outlined empty-icon">history</span>
+                                <p class="empty-message">Aún no hay reportes recientes en esta red.</p>
                             </div>
                             {% endif %}
                         </div>
                     </article>
+
 
                     <!-- Distribución de Asistencia en la Red (Donut) -->
                     <section class="chart-card fade-in-6" style="margin-top: 1rem;">
@@ -491,18 +659,54 @@
                         </div>
 
                         <div class="chart-area">
-                            <ul class="chart-legend" aria-hidden="true">
-                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares }})</li>
-                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos }})</li>
-                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas }})</li>
-                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos }})</li>
+                            {% set d_reg_red = ((metricas.distribucion.regulares if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_nin_red = ((metricas.distribucion.ninos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_vis_red = ((metricas.distribucion.visitas if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_com_red = ((metricas.distribucion.comprometidos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set sum_dist_red = (d_reg_red + d_nin_red + d_vis_red + d_com_red) %}
+                            {% set pct_base_red = sum_dist_red if sum_dist_red > 0 else 1 %}
+                            <ul class="chart-legend" role="list" aria-label="Leyenda de distribución de asistencia de la red">
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-red" data-category="regular" data-count="{{ d_reg_red }}" data-percent="{{ (d_reg_red / pct_base_red * 100)|round|int }}" aria-label="Regulares: {{ d_reg_red }} personas ({{ (d_reg_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot regular"></span> Regulares ({{ d_reg_red }})
+                                    <div class="legend-tooltip" id="legend-tip-reg-red" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Regulares</span>
+                                        <span class="tooltip-val"><strong>{{ d_reg_red }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_reg_red / pct_base_red * 100)|round|int }}% de la red</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-red" data-category="ninos" data-count="{{ d_nin_red }}" data-percent="{{ (d_nin_red / pct_base_red * 100)|round|int }}" aria-label="Niños: {{ d_nin_red }} personas ({{ (d_nin_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot ninos"></span> Niños ({{ d_nin_red }})
+                                    <div class="legend-tooltip" id="legend-tip-nin-red" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Niños</span>
+                                        <span class="tooltip-val"><strong>{{ d_nin_red }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_nin_red / pct_base_red * 100)|round|int }}% de la red</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-red" data-category="visitas" data-count="{{ d_vis_red }}" data-percent="{{ (d_vis_red / pct_base_red * 100)|round|int }}" aria-label="Visitas: {{ d_vis_red }} personas ({{ (d_vis_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot visitas"></span> Visitas ({{ d_vis_red }})
+                                    <div class="legend-tooltip" id="legend-tip-vis-red" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Visitas</span>
+                                        <span class="tooltip-val"><strong>{{ d_vis_red }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_vis_red / pct_base_red * 100)|round|int }}% de la red</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-com-red" data-category="comprometidos" data-count="{{ d_com_red }}" data-percent="{{ (d_com_red / pct_base_red * 100)|round|int }}" aria-label="Comprometidos: {{ d_com_red }} personas ({{ (d_com_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot comprometidos"></span> Comprometidos ({{ d_com_red }})
+                                    <div class="legend-tooltip" id="legend-tip-com-red" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Comprometidos</span>
+                                        <span class="tooltip-val"><strong>{{ d_com_red }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_com_red / pct_base_red * 100)|round|int }}% de la red</span>
+                                    </div>
+                                </li>
                             </ul>
-                            <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia de la red">
-                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares }}" data-ninos="{{ metricas.distribucion.ninos }}" data-visitas="{{ metricas.distribucion.visitas }}" data-comprometidos="{{ metricas.distribucion.comprometidos }}"></div>
-                                <div class="donut-center">
-                                    <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.asistencia_total|default(0, true) }}</span>
+                            <div class="donut-wrapper" role="region" aria-label="Gráfico de asistencia de la red" style="position: relative; width: 220px; height: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0;">
+                                <div class="donut-ring" data-regular="{{ d_reg_red }}" data-ninos="{{ d_nin_red }}" data-visitas="{{ d_vis_red }}" data-comprometidos="{{ d_com_red }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <div class="donut-center" aria-live="polite" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 10; width: 100px; height: 100px; margin: 0; padding: 0; box-sizing: border-box;">
+                                        <span class="donut-label" style="display: block; font-size: 0.8rem; margin-bottom: 0.2rem; line-height: 1.2;">TOTAL</span>
+                                        <span class="donut-number" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.asistencia_total|default(0, true) }}</span>
+                                    </div>
                                 </div>
+                                <div class="donut-tooltip" id="donut-tooltip-red" role="tooltip" aria-hidden="true"></div>
                             </div>
                         </div>
                     </section>
@@ -512,9 +716,21 @@
                 <aside class="sidebar-column fade-in-6">
                     <!-- Bloque 1: Alertas Zonal -->
                     <article class="warning-card">
+                        {% set total_alt_z = (metricas.alertas_zonal|default([], true))|length %}
                         <div class="status-card-header">
-                            <h2 class="section-title">Alertas Zonal</h2>
-                            <p class="section-subtitle">Casas con riesgo o reportes pendientes</p>
+                            <div class="status-header-title-wrap">
+                                <h2 class="section-title">Alertas Zonal</h2>
+                                {% if total_alt_z > 0 %}
+                                <span class="alert-header-badge" title="{% if total_alt_z == 1 %}1 casa falta por reporte{% else %}{{ total_alt_z }} casas faltan por reporte{% endif %}">{{ total_alt_z }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="section-subtitle">
+                                {% if total_alt_z > 0 %}
+                                {% if total_alt_z == 1 %}Falta 1 por reporte{% else %}Faltan {{ total_alt_z }} por reporte{% endif %}
+                                {% else %}
+                                Sin alertas pendientes
+                                {% endif %}
+                            </p>
                         </div>
                         <div class="alert-list">
                             {% if metricas.alertas_zonal %}
@@ -525,7 +741,7 @@
                                     <p class="alert-meta">Líder: {{ alerta.lider }}</p>
                                     <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
+                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
                                     <span class="material-symbols-outlined">support_agent</span>
                                     Atender
                                 </a>{% endif %}
@@ -552,8 +768,8 @@
                             </div>
                             <div class="growth-details">
                                 <h3>{{ metricas.top_crecimiento.nombre }} <span class="badge-code">{{ metricas.top_crecimiento.codigo }}</span></h3>
-                                <p class="growth-rate"><strong class="text-success">{{ metricas.top_crecimiento.tasa|default('Sin datos') }}</strong> indicador destacado</p>
-                                <p class="growth-sub">{{ metricas.top_crecimiento.visitas|default(0) }} visitas registradas · Líder: {{ metricas.top_crecimiento.lider|default('Sin asignar') }}</p>
+                                <p class="growth-rate"><strong class="text-success">{{ metricas.top_crecimiento.tasa|default('Sin datos', true) }}</strong> indicador destacado</p>
+                                <p class="growth-sub">{{ metricas.top_crecimiento.visitas|default(0, true) }} visitas registradas · Líder: {{ metricas.top_crecimiento.lider|default('Sin asignar', true) }}</p>
                             </div>
                         </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">workspace_premium</span><p class="empty-message">Aún no hay datos de crecimiento para destacar.</p></div>{% endif %}
                     </article>
@@ -566,20 +782,20 @@
                         </div>
                         <div class="cumplimiento-zonal-box">
                             <div class="cumplimiento-header-row">
-                                <span class="cumplimiento-percentage">{{ metricas.cumplimiento }}%</span>
-                                <span class="cumplimiento-fraction">{{ metricas.casas_con_reporte }} de {{ metricas.casas_activas }} casas</span>
+                                <span class="cumplimiento-percentage">{{ metricas.cumplimiento|default(0, true) }}%</span>
+                                <span class="cumplimiento-fraction">{{ metricas.casas_con_reporte|default(0, true) }} de {{ metricas.casas_activas|default(0, true) }} casas</span>
                             </div>
                             <div class="progress-bar-track">
-                                <div class="progress-bar-fill" style="--bar-width: {{ metricas.cumplimiento }}%;"></div>
+                                <div class="progress-bar-fill" style="--bar-width: {{ metricas.cumplimiento|default(0, true) }}%;"></div>
                             </div>
                             <div class="cumplimiento-pills">
                                 <span class="cumplimiento-pill al-dia">
                                     <span class="material-symbols-outlined">check_circle</span>
-                                    {{ metricas.casas_con_reporte }} Al día
+                                    {{ metricas.casas_con_reporte|default(0, true) }} Al día
                                 </span>
                                 <span class="cumplimiento-pill pendientes">
                                     <span class="material-symbols-outlined">schedule</span>
-                                    {{ metricas.casas_pendientes }} Pendientes
+                                    {{ metricas.casas_pendientes|default(0, true) }} Pendientes
                                 </span>
                             </div>
                         </div>
@@ -593,18 +809,18 @@
                         </div>
                         <div class="lideres-red-list">
                             {% if metricas.lideres_red %}
-                            {% for lid in metricas.lideres_red %}
+                            {% for lid in metricas.lideres_red if lid.rol == 'Lider' or not lid.rol %}
                             <div class="leader-card-item">
                                 <div class="leader-avatar">
                                     <span class="material-symbols-outlined">person</span>
                                 </div>
                                 <div class="leader-info">
-                                    <h4>{{ lid.nombre }} <span class="badge-role">{{ lid.rol }}</span></h4>
+                                    <h4>{{ lid.nombre }} <span class="badge-role">{{ lid.rol|default('Líder') }}</span></h4>
                                     <p><span class="badge-code">{{ lid.cdp_codigo }}</span>{% if lid.cdp_anfitrion %} · {{ lid.cdp_anfitrion }}{% endif %}</p>
                                 </div>
                                 <div class="leader-actions">
                                     {% if lid.telefono %}
-                                    <a href="https://wa.me/{{ lid.telefono|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="btn-icon-wa" aria-label="WhatsApp a {{ lid.nombre }}" title="Contactar por WhatsApp">
+                                    <a href="https://wa.me/{{ lid.telefono|string|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="btn-icon-wa" aria-label="WhatsApp a {{ lid.nombre }}" title="Contactar por WhatsApp">
                                         <span class="material-symbols-outlined">chat</span>
                                     </a>
                                     <a href="tel:{{ lid.telefono }}" class="btn-icon-call" aria-label="Llamar a {{ lid.nombre }}" title="Llamar {{ lid.nombre }}">
@@ -630,6 +846,26 @@
              VISTA 4: VISTA CASA DE PAZ
              =================================================================== -->
         {% elif nivel == 'cdp' %}
+        {% if not cdp_id %}
+        <!-- Estado vacío: La red seleccionada no tiene Casas de Paz asignadas -->
+        <section class="empty-state-card" style="margin: 2rem auto; max-width: 640px; text-align: center; padding: 3.5rem 2rem; background: var(--color4, #fff); border-radius: 12px; box-shadow: var(--shadow-card, 0 4px 20px rgba(35,25,25,0.04)); border: 1px solid rgba(137, 114, 111, 0.15);">
+            <span class="material-symbols-outlined" style="font-size: 3.8rem; color: var(--color5, #96292b); margin-bottom: 1rem;">home_work</span>
+            <h2 style="font-family: var(--font-serif, 'Noto Serif', serif); color: var(--primary, #390002); margin-bottom: 0.75rem; font-size: 1.5rem;">Sin Casas de Paz Asignadas</h2>
+            <p style="color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                La red seleccionada {% if metricas.nombre_red %}<strong>({{ metricas.nombre_red }})</strong> {% endif %}aún no tiene Casas de Paz registradas o activas. Puedes seleccionar otra red en el filtro superior o registrar nuevas Casas de Paz desde la sección de Estructura.
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard', nivel='red') }}{% else %}{{ url_for('admin.dashboard', nivel='red', red_id=red_id) }}{% endif %}" class="btn-full-outline" style="display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">arrow_back</span>
+                    Ver Vista Zonal
+                </a>
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="btn-full-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; background: var(--primary, #780204); color: #fff;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">account_tree</span>
+                    Estructura y Redes
+                </a>
+            </div>
+        </section>
+        {% else %}
         <section class="view-panel view-cdp active">
             <!-- Header de Casa de Paz -->
             <div class="section-header-row">
@@ -651,7 +887,7 @@
                     <span class="material-symbols-outlined">table_chart</span>
                     <span>Ver Reportes</span>
                 </a>
-                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura') }}{% else %}{{ url_for('admin.estructura', red_id=red_id) }}{% endif %}" class="quick-action-btn">
+                <a href="{% if has_role('supervisor') %}{{ url_for('supervisor.estructura', red_id=red_id, cdp_id=cdp_id) }}{% else %}{{ url_for('admin.estructura', red_id=red_id, cdp_id=cdp_id) }}{% endif %}" class="quick-action-btn">
                     <span class="material-symbols-outlined">account_tree</span>
                     <span>Estructura y Redes</span>
                 </a>
@@ -676,37 +912,30 @@
                         <p>{% if metricas.lider %}Líder principal{% else %}Falta asignar líder{% endif %}</p>
                     </div>
                 </div>
-                {% if metricas.sublider %}
-                <div class="lider-info">
-                    <div class="lider-avatar">
-                        <span class="material-symbols-outlined">supervisor_account</span>
-                    </div>
-                    <div class="lider-details">
-                        <h3>{{ metricas.sublider }}</h3>
-                        <p>Sublíder</p>
-                    </div>
-                </div>
-                {% endif %}
 
-                <!-- Trazabilidad de Último Reporte -->
-                <div class="trazabilidad-box {{ metricas.estado_reporte }}">
-                    <span class="material-symbols-outlined trazabilidad-icon">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
-                    <div class="trazabilidad-text">
-                        <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Último Reporte Enviado{% else %}Reporte Pendiente{% endif %}</span>
-                        {% if metricas.estado_reporte == 'enviado' %}
-                        <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>
-                        {% else %}
-                        <span class="trazabilidad-author">Todavía no hay reportes registrados para esta casa.</span>
-                        {% endif %}
+                <div class="cdp-header-meta">
+                    <!-- Trazabilidad de Último Reporte -->
+                    <div class="trazabilidad-box {{ metricas.estado_reporte }}">
+                        <span class="material-symbols-outlined trazabilidad-icon">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
+                        <div class="trazabilidad-text">
+                            <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Reporte de esta semana recibido{% else %}Reporte de esta semana pendiente{% endif %}</span>
+                            {% if metricas.estado_reporte == 'enviado' %}
+                            <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>
+                            {% elif metricas.historial %}
+                            <span class="trazabilidad-author">Último servicio registrado: {{ metricas.ultimo_reporte_fecha }}{% if metricas.dias_desde_reporte is not none and metricas.dias_desde_reporte > 0 %} (hace {{ metricas.dias_desde_reporte }} días){% endif %} · Enviado por: <strong>{{ metricas.ultimo_reporte_por or 'Líder' }}</strong></span>
+                            {% else %}
+                            <span class="trazabilidad-author">Todavía no hay reportes registrados para esta casa.</span>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
 
-                <div class="lider-actions">
                     {% if metricas.telefono_contacto %}
-                    <a href="https://wa.me/{{ metricas.telefono_contacto|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
-                        <span class="material-symbols-outlined">chat</span>
-                        WhatsApp
-                    </a>
+                    <div class="lider-actions">
+                        <a href="https://wa.me/{{ metricas.telefono_contacto|string|replace(' ', '')|replace('+', '') }}" target="_blank" rel="noopener noreferrer" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
+                            <span class="material-symbols-outlined">chat</span>
+                            WhatsApp
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </section>
@@ -716,14 +945,14 @@
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">event_available</span>
                     <h3 class="card-title">Asistencia Último Servicio</h3>
-                    <div class="card-number">{% if metricas.historial %}{{ metricas.asistencia_ultimo }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.historial %}{{ metricas.asistencia_ultimo|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">event_available</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">insights</span>
                     <h3 class="card-title">Promedio Histórico</h3>
-                    <div class="card-number">{% if metricas.historial %}{{ metricas.promedio_historico }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number">{% if metricas.historial %}{{ metricas.promedio_historico|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">insights</span>
                 </article>
 
@@ -732,9 +961,11 @@
                     <h3 class="card-title">Ofrendas Último Servicio</h3>
                     <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.historial %}
-                            <div>${{ '{:,.2f}'.format(metricas.ofrendas_usd|default(metricas.historial[0].ofrendas_usd|default(0))) }}</div>
-                            {% if metricas.ofrendas_bs|default(metricas.historial[0].ofrendas_bs|default(0)) > 0 %}
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(metricas.ofrendas_bs|default(metricas.historial[0].ofrendas_bs|default(0))) }}</div>
+                            {% set cdp_ofr_usd = (metricas.ofrendas_usd if metricas.ofrendas_usd is defined and metricas.ofrendas_usd is not none else (metricas.historial[0].ofrendas_usd if metricas.historial and metricas.historial[0].ofrendas_usd is defined else 0))|default(0, true) %}
+                            {% set cdp_ofr_bs = (metricas.ofrendas_bs if metricas.ofrendas_bs is defined and metricas.ofrendas_bs is not none else (metricas.historial[0].ofrendas_bs if metricas.historial and metricas.historial[0].ofrendas_bs is defined else 0))|default(0, true) %}
+                            <div>${{ '{:,.2f}'.format((cdp_ofr_usd|default(0, true))|float) }}</div>
+                            {% if (cdp_ofr_bs|default(0, true))|float > 0 %}
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((cdp_ofr_bs|default(0, true))|float) }}</div>
                             {% endif %}
                         {% else %}
                             Sin datos
@@ -748,7 +979,7 @@
                     <h3 class="card-title">Estado del Reporte</h3>
                     <div class="card-number">
                         <span class="badge-status {% if metricas.estado_reporte == 'enviado' %}badge-success{% else %}badge-warning{% endif %}">
-                            <span class="material-symbols-outlined" style="font-size: 0.85rem;">{% if metricas.estado_reporte == 'enviado' %}check{% else %}schedule{% endif %}</span> {% if metricas.estado_reporte == 'enviado' %}Enviado{% else %}Pendiente{% endif %}
+                            <span class="material-symbols-outlined" style="font-size: 0.85rem;">{% if metricas.estado_reporte == 'enviado' %}check{% else %}schedule{% endif %}</span> {% if metricas.estado_reporte == 'enviado' %}Al día (Esta semana){% else %}Pendiente esta semana{% endif %}
                         </span>
                     </div>
                     <span class="material-symbols-outlined watermark-icon">send</span>
@@ -765,7 +996,7 @@
                             <h2 id="historial-title" class="section-title">Historial de Reportes</h2>
                             <p class="section-subtitle">Últimos reportes registrados de la Casa de Paz</p>
                         </div>
-                        <div class="table-scroll">
+                        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de historial de reportes">
                             <table class="cdp-table">
                                 <thead>
                                     <tr>
@@ -785,9 +1016,9 @@
                                         <td data-label="Niños">{{ reporte.ninos }}</td>
                                         <td data-label="Visitas">{{ reporte.visitas }}</td>
                                         <td data-label="Ofrenda">
-                                            <div><strong>${{ '{:,.2f}'.format(reporte.ofrendas_usd|default(0)) }}</strong></div>
-                                            {% if reporte.ofrendas_bs|default(0) > 0 %}
-                                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format(reporte.ofrendas_bs) }}</div>
+                                            <div><strong>${{ '{:,.2f}'.format((reporte.ofrendas_usd|default(0, true))|float) }}</strong></div>
+                                            {% if (reporte.ofrendas_bs|default(0, true))|float > 0 %}
+                                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((reporte.ofrendas_bs|default(0, true))|float) }}</div>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -804,24 +1035,69 @@
                     <section class="chart-card fade-in-6" style="margin-top: 1rem;">
                         <div class="chart-header">
                             <div>
-                                <h2 class="section-title">Distribución del Último Reporte</h2>
-                                <p class="section-subtitle">{% if metricas.historial %}Asistencia registrada el {{ metricas.historial[0].fecha }} en {{ metricas.nombre_cdp }}{% else %}No hay reportes registrados{% endif %}</p>
+                                <h2 class="section-title">Distribución de Asistencia</h2>
+                                <p class="section-subtitle">
+                                    {% if metricas.historial %}
+                                        Asistencia registrada el {{ metricas.historial[0].fecha }} en {{ metricas.nombre_cdp }}
+                                        {% if not metricas.reporte_al_dia and metricas.dias_desde_reporte is not none and metricas.dias_desde_reporte > 7 %}
+                                            · <span style="color: var(--color5, #96292b); font-weight: 600;">(hace {{ metricas.dias_desde_reporte }} días · Pendiente esta semana)</span>
+                                        {% endif %}
+                                    {% else %}
+                                        No hay reportes registrados
+                                    {% endif %}
+                                </p>
                             </div>
                         </div>
 
                         {% if metricas.historial %}<div class="chart-area">
-                            <ul class="chart-legend" aria-hidden="true">
-                                <li><span class="dot regular"></span> Regulares ({{ metricas.distribucion.regulares|default(0) }})</li>
-                                <li><span class="dot ninos"></span> Niños ({{ metricas.distribucion.ninos|default(0) }})</li>
-                                <li><span class="dot visitas"></span> Visitas ({{ metricas.distribucion.visitas|default(0) }})</li>
-                                <li><span class="dot comprometidos"></span> Comprometidos ({{ metricas.distribucion.comprometidos|default(0) }})</li>
+                            {% set d_reg_cdp = ((metricas.distribucion.regulares if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_nin_cdp = ((metricas.distribucion.ninos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_vis_cdp = ((metricas.distribucion.visitas if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set d_com_cdp = ((metricas.distribucion.comprometidos if metricas.distribucion else 0)|default(0, true))|int %}
+                            {% set sum_dist_cdp = (d_reg_cdp + d_nin_cdp + d_vis_cdp + d_com_cdp) %}
+                            {% set pct_base_cdp = sum_dist_cdp if sum_dist_cdp > 0 else 1 %}
+                            <ul class="chart-legend" role="list" aria-label="Leyenda de distribución de asistencia del último reporte">
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-cdp" data-category="regular" data-count="{{ d_reg_cdp }}" data-percent="{{ (d_reg_cdp / pct_base_cdp * 100)|round|int }}" aria-label="Regulares: {{ d_reg_cdp }} personas ({{ (d_reg_cdp / pct_base_cdp * 100)|round|int }}%)">
+                                    <span class="dot regular"></span> Regulares ({{ d_reg_cdp }})
+                                    <div class="legend-tooltip" id="legend-tip-reg-cdp" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Regulares</span>
+                                        <span class="tooltip-val"><strong>{{ d_reg_cdp }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_reg_cdp / pct_base_cdp * 100)|round|int }}% del reporte</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-cdp" data-category="ninos" data-count="{{ d_nin_cdp }}" data-percent="{{ (d_nin_cdp / pct_base_cdp * 100)|round|int }}" aria-label="Niños: {{ d_nin_cdp }} personas ({{ (d_nin_cdp / pct_base_cdp * 100)|round|int }}%)">
+                                    <span class="dot ninos"></span> Niños ({{ d_nin_cdp }})
+                                    <div class="legend-tooltip" id="legend-tip-nin-cdp" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Niños</span>
+                                        <span class="tooltip-val"><strong>{{ d_nin_cdp }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_nin_cdp / pct_base_cdp * 100)|round|int }}% del reporte</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-cdp" data-category="visitas" data-count="{{ d_vis_cdp }}" data-percent="{{ (d_vis_cdp / pct_base_cdp * 100)|round|int }}" aria-label="Visitas: {{ d_vis_cdp }} personas ({{ (d_vis_cdp / pct_base_cdp * 100)|round|int }}%)">
+                                    <span class="dot visitas"></span> Visitas ({{ d_vis_cdp }})
+                                    <div class="legend-tooltip" id="legend-tip-vis-cdp" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Visitas</span>
+                                        <span class="tooltip-val"><strong>{{ d_vis_cdp }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_vis_cdp / pct_base_cdp * 100)|round|int }}% del reporte</span>
+                                    </div>
+                                </li>
+                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-com-cdp" data-category="comprometidos" data-count="{{ d_com_cdp }}" data-percent="{{ (d_com_cdp / pct_base_cdp * 100)|round|int }}" aria-label="Comprometidos: {{ d_com_cdp }} personas ({{ (d_com_cdp / pct_base_cdp * 100)|round|int }}%)">
+                                    <span class="dot comprometidos"></span> Comprometidos ({{ d_com_cdp }})
+                                    <div class="legend-tooltip" id="legend-tip-com-cdp" role="tooltip" aria-hidden="true">
+                                        <span class="tooltip-title">Comprometidos</span>
+                                        <span class="tooltip-val"><strong>{{ d_com_cdp }}</strong> personas</span>
+                                        <span class="tooltip-pct">{{ (d_com_cdp / pct_base_cdp * 100)|round|int }}% del reporte</span>
+                                    </div>
+                                </li>
                             </ul>
-                            <div class="donut-wrapper" role="img" aria-label="Gráfico de asistencia del último reporte">
-                                <div class="donut-ring" data-regular="{{ metricas.distribucion.regulares|default(0) }}" data-ninos="{{ metricas.distribucion.ninos|default(0) }}" data-visitas="{{ metricas.distribucion.visitas|default(0) }}" data-comprometidos="{{ metricas.distribucion.comprometidos|default(0) }}"></div>
-                                <div class="donut-center">
-                                    <span class="donut-label">TOTAL</span>
-                                    <span class="donut-number">{{ metricas.asistencia_ultimo|default(0, true) }}</span>
+                            <div class="donut-wrapper" role="region" aria-label="Gráfico de asistencia del último reporte" style="position: relative; width: 220px; height: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0;">
+                                <div class="donut-ring" data-regular="{{ d_reg_cdp }}" data-ninos="{{ d_nin_cdp }}" data-visitas="{{ d_vis_cdp }}" data-comprometidos="{{ d_com_cdp }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <div class="donut-center" aria-live="polite" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 10; width: 100px; height: 100px; margin: 0; padding: 0; box-sizing: border-box;">
+                                        <span class="donut-label" style="display: block; font-size: 0.8rem; margin-bottom: 0.2rem; line-height: 1.2;">TOTAL</span>
+                                        <span class="donut-number" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.asistencia_ultimo|default(0, true) }}</span>
+                                    </div>
                                 </div>
+                                <div class="donut-tooltip" id="donut-tooltip-cdp" role="tooltip" aria-hidden="true"></div>
                             </div>
                         </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">donut_large</span><p class="empty-message">El gráfico estará disponible después del primer reporte.</p></div>{% endif %}
                     </section>
@@ -889,8 +1165,8 @@
                                 {% for bar in metricas.mini_historico %}
                                 <div class="mini-bar-col">
                                     <div class="mini-bar-track">
-                                        <div class="mini-bar-fill" style="--bar-height: {{ bar.altura }}%;">
-                                            <span class="mini-bar-value">{{ bar.asistencia }}</span>
+                                        <div class="mini-bar-fill" style="--bar-height: {{ bar.altura|default(0, true) }}%;">
+                                            <span class="mini-bar-value">{{ bar.asistencia|default(0, true) }}</span>
                                         </div>
                                     </div>
                                     <span class="mini-bar-lbl">{{ bar.fecha }}</span>
@@ -933,6 +1209,7 @@
                 </aside>
             </div>
         </section>
+        {% endif %}
         {% endif %}
     </div>
     {% endif %}

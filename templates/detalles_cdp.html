@@ -17,8 +17,7 @@
         <h1 class="detail-title">Casa "{{ cdp.codigo or cdp.nombre if cdp else 'HEB-001' }}"</h1>
         <p class="detail-subtitle">
           <span class="badge-network">{{ cdp.red_nombre if cdp else 'Red Hebrón' }}</span>
-          <span class="sep-dot">·</span>
-          <span>Supervisor: <strong>{{ cdp.supervisor_nombre if cdp else 'Sin asignar' }}</strong></span>
+          <span>· Supervisor: <strong>{{ cdp.supervisor_nombre if cdp else 'Sin asignar' }}</strong></span>
         </p>
       </div>
     </div>
@@ -30,6 +29,23 @@
       </button>
 
       {% if has_role("admin") %}
+      {% if cdp and not cdp.is_active %}
+      <form action="{{ url_for('admin.casa_de_paz_toggle_estado', id=cdp.id if cdp.id is defined else (recurso_id or 1)) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn-secondary btn-action-toggle" aria-label="Reactivar Casa de Paz">
+          <span class="material-symbols-outlined" aria-hidden="true">play_circle</span>
+          <span>Reactivar Casa</span>
+        </button>
+      </form>
+      {% elif cdp and cdp.is_active %}
+      <form action="{{ url_for('admin.casa_de_paz_toggle_estado', id=cdp.id if cdp.id is defined else (recurso_id or 1)) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn-secondary btn-action-toggle" aria-label="Poner en pausa Casa de Paz">
+          <span class="material-symbols-outlined" aria-hidden="true">pause_circle</span>
+          <span>Pausar Casa</span>
+        </button>
+      </form>
+      {% endif %}
       <a href="{{ url_for('admin.casa_de_paz_editar', id=recurso_id or (cdp.id if cdp else 1)) }}" class="btn-secondary" aria-label="Editar datos de Casa de Paz">
         <span class="material-symbols-outlined" aria-hidden="true">edit</span>
         <span>Editar</span>
@@ -285,31 +301,31 @@
             </tr>
           </thead>
           <tbody>
-            {% for rep in cdp.reportes %}
+            {% for rep in cdp.reportes[:5] %}
             <tr>
-              <td class="td-date">
+              <td class="td-date" data-label="Fecha">
                 <div class="report-date-badge">
                   <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
                   <strong>{{ rep.fecha_formateada or rep.fecha }}</strong>
                 </div>
               </td>
-              <td class="td-theme">
+              <td class="td-theme" data-label="Tema">
                 <strong>{{ rep.tema or 'Sin tema registrado' }}</strong>
                 {% if rep.observaciones %}
                 <p class="report-note" title="{{ rep.observaciones }}">{{ rep.observaciones|truncate(60) }}</p>
                 {% endif %}
               </td>
-              <td class="td-attendance">
+              <td class="td-attendance" data-label="Asistencia">
                 <span class="total-attendance-pill">{{ rep.asistencia or 0 }} pers.</span>
               </td>
-              <td class="td-breakdown">
+              <td class="td-breakdown" data-label="Desglose">
                 <div class="breakdown-tags">
                   <span class="tag-regulares" title="Regulares">Reg: {{ rep.nro_regulares or 0 }}</span>
                   <span class="tag-ninos" title="Niños">Niñ: {{ rep.nro_niños or rep.nro_ninos or 0 }}</span>
                   <span class="tag-visitas" title="Visitas">Vis: {{ rep.nro_visitas or 0 }}</span>
                 </div>
               </td>
-              <td class="td-offering">
+              <td class="td-offering" data-label="Ofrenda">
                 {% if rep.ofrendas_usd and rep.ofrendas_usd > 0 %}
                 <span class="offering-usd">${{ "%.2f"|format(rep.ofrendas_usd|float) }}</span>
                 {% endif %}
@@ -320,7 +336,7 @@
                 <span class="offering-zero">$0.00</span>
                 {% endif %}
               </td>
-              <td class="td-cesta">
+              <td class="td-cesta" data-label="Cesta">
                 {% if rep.cesta_amor %}
                 <span class="badge-cesta active" title="Cesta de amor entregada">
                   <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
