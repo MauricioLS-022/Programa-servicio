@@ -502,6 +502,11 @@ tbody tr:hover {
     justify-content: center;
     text-decoration: none;
     box-sizing: border-box;
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    flex-shrink: 0;
 }
 
 .btn-icon .material-symbols-outlined,

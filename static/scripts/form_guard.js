@@ -25,31 +25,53 @@ document.addEventListener('DOMContentLoaded', function () {
             form.dataset.submitting = 'true';
 
             // Localizar el botón de acción principal (submit)
-            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"], .btn-save, .btn-new, .btn-modal-save');
+            const submitBtn = (e && e.submitter) || form.querySelector('button[type="submit"], input[type="submit"], .btn-save, .btn-new, .btn-modal-save');
             if (submitBtn) {
                 // Guardar contenido original si no se ha guardado
                 if (!submitBtn.dataset.originalHtml) {
                     submitBtn.dataset.originalHtml = submitBtn.innerHTML;
                 }
 
-                // Determinar texto apropiado según el botón
-                const btnText = submitBtn.textContent.trim().toLowerCase();
-                let loadingText = 'Guardando...';
-                if (btnText.includes('enviar') || btnText.includes('reporte')) {
-                    loadingText = 'Enviando...';
-                } else if (btnText.includes('iniciar') || btnText.includes('acceder')) {
-                    loadingText = 'Iniciando sesión...';
-                }
+                // Detectar si es un botón de sólo icono o acción compacta en tabla
+                const originalIcon = submitBtn.querySelector('.material-symbols-outlined');
+                const hasOnlyIcon = originalIcon && (submitBtn.textContent.replace(originalIcon.textContent, '').trim() === '');
+                const isIconButton = submitBtn.classList.contains('btn-icon') ||
+                                     submitBtn.closest('.action-buttons') !== null ||
+                                     submitBtn.classList.contains('btn-icon-only') ||
+                                     hasOnlyIcon;
 
                 // Aplicar estado visual de carga
                 submitBtn.classList.add('is-submitting');
                 submitBtn.disabled = true;
+                submitBtn.setAttribute('aria-busy', 'true');
 
-                // Renderizar spinner discreto
-                submitBtn.innerHTML = `
-                    <span class="material-symbols-outlined form-guard-spinner" aria-hidden="true">progress_activity</span>
-                    <span>${loadingText}</span>
-                `;
+                if (isIconButton) {
+                    // Mantener clases de color originales del icono (ej. text-primary, text-secondary)
+                    const iconColorClass = originalIcon
+                        ? Array.from(originalIcon.classList).filter(c => c !== 'material-symbols-outlined').join(' ')
+                        : '';
+                    // Rueda girando (spinner) sin texto adicional para no alterar el tamaño del botón
+                    submitBtn.innerHTML = `<span class="material-symbols-outlined form-guard-spinner ${iconColorClass}" aria-hidden="true">progress_activity</span>`;
+                } else {
+                    // Determinar texto apropiado según el botón para formularios normales
+                    const btnText = submitBtn.textContent.trim().toLowerCase();
+                    let loadingText = 'Guardando...';
+                    if (btnText.includes('enviar') || btnText.includes('reporte')) {
+                        loadingText = 'Enviando...';
+                    } else if (btnText.includes('iniciar') || btnText.includes('acceder')) {
+                        loadingText = 'Iniciando sesión...';
+                    } else if (btnText.includes('eliminar') || btnText.includes('borrar')) {
+                        loadingText = 'Eliminando...';
+                    } else if (btnText.includes('pausa') || btnText.includes('reactivar') || btnText.includes('desactivar')) {
+                        loadingText = 'Actualizando...';
+                    }
+
+                    // Renderizar spinner discreto con texto para botones regulares
+                    submitBtn.innerHTML = `
+                        <span class="material-symbols-outlined form-guard-spinner" aria-hidden="true">progress_activity</span>
+                        <span>${loadingText}</span>
+                    `;
+                }
 
                 // Temporizador de seguridad: Si la red se cae o la descarga tarda más de 10s, restablecer
                 setTimeout(function () {
@@ -65,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.dataset.submitting = 'false';
         if (btn) {
             btn.classList.remove('is-submitting');
+            btn.removeAttribute('aria-busy');
             btn.disabled = false;
             if (btn.dataset.originalHtml) {
                 btn.innerHTML = btn.dataset.originalHtml;
@@ -75,8 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Si el usuario regresa con el botón Atrás del navegador (bfcache), restablecer formularios
     window.addEventListener('pageshow', function (event) {
         forms.forEach(function (form) {
-            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"], .btn-save, .btn-new, .btn-modal-save');
-            resetFormButton(form, submitBtn);
+            const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"], .btn-save, .btn-new, .btn-modal-save, .btn-icon');
+            submitBtns.forEach(function (btn) {
+                resetFormButton(form, btn);
+            });
         });
     });
 });

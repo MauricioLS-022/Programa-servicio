@@ -1161,3 +1161,44 @@ a.btn-page:hover {
     text-decoration: none;
 }
 
+/* =========================================
+   ESTADO DE CARGA / PROTECCIÓN ANTI-DOBLE ENVÍO
+   ========================================= */
+.is-submitting {
+    opacity: 0.75 !important;
+    cursor: wait !important;
+    pointer-events: none !important;
+}
+
+.form-guard-spinner {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    animation: formGuardSpin 0.85s linear infinite !important;
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    vertical-align: middle;
+    transform-origin: center center;
+}
+
+.btn-icon.is-submitting {
+    opacity: 0.85 !important;
+    pointer-events: none !important;
+}
+
+.btn-icon .form-guard-spinner {
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+
+@keyframes formGuardSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
