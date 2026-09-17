@@ -47,6 +47,7 @@ def sanitize_metricas(metricas):
         
         # Tendencia
         'tendencia': [],
+        'tendencia_semanas': [],
         
         # Rankings
         'ranking_redes': [],
@@ -74,23 +75,162 @@ def sanitize_metricas(metricas):
         'casas_sin_reporte_ids': [],
         'casas_sin_reporte_codigos': [],
         'lideres_red': [],
+        'actividad_reciente': [],
         'ultimo_tema': 'Sin tema registrado',
         'hr_inicio': '',
         'hr_fin': '',
         'cesta_amor': False,
+        'reporte_al_dia': False,
+        'dias_desde_reporte': None,
+        'ultimo_reporte_reciente': False,
     }
     
     # Merge con valores por defecto
-    result = {**default_metricas, **metricas}
+    metricas_dict = metricas if isinstance(metricas, dict) else {}
+    result = {**default_metricas, **metricas_dict}
+
+    # Asegurar montos de ofrendas como float no negativo
+    for f_key in ['ofrendas_usd', 'ofrendas_bs']:
+        try:
+            val = result.get(f_key)
+            result[f_key] = max(0.0, float(val if val is not None else 0.0))
+        except (ValueError, TypeError):
+            result[f_key] = 0.0
+
+    # Asegurar KPIs enteros no negativos
+    int_keys = [
+        'total_asistencia', 'asistencia_total', 'asistencia_ultimo', 'total_reportes',
+        'cumplimiento', 'total_casas', 'casas_con_reporte', 'casas_pendientes',
+        'total_sin_reporte_7d', 'conversiones', 'reconciliaciones', 'cestas_amor',
+        'total_visitas', 'promedio_tendencia', 'promedio_casa', 'promedio_historico',
+        'reportes_enviados', 'casas_activas'
+    ]
+    for i_key in int_keys:
+        try:
+            val = result.get(i_key)
+            result[i_key] = max(0, int(val if val is not None else 0))
+        except (ValueError, TypeError):
+            result[i_key] = 0
     
     # Asegurar sub-diccionarios
     if 'distribucion' not in result or not isinstance(result.get('distribucion'), dict):
-        result['distribucion'] = default_metricas['distribucion']
+        result['distribucion'] = default_metricas['distribucion'].copy()
+    else:
+        dist = result['distribucion']
+        for cat in ['regulares', 'ninos', 'visitas', 'comprometidos']:
+            try:
+                val = dist.get(cat)
+                dist[cat] = max(0, int(val if val is not None else 0))
+            except (ValueError, TypeError):
+                dist[cat] = 0
     
     # Asegurar listas
-    for key in ['historial', 'tendencia', 'ranking_redes', 'ranking_cdp', 'lideres_red', 'casas_sin_reporte_ids', 'casas_sin_reporte_codigos']:
+    list_keys = [
+        'historial', 'tendencia', 'tendencia_semanas', 'ranking_redes', 'ranking_cdp',
+        'lideres_red', 'casas_sin_reporte_ids', 'casas_sin_reporte_codigos',
+        'casas_sin_reporte_7d', 'alertas', 'alertas_zonal', 'casas', 'mini_historico',
+        'actividad_reciente'
+    ]
+    for key in list_keys:
         if key not in result or not isinstance(result.get(key), list):
             result[key] = []
+    
+    # Sincronizar alias de tendencia y restringir a últimas 8 semanas
+    raw_tend = result['tendencia_semanas'] if result['tendencia_semanas'] else result['tendencia']
+    clean_tendencia = []
+    for t in raw_tend:
+        if isinstance(t, dict):
+            try:
+                asist = max(0, int(t.get('asistencia', 0) if t.get('asistencia') is not None else 0))
+            except (ValueError, TypeError):
+                asist = 0
+            
+            clean_item = {
+                'semana': str(t.get('semana') or 'Semana'),
+                'fecha_completa': str(t.get('fecha_completa') or t.get('semana') or ''),
+                'asistencia': asist,
+            }
+            if 'porcentaje' in t and t.get('porcentaje') is not None:
+                try:
+                    clean_item['porcentaje'] = min(100, max(0, int(t['porcentaje'])))
+                except (ValueError, TypeError):
+                    clean_item['porcentaje'] = None
+            else:
+                clean_item['porcentaje'] = None
+            clean_tendencia.append(clean_item)
+
+    clean_tendencia = clean_tendencia[-8:]
+    max_t_asist = max((t['asistencia'] for t in clean_tendencia), default=0)
+    for t in clean_tendencia:
+        if max_t_asist == 0 or t['asistencia'] == 0:
+            t['porcentaje'] = 0
+        else:
+            t['porcentaje'] = round(t['asistencia'] / max_t_asist * 100)
+
+    result['tendencia_semanas'] = clean_tendencia
+    result['tendencia'] = clean_tendencia
+
+    if not result.get('promedio_tendencia'):
+        asists = [t['asistencia'] for t in clean_tendencia]
+        result['promedio_tendencia'] = round(sum(asists) / len(asists)) if asists else 0
+
+    # Sincronizar total_asistencia y asistencia_total entre niveles
+    tot_asist = result.get('total_asistencia', 0)
+    asist_tot = result.get('asistencia_total', 0)
+    asist_ult = result.get('asistencia_ultimo', 0)
+    resolved_asist = tot_asist or asist_tot or asist_ult
+    if not tot_asist and resolved_asist:
+        result['total_asistencia'] = resolved_asist
+    if not asist_tot and resolved_asist:
+        result['asistencia_total'] = resolved_asist
+
+    # Restringir ranking de redes al podio top 3 y sanitizar campos
+    sanitized_ranking = []
+    for r in result.get('ranking_redes', []):
+        if isinstance(r, dict):
+            try:
+                cumpl = max(0, int(r.get('cumplimiento', 0) if r.get('cumplimiento') is not None else 0))
+            except (ValueError, TypeError):
+                cumpl = 0
+            try:
+                asist_sem = max(0, int(r.get('asistencia_semana', r.get('asistencia', 0)) if r.get('asistencia_semana', r.get('asistencia', 0)) is not None else 0))
+            except (ValueError, TypeError):
+                asist_sem = 0
+            try:
+                asist_tot_item = max(0, int(r.get('asistencia_total', 0) if r.get('asistencia_total') is not None else 0))
+            except (ValueError, TypeError):
+                asist_tot_item = 0
+            try:
+                casas_rep = max(0, int(r.get('casas_reportadas', 0) if r.get('casas_reportadas') is not None else 0))
+            except (ValueError, TypeError):
+                casas_rep = 0
+            try:
+                tot_c = max(0, int(r.get('total_casas', 0) if r.get('total_casas') is not None else 0))
+            except (ValueError, TypeError):
+                tot_c = 0
+
+            color_cls = r.get('color_class') or 'default'
+            if color_cls == 'default':
+                n_clean = (r.get('nombre') or '').lower().strip()
+                if 'sur' in n_clean:
+                    color_cls = 'sur'
+                elif 'central' in n_clean:
+                    color_cls = 'central'
+                elif 'hebr' in n_clean or 'cielo' in n_clean:
+                    color_cls = 'hebron'
+
+            sanitized_ranking.append({
+                'nombre': str(r.get('nombre') or 'Sin nombre'),
+                'supervisor': str(r.get('supervisor') or 'Sin supervisor'),
+                'cumplimiento': cumpl,
+                'asistencia': asist_sem,
+                'asistencia_semana': asist_sem,
+                'asistencia_total': asist_tot_item,
+                'casas_reportadas': casas_rep,
+                'total_casas': tot_c,
+                'color_class': color_cls,
+            })
+    result['ranking_redes'] = sanitized_ranking[:3]
     
     # Asegurar dicts para crecimiento
     for key in ['top_crecimiento', 'bottom_crecimiento']:
@@ -408,15 +548,18 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
                 metricas = get_empty_red(rid)
         
         elif nivel == 'cdp':
-            cid = cdp_id or 1
-            if db_connected:
-                result = get_metricas_cdp(conn, cid)
-                metricas = result if result else get_empty_cdp(cid)
-            elif mock_mode_enabled():
-                metricas = get_mock_cdp(cid)
-                mock_used = True
+            if not cdp_id:
+                metricas = get_empty_cdp(None)
             else:
-                metricas = get_empty_cdp(cid)
+                cid = cdp_id
+                if db_connected:
+                    result = get_metricas_cdp(conn, cid)
+                    metricas = result if result else get_empty_cdp(cid)
+                elif mock_mode_enabled():
+                    metricas = get_mock_cdp(cid)
+                    mock_used = True
+                else:
+                    metricas = get_empty_cdp(cid)
     except Exception as e:
         print(f"[Service] Error obteniendo métricas: {e}")
         metricas = get_empty_generales()
@@ -517,8 +660,11 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     if not sin_red_asignada:
         if nivel == 'red' and not red_id and redes:
             red_id = redes[0]['id']
-        elif nivel == 'cdp' and not cdp_id and casas:
-            cdp_id = casas[0]['id']
+        elif nivel == 'cdp' and not cdp_id:
+            # Solo hacer fallback si no hay red seleccionada (sin contexto previo)
+            # Si red_id existe pero no tiene CDPs asignadas, respetar cdp_id = None
+            if not red_id and casas:
+                cdp_id = casas[0]['id']
 
     # Obtener métricas
     if sin_red_asignada:
@@ -527,6 +673,12 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     else:
         metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id)
         mock_used = metricas.pop('mock_used', False)
+
+    # Si estamos en nivel cdp sin cdp asignada pero con red_id, asegurar nombre_red en métricas
+    if nivel == 'cdp' and not cdp_id and red_id:
+        red_obj = next((r for r in redes if r.get('id') == red_id), None)
+        if red_obj and red_obj.get('nombre'):
+            metricas['nombre_red'] = red_obj['nombre']
 
     return {
         'usuario': usuario,

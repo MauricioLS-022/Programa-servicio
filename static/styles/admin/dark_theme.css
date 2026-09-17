@@ -1000,6 +1000,24 @@ html[data-theme="dark"],
 }
 
 /* Alertas de Seguimiento */
+[data-theme="dark"] .alert-header-badge {
+    background: rgba(248, 113, 113, 0.18);
+    color: var(--danger-color, #ff7b7b);
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+[data-theme="dark"] .alert-list {
+    scrollbar-color: rgba(221, 192, 189, 0.3) transparent;
+}
+
+[data-theme="dark"] .alert-list::-webkit-scrollbar-thumb {
+    background: rgba(221, 192, 189, 0.25);
+}
+
+[data-theme="dark"] .alert-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(221, 192, 189, 0.45);
+}
+
 [data-theme="dark"] .alert-item {
     background: #241517;
     border: 1px solid rgba(248, 113, 113, 0.25);

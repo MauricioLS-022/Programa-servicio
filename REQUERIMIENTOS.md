@@ -205,7 +205,7 @@ graph TD
   - Extender el buscador instantáneo en vivo sin recargar página (como en Estructura) a las tablas de Usuarios y Líderes.
 - [ ] **Normalización de Teléfonos WhatsApp**:
   - Validar y formatear prefijo de país internacional (E.164) en todos los formularios para enlaces directos `wa.me`.
-- [ ] **Tooltips Accesibles e Interactivos**:
-  - Indicadores flotantes con valores exactos al pasar el cursor sobre los segmentos del gráfico de donut y barras.
+- [x] **Tooltips Accesibles e Interactivos**:
+  - Indicadores flotantes con valores exactos y porcentajes al pasar el cursor o hacer focus con teclado sobre los segmentos del gráfico de donut y barras de tendencia (`templates/dashboard_admin.html`, `dashboard.js`, `dashboard.css`). Cubierto en `tests/test_dashboard_metrics.py`.
 - [ ] **Configuración Segura de Producción Final**:
   - Asegurar `DEBUG=False` en despliegue, obligatoriedad de credenciales en variables de entorno y verificación en servidor de producción.

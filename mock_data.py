@@ -5,7 +5,33 @@ Garantiza coherencia relacional estricta entre Redes, Casas de Paz, Líderes, Su
 """
 import urllib.parse
 import re
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+
+
+def formatear_fecha_corta(fecha_val) -> str:
+    """Formatea una fecha como fecha corta legible en español (ej. '28 Ago', '04 Sep')."""
+    if not fecha_val:
+        return ''
+    meses_abr = {
+        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
+    }
+    if isinstance(fecha_val, str):
+        f_str = fecha_val.strip()
+        try:
+            fecha_val = date.fromisoformat(f_str[:10])
+        except Exception:
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d', '%d-%m-%Y'):
+                try:
+                    fecha_val = datetime.strptime(f_str[:10], fmt).date()
+                    break
+                except Exception:
+                    continue
+            else:
+                return f_str
+    if hasattr(fecha_val, 'day') and hasattr(fecha_val, 'month'):
+        return f"{fecha_val.day:02d} {meses_abr.get(fecha_val.month, '')}"
+    return str(fecha_val)
 
 
 def get_redes_demo():
@@ -440,29 +466,33 @@ def get_mock_generales():
 
     reportes = get_mock_reportes()
     casas = get_casas_demo()
-    
-    total_asistencia = sum(c['asistencia'] for c in casas)
-    total_ofrendas_usd = sum(r['ofrendas_usd'] for r in reportes)
-    total_ofrendas_bs = sum(r['ofrendas_bs'] for r in reportes)
-    total_visitas = sum(r['nro_visitas'] for r in reportes)
-    total_reconciliaciones = sum(r['reconciliaciones'] for r in reportes)
-    total_confesiones = sum(r['confesiones'] for r in reportes)
 
     # Base de cálculo: considerar únicamente Casas de Paz activas
     casas_activas = [c for c in casas if bool(c.get('is_active', 1)) and c.get('estado') != 'pausada']
     total_casas = len(casas_activas)
+    casas_activas_ids = {c['id'] for c in casas_activas}
 
-    # Casas activas con al menos un reporte en los últimos 7 días
+    # Reportes emitidos en la semana activa (últimos 7 días) de casas activas
+    reportes_semana = []
     casas_con_rep_7d_ids = set()
     for r in reportes:
         f = r.get('fecha')
-        if f:
+        if f and r.get('cdp_id') in casas_activas_ids:
             try:
                 f_date = date.fromisoformat(str(f)[:10])
                 if f_date >= hace_7_dias:
+                    reportes_semana.append(r)
                     casas_con_rep_7d_ids.add(r['cdp_id'])
             except Exception:
                 pass
+
+    total_asistencia = sum(r['asistencia'] for r in reportes_semana)
+    total_ofrendas_usd = sum(r['ofrendas_usd'] for r in reportes_semana)
+    total_ofrendas_bs = sum(r['ofrendas_bs'] for r in reportes_semana)
+    total_visitas = sum(r['nro_visitas'] for r in reportes_semana)
+    total_reconciliaciones = sum(r['reconciliaciones'] for r in reportes_semana)
+    total_confesiones = sum(r['confesiones'] for r in reportes_semana)
+    total_cestas = sum(r['cesta_amor'] for r in reportes_semana)
 
     casas_con_reporte = len([c for c in casas_activas if c['id'] in casas_con_rep_7d_ids])
     cumplimiento = round((casas_con_reporte / total_casas * 100) if total_casas > 0 else 0)
@@ -472,6 +502,29 @@ def get_mock_generales():
     casas_sin_reporte_codigos = [c.get('codigo') or c.get('nombre') for c in faltantes]
     casas_pendientes = total_sin_reporte_7d
 
+    # 8 semanas consecutivas con etiquetas de fecha corta (ej. '28 Jul', '04 Ago', ...)
+    tendencia_raw = [
+        {'dias_atras': 49, 'asistencia': 48},
+        {'dias_atras': 42, 'asistencia': 52},
+        {'dias_atras': 35, 'asistencia': 55},
+        {'dias_atras': 28, 'asistencia': 58},
+        {'dias_atras': 21, 'asistencia': 64},
+        {'dias_atras': 14, 'asistencia': 62},
+        {'dias_atras': 7,  'asistencia': 68},
+        {'dias_atras': 0,  'asistencia': 72},
+    ]
+    max_asist_tend = max((t['asistencia'] for t in tendencia_raw), default=1) or 1
+    tendencia_semanas = [
+        {
+            'semana': formatear_fecha_corta(hoy - timedelta(days=t['dias_atras'])),
+            'fecha_completa': (hoy - timedelta(days=t['dias_atras'])).strftime('%d %b %Y'),
+            'asistencia': t['asistencia'],
+            'porcentaje': round(t['asistencia'] / max_asist_tend * 100) if max_asist_tend > 0 else 0,
+        }
+        for t in tendencia_raw
+    ]
+    promedio_tendencia = round(sum(t['asistencia'] for t in tendencia_raw) / len(tendencia_raw)) if tendencia_raw else 0
+
     return {
         'total_asistencia': total_asistencia,
         'cumplimiento': cumplimiento,
@@ -479,7 +532,7 @@ def get_mock_generales():
         'ofrendas_bs': total_ofrendas_bs,
         'conversiones': total_confesiones,
         'reconciliaciones': total_reconciliaciones,
-        'cestas_amor': sum(r['cesta_amor'] for r in reportes),
+        'cestas_amor': total_cestas,
         'total_visitas': total_visitas,
         'total_casas': total_casas,
         'casas_con_reporte': casas_con_reporte,
@@ -488,24 +541,21 @@ def get_mock_generales():
         'casas_sin_reporte_ids': casas_sin_reporte_ids,
         'casas_sin_reporte_codigos': casas_sin_reporte_codigos,
         'casas_sin_reporte_7d': casas_sin_reporte_codigos,
-        'reportes_enviados': len(reportes),
+        'reportes_enviados': len(reportes_semana),
         'distribucion': {
-            'regulares': sum(r['nro_regulares'] for r in reportes),
-            'ninos': sum(r['nro_niños'] for r in reportes),
+            'regulares': sum(r['nro_regulares'] for r in reportes_semana),
+            'ninos': sum(r['nro_niños'] for r in reportes_semana),
             'visitas': total_visitas,
-            'comprometidos': sum(r['nro_comprometidos'] for r in reportes),
+            'comprometidos': sum(r['nro_comprometidos'] for r in reportes_semana),
         },
-        'tendencia_semanas': [
-            {'semana': 'Sem 1', 'asistencia': 54, 'porcentaje': 75},
-            {'semana': 'Sem 2', 'asistencia': 58, 'porcentaje': 80},
-            {'semana': 'Sem 3', 'asistencia': 62, 'porcentaje': 85},
-            {'semana': 'Sem 4', 'asistencia': 66, 'porcentaje': 90},
-        ],
+        'tendencia': tendencia_semanas,
+        'tendencia_semanas': tendencia_semanas,
+        'promedio_tendencia': promedio_tendencia,
         'ranking_redes': [
             {'nombre': 'Red Hebrón', 'cumplimiento': 100, 'asistencia': 30, 'asistencia_semana': 30, 'asistencia_total': 340, 'casas_reportadas': 2, 'total_casas': 2, 'supervisor': 'Pedro González', 'color_class': 'hebron'},
-            {'nombre': 'Red Central', 'cumplimiento': 0, 'asistencia': 22, 'asistencia_semana': 0, 'asistencia_total': 280, 'casas_reportadas': 0, 'total_casas': 1, 'supervisor': 'Carlos Ramírez', 'color_class': 'central'},
-            {'nombre': 'Red Sur', 'cumplimiento': 0, 'asistencia': 14, 'asistencia_semana': 0, 'asistencia_total': 190, 'casas_reportadas': 0, 'total_casas': 1, 'supervisor': 'María López', 'color_class': 'sur'},
-        ],
+            {'nombre': 'Red Central', 'cumplimiento': 0, 'asistencia': 0, 'asistencia_semana': 0, 'asistencia_total': 280, 'casas_reportadas': 0, 'total_casas': 1, 'supervisor': 'Carlos Ramírez', 'color_class': 'central'},
+            {'nombre': 'Red Sur', 'cumplimiento': 0, 'asistencia': 0, 'asistencia_semana': 0, 'asistencia_total': 190, 'casas_reportadas': 0, 'total_casas': 1, 'supervisor': 'María López', 'color_class': 'sur'},
+        ][:3],
         'alertas': [],
     }
 
@@ -524,29 +574,36 @@ def get_mock_red(red_id):
 
     casas_red = [c for c in get_casas_demo() if c['red_id'] == rid]
     reportes_red = [rep for rep in get_mock_reportes() if rep['red_id'] == rid]
-    lideres_red = [l for l in get_mock_lideres() if l['red_id'] == rid]
+    reportes_red_semana = []
+    for rep in reportes_red:
+        f = rep.get('fecha')
+        if f:
+            try:
+                if date.fromisoformat(str(f)[:10]) >= hace_7_dias:
+                    reportes_red_semana.append(rep)
+            except Exception:
+                pass
 
-    asistencia_total = sum(c['asistencia'] for c in casas_red)
-    promedio_casa = round(asistencia_total / len(casas_red)) if casas_red else 0
-    ofrendas_usd_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red)
-    ofrendas_bs_total = sum(rep.get('ofrendas_bs', 0.0) for rep in reportes_red)
-    ninos_total = sum(rep.get('nro_niños', 0) for rep in reportes_red)
-    conversiones_total = sum(rep.get('confesiones', 0) for rep in reportes_red)
+    lideres_red = [l for l in get_mock_lideres() if l['red_id'] == rid and l.get('rol') == 'Lider']
 
     casas_activas_red = [c for c in casas_red if bool(c.get('is_active', 1)) and c.get('estado') != 'pausada']
     total_casas_red = len(casas_activas_red)
 
-    # Identificar reportes en los últimos 7 días en esta red
-    casas_con_rep_7d = set()
-    for r in reportes_red:
-        f = r.get('fecha')
-        if f:
-            try:
-                f_date = date.fromisoformat(str(f)[:10])
-                if f_date >= hace_7_dias:
-                    casas_con_rep_7d.add(r['cdp_id'])
-            except Exception:
-                pass
+    casas_con_rep_7d = {r['cdp_id'] for r in reportes_red_semana}
+
+    asistencia_total = sum(rep['asistencia'] for rep in reportes_red_semana)
+    promedio_casa = round(asistencia_total / total_casas_red) if total_casas_red > 0 else 0
+    ofrendas_usd_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red_semana)
+    ofrendas_bs_total = sum(rep.get('ofrendas_bs', 0.0) for rep in reportes_red_semana)
+    ninos_total = sum(rep.get('nro_niños', 0) for rep in reportes_red_semana)
+    conversiones_total = sum(rep.get('confesiones', 0) for rep in reportes_red_semana)
+
+    distribucion = {
+        'regulares': sum(rep.get('nro_regulares', 0) for rep in reportes_red_semana),
+        'ninos': ninos_total,
+        'visitas': sum(rep.get('nro_visitas', 0) for rep in reportes_red_semana),
+        'comprometidos': sum(rep.get('nro_comprometidos', 0) for rep in reportes_red_semana),
+    }
 
     con_reporte = len([c for c in casas_activas_red if c['id'] in casas_con_rep_7d])
     cumplimiento = round((con_reporte / total_casas_red * 100) if total_casas_red > 0 else 0)
@@ -560,6 +617,10 @@ def get_mock_red(red_id):
     for c in casas_red:
         is_act = bool(c.get('is_active', 1)) and c.get('estado') != 'pausada'
         rep_7d = c['id'] in casas_con_rep_7d
+        rep_casa_sem = next((r for r in reportes_red_semana if r['cdp_id'] == c['id']), None)
+        asist_casa = rep_casa_sem['asistencia'] if rep_casa_sem else 0
+        vis_casa = rep_casa_sem['nro_visitas'] if rep_casa_sem else 0
+
         if not is_act:
             estado = 'pausada'
         elif rep_7d:
@@ -571,12 +632,12 @@ def get_mock_red(red_id):
             'id': c['id'],
             'nombre': c['nombre'],
             'codigo': c['codigo'],
-            'asistencia': c['asistencia'],
+            'asistencia': asist_casa,
             'estado': estado,
             'is_active': is_act,
             'reporte_reciente_7d': rep_7d,
             'lider': c['lider'],
-            'visitas': 3
+            'visitas': vis_casa
         })
 
     lideres_cards = []
@@ -590,32 +651,71 @@ def get_mock_red(red_id):
             'cdp_anfitrion': next((c['anfitrion'] for c in casas_red if c['id'] == l['cdp_id']), 'Familia')
         })
 
+    best_growth = max(casas_cards, key=lambda x: (x['asistencia'], x['visitas'])) if casas_cards else None
+    top_growth = {
+        'nombre': best_growth['nombre'] if best_growth else (casas_red[0]['nombre'] if casas_red else 'Casa Bethel'),
+        'codigo': best_growth['codigo'] if best_growth else (casas_red[0]['codigo'] if casas_red else 'HEB-001'),
+        'tasa': f"+{best_growth['asistencia']}" if best_growth else '+0',
+        'visitas': best_growth['visitas'] if best_growth else 0,
+        'lider': best_growth['lider'] if best_growth else 'Líder',
+    }
+
+    # Tendencia de asistencia de la red (8 semanas simuladas)
+    # Escalar proporcional al número de casas de la red
+    base_factor = max(total_casas_red, 1) * 8
+    tendencia_raw_red = [
+        {'dias_atras': 49, 'asistencia': base_factor + 2},
+        {'dias_atras': 42, 'asistencia': base_factor + 5},
+        {'dias_atras': 35, 'asistencia': base_factor + 3},
+        {'dias_atras': 28, 'asistencia': base_factor + 8},
+        {'dias_atras': 21, 'asistencia': base_factor + 10},
+        {'dias_atras': 14, 'asistencia': base_factor + 7},
+        {'dias_atras': 7,  'asistencia': base_factor + 12},
+        {'dias_atras': 0,  'asistencia': asistencia_total if asistencia_total > 0 else base_factor + 14},
+    ]
+    max_asist_red = max((t['asistencia'] for t in tendencia_raw_red), default=1) or 1
+    tendencia_semanas_red = [
+        {
+            'semana': formatear_fecha_corta(hoy - timedelta(days=t['dias_atras'])),
+            'fecha_completa': (hoy - timedelta(days=t['dias_atras'])).strftime('%d %b %Y'),
+            'asistencia': t['asistencia'],
+            'porcentaje': round(t['asistencia'] / max_asist_red * 100) if max_asist_red > 0 else 0,
+        }
+        for t in tendencia_raw_red
+    ]
+    promedio_tendencia_red = round(sum(t['asistencia'] for t in tendencia_raw_red) / len(tendencia_raw_red)) if tendencia_raw_red else 0
+
+    # Actividad reciente: últimos reportes de la red ordenados por fecha desc
+    reportes_ordenados = sorted(reportes_red, key=lambda r: r.get('fecha', ''), reverse=True)[:5]
+    actividad_reciente = []
+    for rep in reportes_ordenados:
+        actividad_reciente.append({
+            'lider': rep.get('lider_nombre', 'Líder'),
+            'iniciales': rep.get('iniciales', 'NN'),
+            'avatar_class': rep.get('avatar_class', 'bg-primary-light text-primary'),
+            'cdp_nombre': rep.get('cdp_nombre', 'Casa de Paz'),
+            'cdp_codigo': next((c['codigo'] for c in casas_red if c['id'] == rep.get('cdp_id')), ''),
+            'fecha_formateada': rep.get('fecha_formateada', ''),
+            'asistencia': rep.get('asistencia', 0),
+            'tema': rep.get('tema', ''),
+        })
+
     return {
         'nombre_red': red['nombre'],
         'red_id': rid,
         'supervisor': red['supervisor'],
         'casas_activas': total_casas_red,
         'asistencia_total': asistencia_total,
+        'total_asistencia': asistencia_total,
         'promedio_casa': promedio_casa,
         'ninos': ninos_total,
         'conversiones': conversiones_total,
         'ofrendas_usd': ofrendas_usd_total,
         'ofrendas_bs': ofrendas_bs_total,
-        'distribucion': {
-            'regulares': sum(rep.get('nro_regulares', 0) for rep in reportes_red) or 20,
-            'ninos': ninos_total or 8,
-            'visitas': sum(rep.get('nro_visitas', 0) for rep in reportes_red) or 5,
-            'comprometidos': sum(rep.get('nro_comprometidos', 0) for rep in reportes_red) or 2,
-        },
+        'distribucion': distribucion,
         'casas': casas_cards,
         'alertas_zonal': [],
-        'top_crecimiento': {
-            'nombre': casas_red[0]['nombre'] if casas_red else 'Casa Bethel',
-            'codigo': casas_red[0]['codigo'] if casas_red else 'HEB-001',
-            'tasa': '+12%',
-            'visitas': 3,
-            'lider': casas_red[0]['lider'] if casas_red else 'Líder',
-        },
+        'top_crecimiento': top_growth,
         'cumplimiento': cumplimiento,
         'casas_con_reporte': con_reporte,
         'casas_pendientes': casas_pendientes,
@@ -624,6 +724,9 @@ def get_mock_red(red_id):
         'casas_sin_reporte_codigos': casas_sin_reporte_codigos,
         'casas_sin_reporte_7d': casas_sin_reporte_codigos,
         'lideres_red': lideres_cards,
+        'tendencia_semanas': tendencia_semanas_red,
+        'promedio_tendencia': promedio_tendencia_red,
+        'actividad_reciente': actividad_reciente,
     }
 
 
@@ -681,12 +784,16 @@ def get_mock_cdp(cdp_id):
         'telefono_contacto': cdp['telefono'],
         'direccion': cdp['direccion'],
         'asistencia_ultimo': historial[0]['asistencia'],
+        'total_asistencia': historial[0]['asistencia'],
         'promedio_historico': round(sum(h['asistencia'] for h in historial) / len(historial)),
         'visitas': sum(h['visitas'] for h in historial),
         'conversiones': 3,
         'ofrendas_usd': sum(h['ofrendas_usd'] for h in historial),
         'ofrendas_bs': sum(h['ofrendas_bs'] for h in historial),
         'estado_reporte': 'enviado',
+        'reporte_al_dia': True,
+        'dias_desde_reporte': 2,
+        'ultimo_reporte_reciente': True,
         'ultimo_reporte_por': f"{lider_nombre} (Líder)",
         'ultimo_reporte_fecha': reps[0]['fecha_formateada'] if reps else '24 Ago 2026',
         'ultimo_tema': reps[0]['tema'] if reps else 'El Poder de la Fe',
@@ -695,10 +802,10 @@ def get_mock_cdp(cdp_id):
         'cesta_amor': True,
         'potencial_multiplicacion': True,
         'distribucion': {
-            'regulares': 10,
-            'ninos': 4,
-            'visitas': 3,
-            'comprometidos': 1,
+            'regulares': reps[0]['nro_regulares'] if reps else 10,
+            'ninos': reps[0]['nro_niños'] if reps else 4,
+            'visitas': reps[0]['nro_visitas'] if reps else 3,
+            'comprometidos': reps[0]['nro_comprometidos'] if reps else 1,
         },
         'historial': historial,
         'mini_historico': mini_hist,
@@ -843,15 +950,21 @@ def get_empty_generales():
     """Métricas vacías cuando la BD está conectada pero no hay reportes."""
     return {
         'total_asistencia': 0,
+        'asistencia_total': 0,
         'cumplimiento': 0,
-        'ofrendas_usd': 0,
-        'ofrendas_bs': 0,
+        'ofrendas_usd': 0.0,
+        'ofrendas_bs': 0.0,
         'conversiones': 0,
         'reconciliaciones': 0,
         'cestas_amor': 0,
         'total_visitas': 0,
         'total_casas': 0,
         'casas_con_reporte': 0,
+        'casas_pendientes': 0,
+        'total_sin_reporte_7d': 0,
+        'casas_sin_reporte_ids': [],
+        'casas_sin_reporte_codigos': [],
+        'casas_sin_reporte_7d': [],
         'reportes_enviados': 0,
         'distribucion': {
             'regulares': 0,
@@ -859,7 +972,9 @@ def get_empty_generales():
             'visitas': 0,
             'comprometidos': 0,
         },
+        'tendencia': [],
         'tendencia_semanas': [],
+        'promedio_tendencia': 0,
         'ranking_redes': [],
         'alertas': [],
     }
@@ -873,14 +988,19 @@ def get_empty_red(red_id):
         'supervisor': 'Sin asignar',
         'casas_activas': 0,
         'asistencia_total': 0,
+        'total_asistencia': 0,
         'promedio_casa': 0,
         'ninos': 0,
         'conversiones': 0,
-        'ofrendas_usd': 0,
-        'ofrendas_bs': 0,
+        'ofrendas_usd': 0.0,
+        'ofrendas_bs': 0.0,
         'cumplimiento': 0,
         'casas_con_reporte': 0,
         'casas_pendientes': 0,
+        'total_sin_reporte_7d': 0,
+        'casas_sin_reporte_ids': [],
+        'casas_sin_reporte_codigos': [],
+        'casas_sin_reporte_7d': [],
         'distribucion': {
             'regulares': 0,
             'ninos': 0,
@@ -891,6 +1011,9 @@ def get_empty_red(red_id):
         'alertas_zonal': [],
         'top_crecimiento': {},
         'lideres_red': [],
+        'tendencia_semanas': [],
+        'promedio_tendencia': 0,
+        'actividad_reciente': [],
     }
 
 
@@ -905,12 +1028,19 @@ def get_empty_cdp(cdp_id):
         'telefono_contacto': '',
         'direccion': '',
         'asistencia_ultimo': 0,
+        'total_asistencia': 0,
+        'asistencia_total': 0,
+        'casas_pendientes': 0,
+        'total_sin_reporte_7d': 0,
         'promedio_historico': 0,
         'visitas': 0,
         'conversiones': 0,
-        'ofrendas_usd': 0,
-        'ofrendas_bs': 0,
+        'ofrendas_usd': 0.0,
+        'ofrendas_bs': 0.0,
         'estado_reporte': 'pendiente',
+        'reporte_al_dia': False,
+        'dias_desde_reporte': None,
+        'ultimo_reporte_reciente': False,
         'ultimo_reporte_por': '',
         'ultimo_reporte_fecha': '',
         'ultimo_tema': '',

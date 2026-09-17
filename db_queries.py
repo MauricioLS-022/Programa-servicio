@@ -7,7 +7,7 @@ Si la consulta no retorna datos (tablas vacías), retorna valores por
 defecto (0, listas vacías) en lugar de mock.
 """
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import uuid
 
 from pymysql.cursors import Cursor
@@ -191,6 +191,32 @@ def _semana_label(fecha):
         return 'Sem 4'
 
 
+def formatear_fecha_corta(fecha_val) -> str:
+    """Formatea una fecha como fecha corta legible en español (ej. '28 Ago', '04 Sep')."""
+    if not fecha_val:
+        return ''
+    meses_abr = {
+        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
+    }
+    if isinstance(fecha_val, str):
+        f_str = fecha_val.strip()
+        try:
+            fecha_val = date.fromisoformat(f_str[:10])
+        except Exception:
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d', '%d-%m-%Y'):
+                try:
+                    fecha_val = datetime.strptime(f_str[:10], fmt).date()
+                    break
+                except Exception:
+                    continue
+            else:
+                return f_str
+    if hasattr(fecha_val, 'day') and hasattr(fecha_val, 'month'):
+        return f"{fecha_val.day:02d} {meses_abr.get(fecha_val.month, '')}"
+    return str(fecha_val)
+
+
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
@@ -212,20 +238,29 @@ def get_metricas_generales(conn):
     cur = conn.cursor()
     _ensure_currency_columns(cur)
 
-    # --- KPIs principales ---
+    hoy = date.today()
+    hace_7_dias = hoy - timedelta(days=7)
+
+    # --- KPIs principales (unificados a la semana activa analizada: últimos 7 días) ---
     try:
         cur.execute("""
             SELECT
-                COALESCE(SUM(nro_regulares + nro_niños + nro_visitas + nro_comprometidos), 0) AS total_asistencia,
-                COALESCE(SUM(ofrendas_usd), 0) AS ofrendas_usd,
-                COALESCE(SUM(ofrendas_bs), 0) AS ofrendas_bs,
-                COALESCE(SUM(confesiones), 0) AS conversiones,
-                COALESCE(SUM(reconciliaciones), 0) AS reconciliaciones,
-                COALESCE(SUM(cesta_amor), 0) AS cestas_amor,
-                COALESCE(SUM(nro_visitas), 0) AS total_visitas,
-                COUNT(DISTINCT cdp_id) AS reportes_enviados
-            FROM reporte
-        """)
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS total_asistencia,
+                COALESCE(SUM(rep.nro_regulares), 0) AS regulares,
+                COALESCE(SUM(rep.nro_niños), 0) AS ninos,
+                COALESCE(SUM(rep.nro_visitas), 0) AS visitas,
+                COALESCE(SUM(rep.nro_comprometidos), 0) AS comprometidos,
+                COALESCE(SUM(rep.ofrendas_usd), 0) AS ofrendas_usd,
+                COALESCE(SUM(rep.ofrendas_bs), 0) AS ofrendas_bs,
+                COALESCE(SUM(rep.confesiones), 0) AS conversiones,
+                COALESCE(SUM(rep.reconciliaciones), 0) AS reconciliaciones,
+                COALESCE(SUM(rep.cesta_amor), 0) AS cestas_amor,
+                COALESCE(SUM(rep.nro_visitas), 0) AS total_visitas,
+                COUNT(DISTINCT rep.cdp_id) AS reportes_enviados
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.is_active = 1 AND rep.fecha >= %s
+        """, (hace_7_dias,))
         kpis = cur.fetchone() or {}
     except Exception:
         kpis = {}
@@ -235,8 +270,6 @@ def get_metricas_generales(conn):
     total_casas = cur.fetchone()['total']
 
     # Cumplimiento: casas activas con reporte en los últimos 7 días / total casas activas
-    hoy = date.today()
-    hace_7_dias = hoy - timedelta(days=7)
     cur.execute("""
         SELECT COUNT(DISTINCT r.cdp_id) AS con_reporte
         FROM reporte r
@@ -263,42 +296,41 @@ def get_metricas_generales(conn):
     casas_sin_reporte_ids = [f['id'] for f in faltantes_global]
     casas_sin_reporte_codigos = [f['codigo'] for f in faltantes_global]
 
-    # --- Distribución del último reporte (el más reciente global) ---
-    cur.execute("""
-        SELECT nro_regulares, nro_niños, nro_visitas, nro_comprometidos
-        FROM reporte ORDER BY fecha DESC LIMIT 1
-    """)
-    dist_row = cur.fetchone()
+    # --- Distribución de la semana activa (coherente con total_asistencia y donut) ---
     distribucion = {
-        'regulares': dist_row['nro_regulares'] if dist_row else 0,
-        'ninos': dist_row['nro_niños'] if dist_row else 0,
-        'visitas': dist_row['nro_visitas'] if dist_row else 0,
-        'comprometidos': dist_row['nro_comprometidos'] if dist_row else 0,
+        'regulares': int(kpis.get('regulares', 0) or 0),
+        'ninos': int(kpis.get('ninos', 0) or 0),
+        'visitas': int(kpis.get('visitas', 0) or 0),
+        'comprometidos': int(kpis.get('comprometidos', 0) or 0),
     }
 
-    # --- Tendencia: últimos 8 meses agrupados ---
+    # --- Tendencia: últimas 6 a 8 semanas agrupadas consecutivas ---
     cur.execute("""
         SELECT
-            DATE_FORMAT(fecha, '%Y-%m') AS mes,
-            SUM(nro_regulares + nro_niños + nro_visitas + nro_comprometidos) AS asistencia
-        FROM reporte
-        GROUP BY mes
-        ORDER BY mes DESC
+            DATE_SUB(DATE(rep.fecha), INTERVAL WEEKDAY(rep.fecha) DAY) AS semana_inicio,
+            SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia
+        FROM reporte rep
+        JOIN cdp c ON rep.cdp_id = c.id
+        WHERE c.is_active = 1 AND rep.fecha IS NOT NULL
+        GROUP BY semana_inicio
+        ORDER BY semana_inicio DESC
         LIMIT 8
     """)
     rows_tendencia = list(cur.fetchall() or [])
     rows_tendencia.reverse()
-    max_asistencia = max((r['asistencia'] for r in rows_tendencia), default=1) or 1
+    max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=1) or 1
     tendencia = [
         {
-            'semana': r['mes'],
+            'semana': formatear_fecha_corta(r['semana_inicio']),
             'asistencia': int(r['asistencia']) if r['asistencia'] else 0,
-            'porcentaje': round(int(r['asistencia']) / max_asistencia * 100) if max_asistencia > 0 else 0,
+            'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
+            'fecha_completa': str(r['semana_inicio']),
         }
         for r in rows_tendencia
     ]
+    promedio_tendencia = round(sum(item['asistencia'] for item in tendencia) / len(tendencia)) if tendencia else 0
 
-    # --- Ranking de redes (Base: Casas activas, Ventana: últimos 7 días) ---
+    # --- Ranking de redes (Base: Casas activas, Ventana: últimos 7 días) restringido al Top 3 ---
     cur.execute("""
         SELECT
             r.nombre AS nombre,
@@ -319,19 +351,26 @@ def get_metricas_generales(conn):
         ORDER BY cumplimiento DESC, asistencia_semana DESC, asistencia_total DESC
     """, (hace_7_dias, hace_7_dias, hace_7_dias))
     ranking = cur.fetchall() or []
-    color_map = {
-        'hebrón': 'hebron', 'cielos abiertos': 'hebron',
-        'sur': 'sur',
-        'central': 'central',
-    }
     for r in ranking:
-        r['color_class'] = color_map.get((r['nombre'] or '').lower().strip(), 'default')
+        n_clean = (r['nombre'] or '').lower().strip()
+        if 'sur' in n_clean:
+            r['color_class'] = 'sur'
+        elif 'central' in n_clean:
+            r['color_class'] = 'central'
+        elif 'hebr' in n_clean or 'cielo' in n_clean:
+            r['color_class'] = 'hebron'
+        else:
+            r['color_class'] = 'default'
+
         r['asistencia_semana'] = int(r.get('asistencia_semana', 0) or 0)
         r['asistencia_total'] = int(r.get('asistencia_total', 0) or 0)
         r['asistencia'] = r['asistencia_semana']
         r['casas_reportadas'] = int(r.get('casas_reportadas', 0) or 0)
         r['total_casas'] = int(r.get('total_casas', 0) or 0)
         r['cumplimiento'] = int(r.get('cumplimiento', 0) or 0)
+
+    # Restringir ranking de redes al podio de los 3 primeros
+    ranking = ranking[:3]
 
     # --- Alertas: casas activas sin reporte en 14+ días ---
     cur.execute("""
@@ -389,7 +428,9 @@ def get_metricas_generales(conn):
         'casas_sin_reporte_7d': casas_sin_reporte_codigos,
         'reportes_enviados': con_reporte,
         'distribucion': distribucion,
+        'tendencia': tendencia,
         'tendencia_semanas': tendencia,
+        'promedio_tendencia': promedio_tendencia,
         'ranking_redes': ranking,
         'alertas': alertas,
     }
@@ -418,44 +459,43 @@ def get_metricas_red(conn, red_id):
     nombre_red = red_info['nombre_red']
     supervisor = red_info['supervisor'] or ''
 
-    # --- KPIs de la red (Base: Casas activas, Ventana: últimos 7 días) ---
+    # --- Total casas activas de la red ---
+    cur.execute("SELECT COUNT(*) AS total FROM cdp WHERE red_id = %s AND is_active = 1", (red_id,))
+    casas_activas_row = cur.fetchone()
+    casas_activas = int(casas_activas_row['total']) if casas_activas_row else 0
+
+    # --- KPIs de la red (Base: Casas activas, Ventana: semana activa analizada, últimos 7 días) ---
     hoy = date.today()
     hace_7_dias = hoy - timedelta(days=7)
     try:
         cur.execute("""
             SELECT
-                COUNT(DISTINCT c.id) AS casas_activas,
                 COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
+                COALESCE(SUM(rep.nro_regulares), 0) AS regulares,
                 COALESCE(SUM(rep.nro_niños), 0) AS ninos,
+                COALESCE(SUM(rep.nro_visitas), 0) AS visitas,
+                COALESCE(SUM(rep.nro_comprometidos), 0) AS comprometidos,
                 COALESCE(SUM(rep.confesiones), 0) AS conversiones,
                 COALESCE(SUM(rep.ofrendas_usd), 0) AS ofrendas_usd,
                 COALESCE(SUM(rep.ofrendas_bs), 0) AS ofrendas_bs,
-                COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END) AS casas_con_reporte
-            FROM cdp c
-            LEFT JOIN reporte rep ON rep.cdp_id = c.id
-            WHERE c.red_id = %s AND c.is_active = 1
-        """, (hace_7_dias, red_id))
-        kpis = cur.fetchone()
+                COUNT(DISTINCT rep.cdp_id) AS casas_con_reporte
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha >= %s
+        """, (red_id, hace_7_dias))
+        kpis = cur.fetchone() or {}
     except Exception:
         kpis = {}
-    casas_activas = int(kpis['casas_activas']) if kpis else 0
-    asistencia_total = int(kpis['asistencia_total']) if kpis else 0
+
+    asistencia_total = int(kpis.get('asistencia_total', 0) or 0)
     promedio_casa = round(asistencia_total / casas_activas) if casas_activas > 0 else 0
 
-    # --- Distribución (del último reporte de la red) ---
-    cur.execute("""
-        SELECT rep.nro_regulares, rep.nro_niños, rep.nro_visitas, rep.nro_comprometidos
-        FROM reporte rep
-        JOIN cdp c ON rep.cdp_id = c.id
-        WHERE c.red_id = %s
-        ORDER BY rep.fecha DESC LIMIT 1
-    """, (red_id,))
-    dist_row = cur.fetchone()
+    # --- Distribución consolidada de la red en la semana activa (coherente con asistencia_total y donut) ---
     distribucion = {
-        'regulares': dist_row['nro_regulares'] if dist_row else 0,
-        'ninos': dist_row['nro_niños'] if dist_row else 0,
-        'visitas': dist_row['nro_visitas'] if dist_row else 0,
-        'comprometidos': dist_row['nro_comprometidos'] if dist_row else 0,
+        'regulares': int(kpis.get('regulares', 0) or 0),
+        'ninos': int(kpis.get('ninos', 0) or 0),
+        'visitas': int(kpis.get('visitas', 0) or 0),
+        'comprometidos': int(kpis.get('comprometidos', 0) or 0),
     }
 
     # --- Lista de casas con estado ---
@@ -466,9 +506,10 @@ def get_metricas_red(conn, red_id):
             c.anfitrion,
             c.telefono,
             c.is_active,
-            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia,
+            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
+            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_visitas ELSE 0 END), 0) AS visitas_semana,
+            COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total_cdp,
             MAX(rep.fecha) AS ultimo_reporte,
-            COALESCE(SUM(rep.nro_visitas), 0) AS visitas,
             COALESCE(
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
                 (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
@@ -481,34 +522,43 @@ def get_metricas_red(conn, red_id):
         WHERE c.red_id = %s
         GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, c.is_active, u.nombre, u.apellido
         ORDER BY c.codigo
-    """, (red_id,))
+    """, (hace_7_dias, hace_7_dias, red_id))
     casas_raw = cur.fetchall() or []
 
     casas = []
     for c in casas_raw:
         is_act = bool(c.get('is_active', 1)) if c.get('is_active') is not None else True
         dias = c['dias_desde_reporte']
+        rep_semana = (dias is not None and dias <= 7)
         if not is_act:
             estado = 'pausada'
-        elif dias is None or dias > 7:
-            estado = 'amarillo' if (dias and dias <= 14) else 'rojo'
-        else:
+        elif rep_semana:
             estado = 'verde'
+        elif dias is not None and dias <= 14:
+            estado = 'amarillo'
+        else:
+            estado = 'rojo'
+
+        asist = int(c.get('asistencia_semana', 0) or 0)
+        vis = int(c.get('visitas_semana', 0) or 0)
+
         casas.append({
-            'nombre': f"{c['codigo']} - {c['anfitrion']}" if c.get('anfitrion') else c['codigo'],
+            'id': c.get('id'),
+            'nombre': c.get('anfitrion') or f"Casa {c['codigo']}",
             'codigo': c['codigo'],
-            'asistencia': int(c['asistencia']),
+            'asistencia': asist,
             'estado': estado,
             'is_active': is_act,
+            'reporte_reciente_7d': rep_semana,
             'lider': c['lider'] or 'Sin asignar',
-            'visitas': int(c['visitas']),
+            'visitas': vis,
             'telefono': c.get('telefono') or '',
         })
 
     # --- Alertas zonal: solo casas activas con >14 días sin reporte ---
     alertas_zonal = [
         {
-            'nombre': c['codigo'],
+            'nombre': c.get('anfitrion') or f"Casa {c['codigo']}",
             'codigo': c['codigo'],
             'dias_sin_reporte': c['dias_desde_reporte'] if c['dias_desde_reporte'] else 999,
             'motivo': 'Sin reporte reciente' if c['dias_desde_reporte'] is None else f"{c['dias_desde_reporte']} días sin reporte",
@@ -558,7 +608,7 @@ def get_metricas_red(conn, red_id):
     casas_sin_reporte_ids = [f['id'] for f in faltantes_red]
     casas_sin_reporte_codigos = [f['codigo'] for f in faltantes_red]
 
-    # --- Directorio de líderes de las Casas de Paz de esta red ---
+    # --- Directorio de líderes de las Casas de Paz de esta red (solo Líderes titulares) ---
     cur.execute("""
         SELECT
             l.id,
@@ -569,10 +619,81 @@ def get_metricas_red(conn, red_id):
             c.anfitrion AS cdp_anfitrion
         FROM lider l
         JOIN cdp c ON l.cdp_id = c.id
-        WHERE c.red_id = %s AND l.is_active = 1
-        ORDER BY c.codigo, FIELD(l.rol, 'Lider', 'Sublider'), l.nombre
+        WHERE c.red_id = %s AND l.is_active = 1 AND l.rol = 'Lider'
+        ORDER BY c.codigo, l.nombre
     """, (red_id,))
     lideres_red = cur.fetchall() or []
+
+    # --- Tendencia de asistencia en la red (últimas 8 semanas agrupadas) ---
+    cur.execute("""
+        SELECT
+            DATE_SUB(DATE(rep.fecha), INTERVAL WEEKDAY(rep.fecha) DAY) AS semana_inicio,
+            SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia
+        FROM reporte rep
+        JOIN cdp c ON rep.cdp_id = c.id
+        WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha IS NOT NULL
+        GROUP BY semana_inicio
+        ORDER BY semana_inicio DESC
+        LIMIT 8
+    """, (red_id,))
+    rows_tendencia = list(cur.fetchall() or [])
+    rows_tendencia.reverse()
+    max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=1) or 1
+    tendencia_red = [
+        {
+            'semana': formatear_fecha_corta(r['semana_inicio']),
+            'asistencia': int(r['asistencia']) if r['asistencia'] else 0,
+            'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
+            'fecha_completa': str(r['semana_inicio']),
+        }
+        for r in rows_tendencia
+    ]
+    promedio_tendencia = round(sum(item['asistencia'] for item in tendencia_red) / len(tendencia_red)) if tendencia_red else 0
+
+    # --- Actividad reciente de la red (últimos 5 reportes) ---
+    cur.execute("""
+        SELECT
+            rep.id,
+            rep.fecha,
+            rep.tema,
+            (rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia,
+            c.codigo AS cdp_codigo,
+            c.anfitrion AS cdp_nombre,
+            COALESCE(
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
+                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
+                'Líder'
+            ) AS lider_nombre
+        FROM reporte rep
+        JOIN cdp c ON rep.cdp_id = c.id
+        WHERE c.red_id = %s AND c.is_active = 1
+        ORDER BY rep.fecha DESC, rep.id DESC
+        LIMIT 5
+    """, (red_id,))
+    actividad_rows = cur.fetchall() or []
+    actividad_reciente = []
+    avatar_classes = ['bg-primary-light text-primary', 'bg-secondary-light text-secondary']
+    for idx, act in enumerate(actividad_rows):
+        lider_nom = act.get('lider_nombre') or 'Líder'
+        partes_nom = lider_nom.split()
+        ini = (partes_nom[0][0] + (partes_nom[-1][0] if len(partes_nom) > 1 else '')).upper() if partes_nom else 'LD'
+        f_val = act.get('fecha')
+        f_fmt = formatear_fecha_corta(f_val)
+        if f_val and hasattr(f_val, 'year'):
+            f_fmt = f"{f_fmt} {f_val.year}"
+        elif f_val and isinstance(f_val, str) and len(f_val) >= 4:
+            f_fmt = f"{f_fmt} {f_val[:4]}"
+        
+        actividad_reciente.append({
+            'lider': lider_nom,
+            'iniciales': ini,
+            'avatar_class': avatar_classes[idx % len(avatar_classes)],
+            'cdp_nombre': act.get('cdp_nombre') or f"Casa {act.get('cdp_codigo')}",
+            'cdp_codigo': act.get('cdp_codigo') or '',
+            'fecha_formateada': f_fmt,
+            'asistencia': int(act.get('asistencia') or 0),
+            'tema': act.get('tema') or '',
+        })
 
     cur.close()
 
@@ -582,9 +703,10 @@ def get_metricas_red(conn, red_id):
         'supervisor': supervisor,
         'casas_activas': casas_activas,
         'asistencia_total': asistencia_total,
+        'total_asistencia': asistencia_total,
         'promedio_casa': promedio_casa,
-        'ninos': int(kpis['ninos']) if kpis else 0,
-        'conversiones': int(kpis.get('conversiones', 0) or 0) if kpis else 0,
+        'ninos': int(kpis.get('ninos', 0) or 0),
+        'conversiones': int(kpis.get('conversiones', 0) or 0),
         'ofrendas_usd': float(kpis.get('ofrendas_usd', 0.0)) if kpis else 0.0,
         'ofrendas_bs': float(kpis.get('ofrendas_bs', 0.0)) if kpis else 0.0,
         'cumplimiento': cumplimiento,
@@ -599,6 +721,10 @@ def get_metricas_red(conn, red_id):
         'alertas_zonal': alertas_zonal,
         'top_crecimiento': top_growth,
         'lideres_red': lideres_red,
+        'tendencia': tendencia_red,
+        'tendencia_semanas': tendencia_red,
+        'promedio_tendencia': promedio_tendencia,
+        'actividad_reciente': actividad_reciente,
     }
 
 
@@ -659,8 +785,27 @@ def get_metricas_cdp(conn, cdp_id):
     """, (cdp_id,))
     ultimo = cur.fetchone()
 
+    hoy = date.today()
+    hace_7_dias = hoy - timedelta(days=7)
+
+    dias_desde_reporte = None
+    reporte_al_dia = False
+    if ultimo and ultimo.get('fecha'):
+        u_fecha = ultimo['fecha']
+        if isinstance(u_fecha, datetime):
+            u_fecha = u_fecha.date()
+        elif isinstance(u_fecha, str):
+            try:
+                u_fecha = datetime.strptime(u_fecha[:10], '%Y-%m-%d').date()
+            except Exception:
+                u_fecha = None
+
+        if u_fecha:
+            dias_desde_reporte = max(0, (hoy - u_fecha).days)
+            reporte_al_dia = (dias_desde_reporte <= 7)
+
     asistencia_ultimo = _asistencia_fila(ultimo) if ultimo else 0
-    estado_reporte = 'enviado' if ultimo else 'pendiente'
+    estado_reporte = 'enviado' if reporte_al_dia else 'pendiente'
     ultimo_reporte_por = (ultimo.get('enviado_por_nombre') if ultimo else None) or lider or 'Líder encargado'
     ultimo_reporte_fecha = ultimo['fecha'].strftime('%d %b %Y') if ultimo and ultimo['fecha'] else ''
     visitas = ultimo['nro_visitas'] if ultimo else 0
@@ -752,12 +897,16 @@ def get_metricas_cdp(conn, cdp_id):
         'telefono_contacto': telefono_contacto,
         'direccion': cdp['direccion'] or '',
         'asistencia_ultimo': asistencia_ultimo,
+        'total_asistencia': asistencia_ultimo,
         'promedio_historico': promedio_historico,
         'visitas': visitas,
         'conversiones': conversiones,
         'ofrendas_usd': ofrendas_usd,
         'ofrendas_bs': ofrendas_bs,
         'estado_reporte': estado_reporte,
+        'reporte_al_dia': reporte_al_dia,
+        'dias_desde_reporte': dias_desde_reporte,
+        'ultimo_reporte_reciente': reporte_al_dia,
         'ultimo_reporte_por': ultimo_reporte_por,
         'ultimo_reporte_fecha': ultimo_reporte_fecha,
         'ultimo_tema': ultimo_tema,
