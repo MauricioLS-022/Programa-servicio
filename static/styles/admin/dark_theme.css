@@ -1352,6 +1352,32 @@ html[data-theme="dark"],
     color: var(--text-muted, #d4c2bf);
 }
 
+[data-theme="dark"] .btn-full-outline {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(221, 192, 189, 0.3);
+    color: var(--text-main, #f8f2f0);
+}
+
+[data-theme="dark"] .btn-full-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary, #f8deda);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .lider-avatar {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--primary, #f8deda);
+    border-color: rgba(221, 192, 189, 0.2);
+}
+
+[data-theme="dark"] .lider-details h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .lider-details p {
+    color: var(--text-muted, #d4c2bf);
+}
+
 [data-theme="dark"] .progress-bar-track,
 [data-theme="dark"] .progress-bar {
     background-color: var(--surface-container-high, #241517);

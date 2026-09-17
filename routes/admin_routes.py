@@ -4,7 +4,7 @@ Rutas del administrador: /admin/...
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 from database import get_db_connection
 from db_queries import get_todas_las_redes, obtener_cdp_admin
-from utils.auth import login_required, role_required
+from utils.auth import login_required, role_required, safe_redirect
 from services.dashboard_service import get_dashboard_context, get_estructura_context
 from services.user_service import (
     get_usuarios_context,
@@ -151,12 +151,7 @@ def usuario_toggle_estado(id):
     else:
         flash(mensaje, 'error')
 
-    if request.referrer:
-        return redirect(request.referrer)
-    try:
-        return redirect(url_for('admin_routes.admin_usuarios'))
-    except Exception:
-        return redirect(url_for('admin.usuario'))
+    return safe_redirect('admin.usuario')
 
 
 @admin_bp.route('/reportes')
@@ -188,9 +183,7 @@ def reporte_editar(reporte_id):
     else:
         flash(mensaje, 'danger')
 
-    if request.referrer:
-        return redirect(request.referrer)
-    return redirect(url_for('admin.reportes'))
+    return safe_redirect('admin.reportes')
 
 
 @admin_bp.route('/lider')
@@ -300,12 +293,7 @@ def lider_toggle_estado(id):
         else:
             flash(mensaje, 'error')
 
-    if request.referrer:
-        return redirect(request.referrer)
-    try:
-        return redirect(url_for('admin_routes.admin_lideres'))
-    except Exception:
-        return redirect(url_for('admin.lider'))
+    return safe_redirect('admin.lider')
 
 
 
@@ -421,12 +409,7 @@ def casa_de_paz_toggle_estado(id):
         else:
             flash(mensaje, 'error')
 
-    if request.referrer:
-        return redirect(request.referrer)
-    try:
-        return redirect(url_for('admin_routes.admin_casa_de_paz'))
-    except Exception:
-        return redirect(url_for('admin.estructura'))
+    return safe_redirect('admin.estructura')
 
 
 @admin_bp.route('/red/crear', methods=['GET', 'POST'])

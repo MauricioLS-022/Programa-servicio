@@ -3,7 +3,7 @@
 ## Descripción General
 Aplicación web de gestión y reportes para un servicio comunitario (ministerio "Vino Nuevo").  
 **Stack:** Python Flask + MySQL (PyMySQL) + HTML/CSS/JS (Jinja2)  
-**Cobertura y Calidad:** 210 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
+**Cobertura y Calidad:** 220 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
 
 ---
 
@@ -16,11 +16,11 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 1 | **INSERT y Guardado de Reportes en BD** | ✅ Implementado | `services/cdp_service.py:process_reporte()` y `db_queries.insertar_reporte()`. Formulario conectado en `POST /lider_cdp/generar_reporte`, con UUID(), invalidación de caché, soporte de ofrendas duales (USD/Bs), cálculo dinámico desacoplado (`generar_reporte.js`) y control transaccional con rollback. |
 | 2 | **Edición y Eliminación de Reportes (Líder CDP)** | ✅ Implementado | Modales funcionales en `index.html` con endpoints `POST /lider_cdp/reporte/<id>/editar` y `POST /lider_cdp/reporte/<id>/eliminar`, control de permisos por CDP, validación anti-IDOR de `cdp_id` y confirmación. |
 | 3 | **Script de Poblado y Test Data** | ✅ Implementado | `insert_test_data.py` con soporte para SSL en BD remota (Aiven/Cloud), dotenv, generación de UUIDs, hashes Werkzeug y 8 semanas de reportes históricos e idempotencia. |
-| 4 | **Dashboard con Datos Reales, Métricas Semanales y Tooltips Interactivos** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` con métricas jerárquicas (General, Red, CDP), ranking dinámico de redes con porcentajes de eficiencia, tooltips flotantes accesibles en gráficos (donut de asistencia y barras mensuales), estados vacíos y caché en memoria con invalidación inteligente (`tests/test_dashboard_metrics.py`). |
+| 4 | **Dashboard con Datos Reales, Métricas Semanales y Tooltips Interactivos** | ✅ Cumplido | `dashboard_service.py` y `db_queries.py` con métricas jerárquicas (General, Red, CDP), ranking dinámico de redes con porcentajes de eficiencia, tooltips flotantes accesibles en gráficos (donut de asistencia y barras mensuales), estados vacíos, scroll dinámico calibrado (5 reportes visibles con cabecera fija sticky) en Historial de Reportes y caché en memoria con invalidación inteligente (`tests/test_dashboard_metrics.py`). |
 | 5 | **Filtros de Reportes (Admin & Supervisor)** | ✅ Implementado | Búsqueda por texto libre, red, Casa de Paz y rango de fechas (`fecha_desde`, `fecha_hasta`) en vistas de administración y supervisión regional. |
 | 6 | **Paginación Real Server-Side** | ✅ Implementado | Paginación con ventana deslizante (±2 páginas) y puntos suspensivos en **Reportes**, **Usuarios**, **Líderes** y en el historial del **Dashboard de Líder CDP**. |
-| 7 | **Vistas de Supervisor Aisladas por Red y Protección de API** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes con filtrado y aislamiento estricto por la red asignada al supervisor. Endpoint `/api/dashboard/datos` con validación estricta que impide consultas fuera de la red del supervisor (403 Forbidden). |
-| 8 | **Vista de Detalle de Casa de Paz y Blindaje de Fallbacks** | ✅ Implementado | Rutas `/admin/casa_de_paz/<id>` y `/supervisor/casa_de_paz/<id>` con `detalles_cdp.html`. Muestra cuenta de usuario del sistema (`@username`), botón de gestión directa de credenciales, teléfono propio de la casa con llamadas y WhatsApp directo, equipo ministerial y badge dinámico de cumplimiento semanal (7 días). Blindaje de consultas para evitar filtración de datos mock en producción. |
+| 7 | **Vistas de Supervisor Aisladas por Red y Protección de API** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes con filtrado y aislamiento estricto por la red asignada al supervisor. Endpoint `/api/dashboard/datos` con validación estricta (403 Forbidden) y ruta `/supervisor/casa_de_paz/<id>` blindada contra IDOR y supervisores sin red asignada (`tests/test_security_remediations.py`). |
+| 8 | **Vista de Detalle de Casa de Paz y Blindaje de Fallbacks** | ✅ Implementado | Rutas `/admin/casa_de_paz/<id>` y `/supervisor/casa_de_paz/<id>` con `detalles_cdp.html`. Muestra cuenta de usuario del sistema (`@username`), botón de gestión directa de credenciales, teléfono propio de la casa con llamadas y WhatsApp directo, equipo ministerial y badge dinámico de cumplimiento semanal (7 días). Blindaje de consultas para evitar filtración de datos mock en producción y validación de pertenencia territorial activa. |
 | 9 | **Módulo de Perfil y Credenciales** | ✅ Implementado | Perfil unificado en Admin, Supervisor y Líder CDP con cambio de nombre de usuario, cambio de contraseña con verificación de clave actual, indicador de fortaleza y hash Werkzeug. Cobertura en `tests/test_perfil.py`. |
 | 10 | **Conectividad Resiliente con Circuit Breaker & Scoped Connection** | ✅ Implementado | `database.py` con `_RequestScopedConnection` (reutilización de socket SSL/TCP por ciclo de vida de petición), circuit breaker con reintentos configurables y limpieza en `teardown_appcontext`. Fallback transparente a modo demo cuando la base de datos externa no está disponible y `MOCK_MODE=True`. |
 | 11 | **Modo Oscuro Global** | ✅ Implementado | Variable `data-theme="dark"`, persistencia en `localStorage`, inicializador centralizado anti-FOUC (`theme_init.js`) y selectores de tema accesibles en login y perfil. |
@@ -38,6 +38,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 23 | **Integración de Contacto por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados con compatibilidad en detalles de CDP, directorio de líderes y tarjetas de estructura. <br>**Falta:** Normalización estricta de códigos telefónicos internacionales (E.164) en todos los formularios de edición restantes. |
 | 24 | **Exportación a PDF y Excel** | ❌ Pendiente | Botones visuales maquetados en reportes y listados. <br>**Falta:** Implementar endpoints con descarga física en PDF (reportes consolidados con resumen de asistencia y ofrendas) y Excel (`.xlsx` o `.csv`) para reportes, usuarios, líderes y CDPs con filtros aplicados. |
 | 25 | **Configuración Segura de Producción Final** | ✅ Implementado | `ProductionConfig` y `validate_production_config()` con Fail-Fast al inicio (`config.py`, `app.py`). `DEBUG=False` y `MOCK_MODE=False` forzados en producción, credenciales obligatorias (`SECRET_KEY` criptográfica, `DB_*`, `RECAPTCHA_*`), cookies seguras HTTPS y neutralización estricta de credenciales demo (`admin/admin`, etc.) en despliegue (`tests/test_production_config.py`). |
+| 26 | **Prevención de Open Redirect y Optimización DDL** | ✅ Implementado | Funciones `is_safe_url` y `safe_redirect` en `utils/auth.py` aplicadas a todos los toggles administrativos (`usuario`, `lider`, `casa_de_paz`) y edición de reportes para impedir redirecciones a dominios externos maliciosos. Introspección `SHOW COLUMNS` en `_ensure_currency_columns` optimizada con caché en memoria (`tests/test_security_remediations.py`). |
 
 ---
 
@@ -62,6 +63,9 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 13 | **Desacoplamiento de Scripts JS (CSP Compliance)** | ✅ **Protegido** | **Bajo** | Eliminación de scripts JavaScript inline en layouts y templates, reduciendo la superficie de ataque XSS y habilitando directivas CSP estrictas sin `unsafe-inline`. |
 | 14 | **Manejo Centralizado de Errores HTTP** | ✅ **Protegido** | **Bajo** | Handlers dedicados en `app.py` para códigos 400, 403, 404, 429 y 500, evitando divulgación de trazas de error (`stack traces`) al cliente. |
 | 15 | **Hardening y Fail-Fast de Producción** | ✅ **Protegido** | **Bajo** | `validate_production_config()` en arranque, forzado de `DEBUG=False` y `MOCK_MODE=False`, cookies HTTPS estrictas y bloqueo de fallbacks demo en despliegue. |
+| 16 | **Prevención de Redirección Abierta (Open Redirect)** | ✅ **Protegido** | **Bajo** | Validación estricta con `is_safe_url()` y `safe_redirect()` en retornos de toggles y formularios administrativos, restringiendo el destino al host institucional seguro. |
+| 17 | **Aislamiento Territorial Estricto en Supervisor** | ✅ **Protegido** | **Bajo** | Ruta `/supervisor/casa_de_paz/<id>` bloquea con `403 Forbidden` a supervisores sin red asignada o con intentos de acceso entre redes ajenas (`tests/test_security_remediations.py`). |
+| 18 | **Optimización de Metadatos DDL en Lecturas** | ✅ **Protegido** | **Bajo** | Flag en memoria `_currency_columns_checked` en `_ensure_currency_columns()` para evitar consultas repetitivas `SHOW COLUMNS` en consultas del dashboard. |
 
 ---
 
@@ -187,6 +191,8 @@ graph TD
 - [x] **Rate Limiting**: `Flask-Limiter` activo en login (5 intentos por minuto) y límites globales anti-abuso.
 - [x] **Google reCAPTCHA**: Protección anti-bot en login con validación server-side.
 - [x] **Protección de API**: `@login_required` y `@role_required` en `/api/dashboard/datos` con aislamiento de red y bloqueo anti-IDOR.
+- [x] **Aislamiento Territorial de Supervisor**: Bloqueo estricto con `403 Forbidden` a supervisores sin red asignada o intentos de acceso entre redes ajenas en `/supervisor/casa_de_paz/<id>` (`tests/test_security_remediations.py`).
+- [x] **Prevención de Open Redirect**: Validación de host con `is_safe_url` y `safe_redirect` en todos los toggles y retornos de formularios administrativos (`utils/auth.py`).
 - [x] **Cabeceras de Seguridad HTTP**: CSP, HSTS, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` y `Referrer-Policy`.
 - [x] **Hardening de Cookies y Sesiones**: `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE='Lax'`, timeout de sesión y `session.clear()` en logout.
 - [x] **Desacoplamiento CSP**: Eliminación de scripts JS inline en todos los templates.
@@ -198,7 +204,7 @@ graph TD
 - [x] **CRUD Completo de Líderes**: Creación, edición, alternancia de estado y eliminación protegida por historial (`test_lider_delete_guards.py`).
 - [x] **Gestión Jerárquica de Estado**: Propagación y cascada de activación/pausa entre Redes, CDPs y Líderes (`test_reactivacion_estado.py`).
 - [x] **Monitoreo de Cumplimiento Semanal**: Detección de casas sin reporte en los últimos 7 días con badges y filtros en Estructura.
-- [x] **Optimización del Dashboard**: Métricas semanales avanzadas, ranking interactivo de redes y tooltips accesibles en gráficos (`test_dashboard_metrics.py`).
+- [x] **Optimización del Dashboard**: Métricas semanales avanzadas, ranking interactivo de redes, tooltips accesibles en gráficos (`test_dashboard_metrics.py`), scroll dinámico con cabecera fija sticky en Historial de Reportes y optimización de metadatos DDL (`_ensure_currency_columns`).
 
 ### ⏳ Fase 5 — Exportación y Optimizaciones Finales (Próximo Paso)
 - [ ] **Generación de Reportes PDF/Excel**:

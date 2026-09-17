@@ -220,8 +220,14 @@ def formatear_fecha_corta(fecha_val) -> str:
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
+_currency_columns_checked = False
+
+
 def _ensure_currency_columns(cursor):
-    """Asegura que las columnas ofrendas_bs y ofrendas_usd existan en la tabla reporte si la BD está disponible."""
+    """Asegura que las columnas ofrendas_bs y ofrendas_usd existan en la tabla reporte una sola vez en el ciclo de la app."""
+    global _currency_columns_checked
+    if _currency_columns_checked:
+        return
     try:
         cursor.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_bs'")
         if not cursor.fetchone():
@@ -229,6 +235,7 @@ def _ensure_currency_columns(cursor):
         cursor.execute("SHOW COLUMNS FROM reporte LIKE 'ofrendas_usd'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE reporte ADD COLUMN ofrendas_usd DECIMAL(10,2) NOT NULL DEFAULT 0.00")
+        _currency_columns_checked = True
     except Exception:
         pass
 

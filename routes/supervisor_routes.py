@@ -78,16 +78,19 @@ def casa_de_paz(id):
     from flask import abort
     usuario_id = session.get("usuario_id")
     supervisor_red_id = get_supervisor_red_id(usuario_id)
-    cdp = get_cdp_detalle(id)
 
+    # Si el supervisor no tiene red asignada, no puede acceder a ninguna Casa de Paz
+    if not supervisor_red_id:
+        abort(403)
+
+    cdp = get_cdp_detalle(id)
     if not cdp:
         abort(404)
 
     # Validar aislamiento territorial (evitar IDOR entre redes)
     cdp_red_id = cdp.get('red_id')
-    if supervisor_red_id is not None and cdp_red_id is not None:
-        if str(cdp_red_id) != str(supervisor_red_id):
-            abort(403)
+    if not cdp_red_id or str(cdp_red_id) != str(supervisor_red_id):
+        abort(403)
 
     return render_template('detalles_cdp.html', title='Detalles de Casa de Paz', breadcrumb='Casa de paz', link='casa_de_paz', recurso_id=id, cdp=cdp)
 

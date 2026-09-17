@@ -912,39 +912,30 @@
                         <p>{% if metricas.lider %}Líder principal{% else %}Falta asignar líder{% endif %}</p>
                     </div>
                 </div>
-                {% if metricas.sublider %}
-                <div class="lider-info">
-                    <div class="lider-avatar">
-                        <span class="material-symbols-outlined">supervisor_account</span>
-                    </div>
-                    <div class="lider-details">
-                        <h3>{{ metricas.sublider }}</h3>
-                        <p>Sublíder</p>
-                    </div>
-                </div>
-                {% endif %}
 
-                <!-- Trazabilidad de Último Reporte -->
-                <div class="trazabilidad-box {{ metricas.estado_reporte }}">
-                    <span class="material-symbols-outlined trazabilidad-icon">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
-                    <div class="trazabilidad-text">
-                        <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Reporte de esta semana recibido{% else %}Reporte de esta semana pendiente{% endif %}</span>
-                        {% if metricas.estado_reporte == 'enviado' %}
-                        <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>
-                        {% elif metricas.historial %}
-                        <span class="trazabilidad-author">Último servicio registrado: {{ metricas.ultimo_reporte_fecha }}{% if metricas.dias_desde_reporte is not none and metricas.dias_desde_reporte > 0 %} (hace {{ metricas.dias_desde_reporte }} días){% endif %} · Enviado por: <strong>{{ metricas.ultimo_reporte_por or 'Líder' }}</strong></span>
-                        {% else %}
-                        <span class="trazabilidad-author">Todavía no hay reportes registrados para esta casa.</span>
-                        {% endif %}
+                <div class="cdp-header-meta">
+                    <!-- Trazabilidad de Último Reporte -->
+                    <div class="trazabilidad-box {{ metricas.estado_reporte }}">
+                        <span class="material-symbols-outlined trazabilidad-icon">{% if metricas.estado_reporte == 'enviado' %}verified{% else %}pending_actions{% endif %}</span>
+                        <div class="trazabilidad-text">
+                            <span class="trazabilidad-label">{% if metricas.estado_reporte == 'enviado' %}Reporte de esta semana recibido{% else %}Reporte de esta semana pendiente{% endif %}</span>
+                            {% if metricas.estado_reporte == 'enviado' %}
+                            <span class="trazabilidad-author">Por: <strong>{{ metricas.ultimo_reporte_por or 'Sin identificar' }}</strong> · {{ metricas.ultimo_reporte_fecha or 'Fecha no disponible' }}</span>
+                            {% elif metricas.historial %}
+                            <span class="trazabilidad-author">Último servicio registrado: {{ metricas.ultimo_reporte_fecha }}{% if metricas.dias_desde_reporte is not none and metricas.dias_desde_reporte > 0 %} (hace {{ metricas.dias_desde_reporte }} días){% endif %} · Enviado por: <strong>{{ metricas.ultimo_reporte_por or 'Líder' }}</strong></span>
+                            {% else %}
+                            <span class="trazabilidad-author">Todavía no hay reportes registrados para esta casa.</span>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
 
-                <div class="lider-actions">
                     {% if metricas.telefono_contacto %}
-                    <a href="https://wa.me/{{ metricas.telefono_contacto|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
-                        <span class="material-symbols-outlined">chat</span>
-                        WhatsApp
-                    </a>
+                    <div class="lider-actions">
+                        <a href="https://wa.me/{{ metricas.telefono_contacto|string|replace(' ', '')|replace('+', '') }}" target="_blank" rel="noopener noreferrer" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
+                            <span class="material-symbols-outlined">chat</span>
+                            WhatsApp
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </section>
