@@ -13,7 +13,7 @@ def _get_cache(key):
     """Retorna valor si existe y no expiró, o None."""
     try:
         from flask import current_app
-        if current_app and (current_app.config.get('DEBUG') or current_app.config.get('FLASK_ENV') == 'development' or current_app.config.get('TESTING')):
+        if current_app and (current_app.config.get('TESTING') or current_app.config.get('DISABLE_CACHE', False)):
             return None
     except Exception:
         pass
