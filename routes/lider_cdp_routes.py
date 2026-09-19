@@ -1,6 +1,7 @@
 """
 Rutas de Líder de Casa de Paz: /lider_cdp/...
 """
+from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.auth import login_required, role_required
 from services.cdp_service import (
@@ -40,7 +41,9 @@ def generar_reporte():
         flash('No se encontró una Casa de Paz asignada a este usuario.', 'danger')
         return redirect(url_for('lider_cdp.dashboard'))
 
+    form_data = {}
     if request.method == 'POST':
+        form_data = request.form
         res = process_reporte(cdp_id=cdp['id'], form_data=request.form)
         exito = res[0] if isinstance(res, (tuple, list)) else bool(res)
         mensaje = res[1] if isinstance(res, (tuple, list)) and len(res) > 1 else ('Reporte guardado exitosamente.' if exito else 'Error al guardar el reporte. Verifica los datos introducidos.')
@@ -50,7 +53,8 @@ def generar_reporte():
         else:
             flash(mensaje, 'danger')
 
-    return render_template('generar_reporte.html', cdp=cdp, lideres=lideres)
+    hoy = date.today().strftime('%Y-%m-%d')
+    return render_template('generar_reporte.html', cdp=cdp, lideres=lideres, form_data=form_data, hoy=hoy)
 
 
 @lider_cdp_bp.route('/reporte/<reporte_id>/editar', methods=['POST'])

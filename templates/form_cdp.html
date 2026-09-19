@@ -180,7 +180,7 @@
 
     <div class="form-group half-width">
       <label for="password">Contraseña</label>
-      <div class="input-wrapper icon-left">
+      <div class="input-wrapper both-icons">
         <span class="material-symbols-outlined input-icon">lock</span>
         <input
           id="password"
@@ -188,6 +188,7 @@
           type="password"
           placeholder="••••••••"
         />
+        <span class="material-symbols-outlined input-icon clickable" role="button" tabindex="0" aria-label="Mostrar contraseña" title="Mostrar contraseña">visibility</span>
       </div>
       {% if is_edit %}
       <span class="input-hint">Deja en blanco para conservar la contraseña actual.</span>

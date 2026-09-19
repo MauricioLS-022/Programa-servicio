@@ -103,7 +103,7 @@
                     <div class="input-wrapper both-icons">
                         <span class="material-symbols-outlined input-icon">lock</span>
                         <input type="password" id="password" name="password" value="" placeholder="Contraseña" {% if not is_edit %}required{% endif %}>
-                        <span class="material-symbols-outlined input-icon clickable">visibility</span>
+                        <span class="material-symbols-outlined input-icon clickable" role="button" tabindex="0" aria-label="Mostrar contraseña" title="Mostrar contraseña">visibility</span>
                     </div>
                     <span class="input-hint">Mínimo 8 caracteres, incluir mayúsculas y números.{% if is_edit %} Deja en blanco para conservar la contraseña actual.{% endif %}</span>
                 </div>

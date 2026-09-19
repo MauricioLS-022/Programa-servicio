@@ -104,5 +104,37 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    // Alternancia de visibilidad de contraseñas (Toggle Password Visibility) mediante delegación
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.input-wrapper .input-icon.clickable, .btn-toggle-password');
+        if (!btn) return;
+        e.preventDefault();
+
+        const wrapper = btn.closest('.input-wrapper');
+        const input = wrapper ? wrapper.querySelector('input') : document.getElementById(btn.dataset.target);
+        if (!input) return;
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+
+        const icon = btn.classList.contains('material-symbols-outlined')
+            ? btn
+            : btn.querySelector('.material-symbols-outlined');
+
+        if (icon) {
+            icon.textContent = isPassword ? 'visibility_off' : 'visibility';
+        }
+        btn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        btn.setAttribute('title', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const btn = e.target.closest('.input-wrapper .input-icon.clickable, .btn-toggle-password');
+        if (!btn) return;
+        e.preventDefault();
+        btn.click();
+    });
 });
 

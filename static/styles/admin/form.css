@@ -169,9 +169,14 @@
     font-size: 1.15rem;
     pointer-events: auto; /* El usuario puede hacer clic aquí */
     cursor: pointer;
+    user-select: none;
     transition: color 0.2s;
 }
-.both-icons .input-icon.clickable:hover { color: var(--primary); }
+.both-icons .input-icon.clickable:hover,
+.both-icons .input-icon.clickable:focus-visible {
+    color: var(--primary);
+    outline: none;
+}
 .both-icons input {
     padding-left: 2.35rem;
     padding-right: 2.35rem;
