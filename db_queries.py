@@ -217,6 +217,48 @@ def formatear_fecha_corta(fecha_val) -> str:
     return str(fecha_val)
 
 
+def formatear_mes_nombre(fecha_val) -> str:
+    """Formatea una fecha retornando el nombre abreviado del mes en español (ej. 'Ene', 'Feb')."""
+    if not fecha_val:
+        return ''
+    meses_abr = {
+        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
+    }
+    if isinstance(fecha_val, str):
+        f_str = fecha_val.strip()
+        try:
+            fecha_val = date.fromisoformat(f_str[:10])
+        except Exception:
+            try:
+                fecha_val = datetime.strptime(f_str[:10], '%Y-%m-%d').date()
+            except Exception:
+                return f_str
+    if hasattr(fecha_val, 'month'):
+        return meses_abr.get(fecha_val.month, '')
+    return str(fecha_val)
+
+
+def _obtener_rango_periodo(periodo='semana'):
+    """Retorna (fecha_inicio, fecha_fin) para el período solicitado según el calendario natural."""
+    hoy = date.today()
+    if periodo == 'mes':
+        inicio = date(hoy.year, hoy.month, 1)
+        if hoy.month == 12:
+            fin = date(hoy.year, 12, 31)
+        else:
+            fin = date(hoy.year, hoy.month + 1, 1) - timedelta(days=1)
+        return inicio, fin
+    elif periodo == 'anio':
+        return date(hoy.year, 1, 1), date(hoy.year, 12, 31)
+    return hoy - timedelta(days=7), hoy
+
+
+def _periodo_a_fecha(periodo='semana'):
+    """Convierte un período ('semana', 'mes', 'anio') a la fecha límite desde."""
+    return _obtener_rango_periodo(periodo)[0]
+
+
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
@@ -240,15 +282,15 @@ def _ensure_currency_columns(cursor):
         pass
 
 
-def get_metricas_generales(conn):
-    """Query real de métricas generales de toda la iglesia."""
+def get_metricas_generales(conn, periodo='semana', include_alertas=True):
+    """Query real de métricas generales de toda la iglesia según el período ('semana', 'mes', 'anio')."""
     cur = conn.cursor()
     _ensure_currency_columns(cur)
 
     hoy = date.today()
-    hace_7_dias = hoy - timedelta(days=7)
+    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo)
 
-    # --- KPIs principales (unificados a la semana activa analizada: últimos 7 días) ---
+    # --- KPIs principales (filtrados por el período analizado) ---
     try:
         cur.execute("""
             SELECT
@@ -266,8 +308,8 @@ def get_metricas_generales(conn):
                 COUNT(DISTINCT rep.cdp_id) AS reportes_enviados
             FROM reporte rep
             JOIN cdp c ON rep.cdp_id = c.id
-            WHERE c.is_active = 1 AND rep.fecha >= %s
-        """, (hace_7_dias,))
+            WHERE c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+        """, (fecha_desde, fecha_hasta))
         kpis = cur.fetchone() or {}
     except Exception:
         kpis = {}
@@ -276,34 +318,28 @@ def get_metricas_generales(conn):
     cur.execute("SELECT COUNT(*) AS total FROM cdp WHERE is_active = 1")
     total_casas = cur.fetchone()['total']
 
-    # Cumplimiento: casas activas con reporte en los últimos 7 días / total casas activas
-    cur.execute("""
-        SELECT COUNT(DISTINCT r.cdp_id) AS con_reporte
-        FROM reporte r
-        JOIN cdp c ON r.cdp_id = c.id
-        WHERE c.is_active = 1 AND r.fecha >= %s
-    """, (hace_7_dias,))
-    con_reporte = cur.fetchone()['con_reporte']
+    # Cumplimiento: casas activas con reporte en el período analizado / total casas activas
+    con_reporte = int(kpis.get('reportes_enviados', 0) or 0)
     cumplimiento = round((con_reporte / total_casas * 100) if total_casas > 0 else 0)
     casas_pendientes = max(total_casas - con_reporte, 0)
     total_sin_reporte_7d = casas_pendientes
 
-    # Lista de casas activas sin reporte en los últimos 7 días
+    # Lista de casas activas sin reporte en el período analizado
     cur.execute("""
         SELECT c.id, c.codigo
         FROM cdp c
         WHERE c.is_active = 1
           AND NOT EXISTS (
               SELECT 1 FROM reporte r
-              WHERE r.cdp_id = c.id AND r.fecha >= %s
+              WHERE r.cdp_id = c.id AND r.fecha BETWEEN %s AND %s
           )
         ORDER BY c.codigo
-    """, (hace_7_dias,))
+    """, (fecha_desde, fecha_hasta))
     faltantes_global = cur.fetchall() or []
     casas_sin_reporte_ids = [f['id'] for f in faltantes_global]
     casas_sin_reporte_codigos = [f['codigo'] for f in faltantes_global]
 
-    # --- Distribución de la semana activa (coherente con total_asistencia y donut) ---
+    # --- Distribución del período (coherente con total_asistencia y donut) ---
     distribucion = {
         'regulares': int(kpis.get('regulares', 0) or 0),
         'ninos': int(kpis.get('ninos', 0) or 0),
@@ -311,42 +347,119 @@ def get_metricas_generales(conn):
         'comprometidos': int(kpis.get('comprometidos', 0) or 0),
     }
 
-    # --- Tendencia: últimas 6 a 8 semanas agrupadas consecutivas ---
-    cur.execute("""
-        SELECT
-            DATE_SUB(DATE(rep.fecha), INTERVAL WEEKDAY(rep.fecha) DAY) AS semana_inicio,
-            SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia
-        FROM reporte rep
-        JOIN cdp c ON rep.cdp_id = c.id
-        WHERE c.is_active = 1 AND rep.fecha IS NOT NULL
-        GROUP BY semana_inicio
-        ORDER BY semana_inicio DESC
-        LIMIT 8
-    """)
-    rows_tendencia = list(cur.fetchall() or [])
-    rows_tendencia.reverse()
-    max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=1) or 1
-    tendencia = [
-        {
-            'semana': formatear_fecha_corta(r['semana_inicio']),
-            'asistencia': int(r['asistencia']) if r['asistencia'] else 0,
-            'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
-            'fecha_completa': str(r['semana_inicio']),
-        }
-        for r in rows_tendencia
-    ]
+    # --- Tendencia adaptada al período ---
+    if periodo == 'anio':
+        # Agrupación mensual en el año (solo meses con reportes/asistencia de momento)
+        cur.execute("""
+            SELECT
+                MONTH(rep.fecha) AS num_mes,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+            GROUP BY num_mes
+            HAVING asistencia > 0
+            ORDER BY num_mes ASC
+        """, (fecha_desde, fecha_hasta))
+        rows = cur.fetchall() or []
+        meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        if rows:
+            tendencia = [
+                {
+                    'semana': meses_nombres[r['num_mes']],
+                    'asistencia': int(r['asistencia'] or 0),
+                    'porcentaje': 0,
+                    'fecha_completa': f"{meses_completos[r['num_mes']]} {hoy.year}",
+                }
+                for r in rows
+            ]
+        else:
+            m_curr = hoy.month
+            tendencia = [
+                {
+                    'semana': meses_nombres[m_curr],
+                    'asistencia': 0,
+                    'porcentaje': 0,
+                    'fecha_completa': f"{meses_completos[m_curr]} {hoy.year}",
+                }
+            ]
+        max_asistencia = max((item['asistencia'] for item in tendencia), default=0)
+        for item in tendencia:
+            item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
+    elif periodo == 'mes':
+        # Agrupación semanal en el mes calendario actual (Semanas 1 a 4/5)
+        cur.execute("""
+            SELECT
+                CASE
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 1 AND 7 THEN 1
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 8 AND 14 THEN 2
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 15 AND 21 THEN 3
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 22 AND 28 THEN 4
+                    ELSE 5
+                END AS num_semana,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+            GROUP BY num_semana
+            ORDER BY num_semana ASC
+        """, (fecha_desde, fecha_hasta))
+        semanas_map = {row['num_semana']: int(row['asistencia'] or 0) for row in (cur.fetchall() or [])}
+        num_dias_mes = fecha_hasta.day
+        total_semanas_mes = 5 if num_dias_mes > 28 else 4
+        tendencia = []
+        for w in range(1, total_semanas_mes + 1):
+            dia_ini = 1 + (w - 1) * 7
+            dia_fin = min(w * 7, num_dias_mes)
+            d_ini = date(hoy.year, hoy.month, dia_ini)
+            d_fin = date(hoy.year, hoy.month, dia_fin)
+            tendencia.append({
+                'semana': f"Sem {w}",
+                'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
+                'asistencia': semanas_map.get(w, 0),
+                'porcentaje': 0,
+                'fecha_completa': f"Semana {w} ({formatear_fecha_corta(d_ini)} - {formatear_fecha_corta(d_fin)})",
+            })
+        max_asistencia = max((item['asistencia'] for item in tendencia), default=0)
+        for item in tendencia:
+            item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
+    else:
+        # Período semanal: Desglose individual de asistencia por cada Red en esta semana
+        cur.execute("""
+            SELECT
+                r.id,
+                r.nombre AS nombre_red,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM red r
+            LEFT JOIN cdp c ON c.red_id = r.id AND c.is_active = 1
+            LEFT JOIN reporte rep ON rep.cdp_id = c.id AND rep.fecha BETWEEN %s AND %s
+            GROUP BY r.id, r.nombre
+            ORDER BY r.id ASC
+        """, (fecha_desde, fecha_hasta))
+        rows_tendencia = cur.fetchall() or []
+        max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=0)
+        tendencia = [
+            {
+                'semana': r['nombre_red'],
+                'asistencia': int(r['asistencia'] or 0),
+                'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
+                'fecha_completa': f"{r['nombre_red']} · Esta semana",
+            }
+            for r in rows_tendencia
+        ]
     promedio_tendencia = round(sum(item['asistencia'] for item in tendencia) / len(tendencia)) if tendencia else 0
 
-    # --- Ranking de redes (Base: Casas activas, Ventana: últimos 7 días) restringido al Top 3 ---
+    # --- Ranking de redes (Base: Casas activas, Ventana: período analizado) restringido al Top 3 ---
     cur.execute("""
         SELECT
             r.nombre AS nombre,
             COUNT(DISTINCT c.id) AS total_casas,
-            COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END) AS casas_reportadas,
-            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
+            COUNT(DISTINCT CASE WHEN rep.fecha BETWEEN %s AND %s THEN rep.cdp_id END) AS casas_reportadas,
+            COALESCE(SUM(CASE WHEN rep.fecha BETWEEN %s AND %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
             COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total,
             ROUND(
-                COUNT(DISTINCT CASE WHEN rep.fecha >= %s THEN rep.cdp_id END)
+                COUNT(DISTINCT CASE WHEN rep.fecha BETWEEN %s AND %s THEN rep.cdp_id END)
                 / GREATEST(COUNT(DISTINCT c.id), 1) * 100
             ) AS cumplimiento,
             COALESCE(CONCAT(u.nombre, ' ', u.apellido), 'Sin supervisor') AS supervisor
@@ -356,7 +469,7 @@ def get_metricas_generales(conn):
         LEFT JOIN usuario u ON r.supervisor_id = u.id
         GROUP BY r.id, r.nombre, u.nombre, u.apellido
         ORDER BY cumplimiento DESC, asistencia_semana DESC, asistencia_total DESC
-    """, (hace_7_dias, hace_7_dias, hace_7_dias))
+    """, (fecha_desde, fecha_hasta, fecha_desde, fecha_hasta, fecha_desde, fecha_hasta))
     ranking = cur.fetchall() or []
     for r in ranking:
         n_clean = (r['nombre'] or '').lower().strip()
@@ -379,41 +492,44 @@ def get_metricas_generales(conn):
     # Restringir ranking de redes al podio de los 3 primeros
     ranking = ranking[:3]
 
-    # --- Alertas: casas activas sin reporte en 14+ días ---
-    cur.execute("""
-        SELECT
-            c.codigo,
-            c.anfitrion AS nombre,
-            r.nombre AS red,
-            DATEDIFF(CURDATE(), MAX(rep.fecha)) AS dias_sin_reporte,
-            COALESCE(
-                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
-                (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
-                'Sin asignar'
-            ) AS lider,
-            COALESCE(c.telefono, (SELECT l.telefono FROM lider l WHERE l.cdp_id = c.id AND l.telefono IS NOT NULL LIMIT 1), '') AS telefono
-        FROM cdp c
-        LEFT JOIN reporte rep ON rep.cdp_id = c.id
-        LEFT JOIN red r ON c.red_id = r.id
-        LEFT JOIN usuario u ON c.usuario_id = u.id
-        WHERE c.is_active = 1
-        GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, r.nombre, u.nombre, u.apellido
-        HAVING dias_sin_reporte > 14 OR dias_sin_reporte IS NULL
-        ORDER BY dias_sin_reporte DESC
-    """)
-    alertas_raw = cur.fetchall() or []
-    alertas = [
-        {
-            'nombre': a['nombre'] or a['codigo'],
-            'codigo': a['codigo'],
-            'red': a['red'] or '',
-            'dias_sin_reporte': a['dias_sin_reporte'] if a['dias_sin_reporte'] else 999,
-            'motivo': 'Sin reporte reciente' if a['dias_sin_reporte'] is None else f"{a['dias_sin_reporte']} días sin reporte",
-            'lider': a['lider'] or 'Sin asignar',
-            'telefono': a['telefono'] or '',
-        }
-        for a in alertas_raw
-    ]
+    # --- Alertas: casas activas sin reporte en 14+ días (umbral fijo por regla institucional) ---
+    if include_alertas:
+        cur.execute("""
+            SELECT
+                c.codigo,
+                c.anfitrion AS nombre,
+                r.nombre AS red,
+                DATEDIFF(CURDATE(), MAX(rep.fecha)) AS dias_sin_reporte,
+                COALESCE(
+                    (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' LIMIT 1),
+                    (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1),
+                    'Sin asignar'
+                ) AS lider,
+                COALESCE(c.telefono, (SELECT l.telefono FROM lider l WHERE l.cdp_id = c.id AND l.telefono IS NOT NULL LIMIT 1), '') AS telefono
+            FROM cdp c
+            LEFT JOIN reporte rep ON rep.cdp_id = c.id
+            LEFT JOIN red r ON c.red_id = r.id
+            LEFT JOIN usuario u ON c.usuario_id = u.id
+            WHERE c.is_active = 1
+            GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, r.nombre, u.nombre, u.apellido
+            HAVING dias_sin_reporte > 14 OR dias_sin_reporte IS NULL
+            ORDER BY dias_sin_reporte DESC
+        """)
+        alertas_raw = cur.fetchall() or []
+        alertas = [
+            {
+                'nombre': a['nombre'] or a['codigo'],
+                'codigo': a['codigo'],
+                'red': a['red'] or '',
+                'dias_sin_reporte': a['dias_sin_reporte'] if a['dias_sin_reporte'] else 999,
+                'motivo': 'Sin reporte reciente' if a['dias_sin_reporte'] is None else f"{a['dias_sin_reporte']} días sin reporte",
+                'lider': a['lider'] or 'Sin asignar',
+                'telefono': a['telefono'] or '',
+            }
+            for a in alertas_raw
+        ]
+    else:
+        alertas = []
 
     cur.close()
 
@@ -440,14 +556,15 @@ def get_metricas_generales(conn):
         'promedio_tendencia': promedio_tendencia,
         'ranking_redes': ranking,
         'alertas': alertas,
+        'periodo': periodo,
     }
 
 
 # ---------------------------------------------------------------------------
 # Vista Red
 # ---------------------------------------------------------------------------
-def get_metricas_red(conn, red_id):
-    """Query real de métricas para una red específica."""
+def get_metricas_red(conn, red_id, periodo='semana'):
+    """Query real de métricas para una red específica según el período ('semana', 'mes', 'anio')."""
     cur = conn.cursor()
 
     # --- Datos de la red + supervisor ---
@@ -471,9 +588,9 @@ def get_metricas_red(conn, red_id):
     casas_activas_row = cur.fetchone()
     casas_activas = int(casas_activas_row['total']) if casas_activas_row else 0
 
-    # --- KPIs de la red (Base: Casas activas, Ventana: semana activa analizada, últimos 7 días) ---
+    # --- KPIs de la red (Base: Casas activas, Ventana: período analizado) ---
     hoy = date.today()
-    hace_7_dias = hoy - timedelta(days=7)
+    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo)
     try:
         cur.execute("""
             SELECT
@@ -488,8 +605,8 @@ def get_metricas_red(conn, red_id):
                 COUNT(DISTINCT rep.cdp_id) AS casas_con_reporte
             FROM reporte rep
             JOIN cdp c ON rep.cdp_id = c.id
-            WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha >= %s
-        """, (red_id, hace_7_dias))
+            WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+        """, (red_id, fecha_desde, fecha_hasta))
         kpis = cur.fetchone() or {}
     except Exception:
         kpis = {}
@@ -497,7 +614,7 @@ def get_metricas_red(conn, red_id):
     asistencia_total = int(kpis.get('asistencia_total', 0) or 0)
     promedio_casa = round(asistencia_total / casas_activas) if casas_activas > 0 else 0
 
-    # --- Distribución consolidada de la red en la semana activa (coherente con asistencia_total y donut) ---
+    # --- Distribución consolidada de la red en el período activo ---
     distribucion = {
         'regulares': int(kpis.get('regulares', 0) or 0),
         'ninos': int(kpis.get('ninos', 0) or 0),
@@ -513,8 +630,8 @@ def get_metricas_red(conn, red_id):
             c.anfitrion,
             c.telefono,
             c.is_active,
-            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
-            COALESCE(SUM(CASE WHEN rep.fecha >= %s THEN rep.nro_visitas ELSE 0 END), 0) AS visitas_semana,
+            COALESCE(SUM(CASE WHEN rep.fecha BETWEEN %s AND %s THEN rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos ELSE 0 END), 0) AS asistencia_semana,
+            COALESCE(SUM(CASE WHEN rep.fecha BETWEEN %s AND %s THEN rep.nro_visitas ELSE 0 END), 0) AS visitas_semana,
             COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia_total_cdp,
             MAX(rep.fecha) AS ultimo_reporte,
             COALESCE(
@@ -529,17 +646,18 @@ def get_metricas_red(conn, red_id):
         WHERE c.red_id = %s
         GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, c.is_active, u.nombre, u.apellido
         ORDER BY c.codigo
-    """, (hace_7_dias, hace_7_dias, red_id))
+    """, (fecha_desde, fecha_hasta, fecha_desde, fecha_hasta, red_id))
     casas_raw = cur.fetchall() or []
 
+    dias_limite = 30 if periodo == 'mes' else (365 if periodo == 'anio' else 7)
     casas = []
     for c in casas_raw:
         is_act = bool(c.get('is_active', 1)) if c.get('is_active') is not None else True
         dias = c['dias_desde_reporte']
-        rep_semana = (dias is not None and dias <= 7)
+        rep_periodo = (dias is not None and dias <= dias_limite)
         if not is_act:
             estado = 'pausada'
-        elif rep_semana:
+        elif rep_periodo:
             estado = 'verde'
         elif dias is not None and dias <= 14:
             estado = 'amarillo'
@@ -556,13 +674,14 @@ def get_metricas_red(conn, red_id):
             'asistencia': asist,
             'estado': estado,
             'is_active': is_act,
-            'reporte_reciente_7d': rep_semana,
+            'reporte_reciente_7d': (dias is not None and dias <= 7),
+            'reporte_reciente_periodo': rep_periodo,
             'lider': c['lider'] or 'Sin asignar',
             'visitas': vis,
             'telefono': c.get('telefono') or '',
         })
 
-    # --- Alertas zonal: solo casas activas con >14 días sin reporte ---
+    # --- Alertas zonal: solo casas activas con >14 días sin reporte (umbral fijo institucional) ---
     alertas_zonal = [
         {
             'nombre': c.get('anfitrion') or f"Casa {c['codigo']}",
@@ -588,15 +707,8 @@ def get_metricas_red(conn, red_id):
             'lider': best['lider'],
         }
 
-    # --- Cumplimiento de la red en los últimos 7 días (Base: Casas activas) ---
-    cur.execute("""
-        SELECT COUNT(DISTINCT rep.cdp_id) AS con_reporte
-        FROM reporte rep
-        JOIN cdp c ON rep.cdp_id = c.id
-        WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha >= %s
-    """, (red_id, hace_7_dias))
-    con_reporte_row = cur.fetchone()
-    con_reporte = int(con_reporte_row['con_reporte']) if con_reporte_row else 0
+    # --- Cumplimiento de la red en el período analizado (Base: Casas activas) ---
+    con_reporte = int(kpis.get('casas_con_reporte', 0) or 0)
     cumplimiento = round((con_reporte / casas_activas * 100) if casas_activas > 0 else 0)
     casas_pendientes = max(casas_activas - con_reporte, 0)
     total_sin_reporte_7d = casas_pendientes
@@ -607,10 +719,10 @@ def get_metricas_red(conn, red_id):
         WHERE c.red_id = %s AND c.is_active = 1
           AND NOT EXISTS (
               SELECT 1 FROM reporte r
-              WHERE r.cdp_id = c.id AND r.fecha >= %s
+              WHERE r.cdp_id = c.id AND r.fecha BETWEEN %s AND %s
           )
         ORDER BY c.codigo
-    """, (red_id, hace_7_dias))
+    """, (red_id, fecha_desde, fecha_hasta))
     faltantes_red = cur.fetchall() or []
     casas_sin_reporte_ids = [f['id'] for f in faltantes_red]
     casas_sin_reporte_codigos = [f['codigo'] for f in faltantes_red]
@@ -631,30 +743,108 @@ def get_metricas_red(conn, red_id):
     """, (red_id,))
     lideres_red = cur.fetchall() or []
 
-    # --- Tendencia de asistencia en la red (últimas 8 semanas agrupadas) ---
-    cur.execute("""
-        SELECT
-            DATE_SUB(DATE(rep.fecha), INTERVAL WEEKDAY(rep.fecha) DAY) AS semana_inicio,
-            SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos) AS asistencia
-        FROM reporte rep
-        JOIN cdp c ON rep.cdp_id = c.id
-        WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha IS NOT NULL
-        GROUP BY semana_inicio
-        ORDER BY semana_inicio DESC
-        LIMIT 8
-    """, (red_id,))
-    rows_tendencia = list(cur.fetchall() or [])
-    rows_tendencia.reverse()
-    max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=1) or 1
-    tendencia_red = [
-        {
-            'semana': formatear_fecha_corta(r['semana_inicio']),
-            'asistencia': int(r['asistencia']) if r['asistencia'] else 0,
-            'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
-            'fecha_completa': str(r['semana_inicio']),
-        }
-        for r in rows_tendencia
-    ]
+    # --- Tendencia de asistencia en la red adaptada al período ---
+    if periodo == 'anio':
+        # Agrupación mensual en el año (solo meses con reportes/asistencia de momento)
+        cur.execute("""
+            SELECT
+                MONTH(rep.fecha) AS num_mes,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+            GROUP BY num_mes
+            HAVING asistencia > 0
+            ORDER BY num_mes ASC
+        """, (red_id, fecha_desde, fecha_hasta))
+        rows = cur.fetchall() or []
+        meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        if rows:
+            tendencia_red = [
+                {
+                    'semana': meses_nombres[r['num_mes']],
+                    'asistencia': int(r['asistencia'] or 0),
+                    'porcentaje': 0,
+                    'fecha_completa': f"{meses_completos[r['num_mes']]} {hoy.year}",
+                }
+                for r in rows
+            ]
+        else:
+            m_curr = hoy.month
+            tendencia_red = [
+                {
+                    'semana': meses_nombres[m_curr],
+                    'asistencia': 0,
+                    'porcentaje': 0,
+                    'fecha_completa': f"{meses_completos[m_curr]} {hoy.year}",
+                }
+            ]
+        max_asistencia = max((item['asistencia'] for item in tendencia_red), default=0)
+        for item in tendencia_red:
+            item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
+    elif periodo == 'mes':
+        # Agrupación semanal en el mes calendario actual (Semanas 1 a 4/5)
+        cur.execute("""
+            SELECT
+                CASE
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 1 AND 7 THEN 1
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 8 AND 14 THEN 2
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 15 AND 21 THEN 3
+                    WHEN DAYOFMONTH(rep.fecha) BETWEEN 22 AND 28 THEN 4
+                    ELSE 5
+                END AS num_semana,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM reporte rep
+            JOIN cdp c ON rep.cdp_id = c.id
+            WHERE c.red_id = %s AND c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+            GROUP BY num_semana
+            ORDER BY num_semana ASC
+        """, (red_id, fecha_desde, fecha_hasta))
+        semanas_map = {row['num_semana']: int(row['asistencia'] or 0) for row in (cur.fetchall() or [])}
+        num_dias_mes = fecha_hasta.day
+        total_semanas_mes = 5 if num_dias_mes > 28 else 4
+        tendencia_red = []
+        for w in range(1, total_semanas_mes + 1):
+            dia_ini = 1 + (w - 1) * 7
+            dia_fin = min(w * 7, num_dias_mes)
+            d_ini = date(hoy.year, hoy.month, dia_ini)
+            d_fin = date(hoy.year, hoy.month, dia_fin)
+            tendencia_red.append({
+                'semana': f"Sem {w}",
+                'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
+                'asistencia': semanas_map.get(w, 0),
+                'porcentaje': 0,
+                'fecha_completa': f"Semana {w} ({formatear_fecha_corta(d_ini)} - {formatear_fecha_corta(d_fin)})",
+            })
+        max_asistencia = max((item['asistencia'] for item in tendencia_red), default=0)
+        for item in tendencia_red:
+            item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
+    else:
+        # Período semanal: Desglose individual de asistencia por cada Casa de Paz en esta semana
+        cur.execute("""
+            SELECT
+                c.id,
+                c.codigo,
+                c.anfitrion,
+                COALESCE(SUM(rep.nro_regulares + rep.nro_niños + rep.nro_visitas + rep.nro_comprometidos), 0) AS asistencia
+            FROM cdp c
+            LEFT JOIN reporte rep ON rep.cdp_id = c.id AND rep.fecha BETWEEN %s AND %s
+            WHERE c.red_id = %s AND c.is_active = 1
+            GROUP BY c.id, c.codigo, c.anfitrion
+            ORDER BY c.codigo ASC
+        """, (fecha_desde, fecha_hasta, red_id))
+        rows_tendencia = cur.fetchall() or []
+        max_asistencia = max((int(r['asistencia'] or 0) for r in rows_tendencia), default=0)
+        tendencia_red = [
+            {
+                'semana': r['codigo'],
+                'asistencia': int(r['asistencia'] or 0),
+                'porcentaje': round(int(r['asistencia'] or 0) / max_asistencia * 100) if max_asistencia > 0 else 0,
+                'fecha_completa': f"{r['codigo']} - {r['anfitrion'] or 'Casa de Paz'}",
+            }
+            for r in rows_tendencia
+        ]
     promedio_tendencia = round(sum(item['asistencia'] for item in tendencia_red) / len(tendencia_red)) if tendencia_red else 0
 
     # --- Actividad reciente de la red (últimos 5 reportes) ---
@@ -739,13 +929,14 @@ def get_metricas_red(conn, red_id):
         'tendencia_semanas': tendencia_red,
         'promedio_tendencia': promedio_tendencia,
         'actividad_reciente': actividad_reciente,
+        'periodo': periodo,
     }
 
 
 # ---------------------------------------------------------------------------
 # Vista Casa de Paz
 # ---------------------------------------------------------------------------
-def get_metricas_cdp(conn, cdp_id):
+def get_metricas_cdp(conn, cdp_id, periodo='semana'):
     """Query real de métricas para una Casa de Paz específica."""
     cur = conn.cursor()
 

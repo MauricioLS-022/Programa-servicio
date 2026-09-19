@@ -457,12 +457,30 @@ def get_mock_reportes():
 
 
 # ---------------------------------------------------------------------------
+def _mock_obtener_rango_periodo(periodo='semana'):
+    """Calcula (fecha_inicio, fecha_fin) para datos mock según el período natural."""
+    hoy = date.today()
+    if periodo == 'mes':
+        inicio = date(hoy.year, hoy.month, 1)
+        fin = date(hoy.year, 12, 31) if hoy.month == 12 else date(hoy.year, hoy.month + 1, 1) - timedelta(days=1)
+        return inicio, fin
+    elif periodo == 'anio':
+        return date(hoy.year, 1, 1), date(hoy.year, 12, 31)
+    return hoy - timedelta(days=7), hoy
+
+
+def _mock_periodo_a_fecha(periodo='semana'):
+    """Calcula la fecha límite desde según el período para datos mock."""
+    return _mock_obtener_rango_periodo(periodo)[0]
+
+
+# ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
-def get_mock_generales():
-    """Métricas mock para la vista general de la iglesia."""
+def get_mock_generales(periodo='semana'):
+    """Métricas mock para la vista general de la iglesia según el período ('semana', 'mes', 'anio')."""
     hoy = date.today()
-    hace_7_dias = hoy - timedelta(days=7)
+    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo)
 
     reportes = get_mock_reportes()
     casas = get_casas_demo()
@@ -472,58 +490,122 @@ def get_mock_generales():
     total_casas = len(casas_activas)
     casas_activas_ids = {c['id'] for c in casas_activas}
 
-    # Reportes emitidos en la semana activa (últimos 7 días) de casas activas
-    reportes_semana = []
-    casas_con_rep_7d_ids = set()
+    # Reportes emitidos en el período activo de casas activas
+    reportes_periodo = []
+    casas_con_rep_ids = set()
     for r in reportes:
         f = r.get('fecha')
         if f and r.get('cdp_id') in casas_activas_ids:
             try:
                 f_date = date.fromisoformat(str(f)[:10])
-                if f_date >= hace_7_dias:
-                    reportes_semana.append(r)
-                    casas_con_rep_7d_ids.add(r['cdp_id'])
+                if fecha_desde <= f_date <= fecha_hasta:
+                    reportes_periodo.append(r)
+                    casas_con_rep_ids.add(r['cdp_id'])
             except Exception:
                 pass
 
-    total_asistencia = sum(r['asistencia'] for r in reportes_semana)
-    total_ofrendas_usd = sum(r['ofrendas_usd'] for r in reportes_semana)
-    total_ofrendas_bs = sum(r['ofrendas_bs'] for r in reportes_semana)
-    total_visitas = sum(r['nro_visitas'] for r in reportes_semana)
-    total_reconciliaciones = sum(r['reconciliaciones'] for r in reportes_semana)
-    total_confesiones = sum(r['confesiones'] for r in reportes_semana)
-    total_cestas = sum(r['cesta_amor'] for r in reportes_semana)
+    total_asistencia = sum(r['asistencia'] for r in reportes_periodo)
+    total_ofrendas_usd = sum(r['ofrendas_usd'] for r in reportes_periodo)
+    total_ofrendas_bs = sum(r['ofrendas_bs'] for r in reportes_periodo)
+    total_visitas = sum(r['nro_visitas'] for r in reportes_periodo)
+    total_reconciliaciones = sum(r['reconciliaciones'] for r in reportes_periodo)
+    total_confesiones = sum(r['confesiones'] for r in reportes_periodo)
+    total_cestas = sum(r['cesta_amor'] for r in reportes_periodo)
 
-    casas_con_reporte = len([c for c in casas_activas if c['id'] in casas_con_rep_7d_ids])
+    casas_con_reporte = len([c for c in casas_activas if c['id'] in casas_con_rep_ids])
     cumplimiento = round((casas_con_reporte / total_casas * 100) if total_casas > 0 else 0)
-    faltantes = [c for c in casas_activas if c['id'] not in casas_con_rep_7d_ids]
+    faltantes = [c for c in casas_activas if c['id'] not in casas_con_rep_ids]
     total_sin_reporte_7d = len(faltantes)
     casas_sin_reporte_ids = [c['id'] for c in faltantes]
     casas_sin_reporte_codigos = [c.get('codigo') or c.get('nombre') for c in faltantes]
     casas_pendientes = total_sin_reporte_7d
 
-    # 8 semanas consecutivas con etiquetas de fecha corta (ej. '28 Jul', '04 Ago', ...)
-    tendencia_raw = [
-        {'dias_atras': 49, 'asistencia': 48},
-        {'dias_atras': 42, 'asistencia': 52},
-        {'dias_atras': 35, 'asistencia': 55},
-        {'dias_atras': 28, 'asistencia': 58},
-        {'dias_atras': 21, 'asistencia': 64},
-        {'dias_atras': 14, 'asistencia': 62},
-        {'dias_atras': 7,  'asistencia': 68},
-        {'dias_atras': 0,  'asistencia': 72},
-    ]
-    max_asist_tend = max((t['asistencia'] for t in tendencia_raw), default=1) or 1
-    tendencia_semanas = [
-        {
-            'semana': formatear_fecha_corta(hoy - timedelta(days=t['dias_atras'])),
-            'fecha_completa': (hoy - timedelta(days=t['dias_atras'])).strftime('%d %b %Y'),
-            'asistencia': t['asistencia'],
-            'porcentaje': round(t['asistencia'] / max_asist_tend * 100) if max_asist_tend > 0 else 0,
-        }
-        for t in tendencia_raw
-    ]
-    promedio_tendencia = round(sum(t['asistencia'] for t in tendencia_raw) / len(tendencia_raw)) if tendencia_raw else 0
+    # Tendencia según período
+    meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+    if periodo == 'anio':
+        # 12 meses fijos del año en curso
+        asist_mes = {m: 0 for m in range(1, 13)}
+        for r in reportes:
+            f = r.get('fecha')
+            if f:
+                try:
+                    fd = date.fromisoformat(str(f)[:10])
+                    if fd.year == hoy.year:
+                        asist_mes[fd.month] += r.get('asistencia', 0)
+                except Exception:
+                    pass
+        if sum(asist_mes.values()) == 0:
+            # Simular meses activos hasta el mes en curso (máx 6 meses)
+            for m in range(max(1, hoy.month - 4), hoy.month + 1):
+                asist_mes[m] = 120 + m * 8
+        meses_activos = [m for m in range(1, 13) if asist_mes[m] > 0]
+        if not meses_activos:
+            meses_activos = [hoy.month]
+        max_asist_tend = max((asist_mes[m] for m in meses_activos), default=1) or 1
+        tendencia_semanas = [
+            {
+                'semana': meses_nombres[m],
+                'fecha_completa': f"{meses_completos[m]} {hoy.year}",
+                'asistencia': asist_mes[m],
+                'porcentaje': round(asist_mes[m] / max_asist_tend * 100) if max_asist_tend > 0 else 0,
+            }
+            for m in meses_activos
+        ]
+    elif periodo == 'mes':
+        # Semanas del mes calendario actual (Sem 1 a 4/5)
+        num_dias_mes = fecha_hasta.day
+        total_semanas_mes = 5 if num_dias_mes > 28 else 4
+        asist_sem = {w: 0 for w in range(1, total_semanas_mes + 1)}
+        for r in reportes_periodo:
+            try:
+                fd = date.fromisoformat(str(r['fecha'])[:10])
+                day = fd.day
+                w = 1 if day <= 7 else (2 if day <= 14 else (3 if day <= 21 else (4 if day <= 28 else 5)))
+                if w in asist_sem:
+                    asist_sem[w] += r.get('asistencia', 0)
+            except Exception:
+                pass
+        if sum(asist_sem.values()) == 0:
+            for w in range(1, total_semanas_mes + 1):
+                asist_sem[w] = 20 + w * 6
+        max_asist_tend = max(asist_sem.values(), default=1) or 1
+        tendencia_semanas = []
+        for w in range(1, total_semanas_mes + 1):
+            dia_ini = 1 + (w - 1) * 7
+            dia_fin = min(w * 7, num_dias_mes)
+            d_ini = date(hoy.year, hoy.month, dia_ini)
+            d_fin = date(hoy.year, hoy.month, dia_fin)
+            tendencia_semanas.append({
+                'semana': f"Sem {w}",
+                'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
+                'fecha_completa': f"Semana {w} ({formatear_fecha_corta(d_ini)} - {formatear_fecha_corta(d_fin)})",
+                'asistencia': asist_sem[w],
+                'porcentaje': round(asist_sem[w] / max_asist_tend * 100) if max_asist_tend > 0 else 0,
+            })
+    else:
+        # Período semanal: Desglose individual de asistencia por cada Red
+        redes = get_redes_demo()
+        asist_red = {r['nombre']: 0 for r in redes}
+        for r in reportes_periodo:
+            rn = r.get('red_nombre')
+            if rn in asist_red:
+                asist_red[rn] += r.get('asistencia', 0)
+        # Asegurar datos para demostración si no hay reportes en la semana
+        if sum(asist_red.values()) == 0:
+            asist_red = {'Red Hebrón': 30, 'Red Central': 25, 'Red Sur': 18}
+        max_asist_tend = max(asist_red.values(), default=1) or 1
+        tendencia_semanas = [
+            {
+                'semana': r['nombre'],
+                'fecha_completa': f"{r['nombre']} · Esta semana",
+                'asistencia': asist_red.get(r['nombre'], 0),
+                'porcentaje': round(asist_red.get(r['nombre'], 0) / max_asist_tend * 100) if max_asist_tend > 0 else 0,
+            }
+            for r in redes
+        ]
+    promedio_tendencia = round(sum(t['asistencia'] for t in tendencia_semanas) / len(tendencia_semanas)) if tendencia_semanas else 0
 
     return {
         'total_asistencia': total_asistencia,
@@ -541,12 +623,12 @@ def get_mock_generales():
         'casas_sin_reporte_ids': casas_sin_reporte_ids,
         'casas_sin_reporte_codigos': casas_sin_reporte_codigos,
         'casas_sin_reporte_7d': casas_sin_reporte_codigos,
-        'reportes_enviados': len(reportes_semana),
+        'reportes_enviados': len(reportes_periodo),
         'distribucion': {
-            'regulares': sum(r['nro_regulares'] for r in reportes_semana),
-            'ninos': sum(r['nro_niños'] for r in reportes_semana),
+            'regulares': sum(r['nro_regulares'] for r in reportes_periodo),
+            'ninos': sum(r['nro_niños'] for r in reportes_periodo),
             'visitas': total_visitas,
-            'comprometidos': sum(r['nro_comprometidos'] for r in reportes_semana),
+            'comprometidos': sum(r['nro_comprometidos'] for r in reportes_periodo),
         },
         'tendencia': tendencia_semanas,
         'tendencia_semanas': tendencia_semanas,
@@ -557,16 +639,17 @@ def get_mock_generales():
             {'nombre': 'Red Sur', 'cumplimiento': 0, 'asistencia': 0, 'asistencia_semana': 0, 'asistencia_total': 190, 'casas_reportadas': 0, 'total_casas': 1, 'supervisor': 'María López', 'color_class': 'sur'},
         ][:3],
         'alertas': [],
+        'periodo': periodo,
     }
 
 
 # ---------------------------------------------------------------------------
 # Vista Red
 # ---------------------------------------------------------------------------
-def get_mock_red(red_id):
-    """Métricas mock para la vista de una red específica."""
+def get_mock_red(red_id, periodo='semana'):
+    """Métricas mock para la vista de una red específica según el período ('semana', 'mes', 'anio')."""
     hoy = date.today()
-    hace_7_dias = hoy - timedelta(days=7)
+    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo)
 
     redes = get_redes_demo()
     red = next((r for r in redes if str(r['id']) == str(red_id)), None)
@@ -576,13 +659,14 @@ def get_mock_red(red_id):
 
     casas_red = [c for c in get_casas_demo() if c['red_id'] == rid]
     reportes_red = [rep for rep in get_mock_reportes() if rep['red_id'] == rid]
-    reportes_red_semana = []
+    reportes_red_periodo = []
     for rep in reportes_red:
         f = rep.get('fecha')
         if f:
             try:
-                if date.fromisoformat(str(f)[:10]) >= hace_7_dias:
-                    reportes_red_semana.append(rep)
+                fd = date.fromisoformat(str(f)[:10])
+                if fecha_desde <= fd <= fecha_hasta:
+                    reportes_red_periodo.append(rep)
             except Exception:
                 pass
 
@@ -591,25 +675,25 @@ def get_mock_red(red_id):
     casas_activas_red = [c for c in casas_red if bool(c.get('is_active', 1)) and c.get('estado') != 'pausada']
     total_casas_red = len(casas_activas_red)
 
-    casas_con_rep_7d = {r['cdp_id'] for r in reportes_red_semana}
+    casas_con_rep_ids = {r['cdp_id'] for r in reportes_red_periodo}
 
-    asistencia_total = sum(rep['asistencia'] for rep in reportes_red_semana)
+    asistencia_total = sum(rep['asistencia'] for rep in reportes_red_periodo)
     promedio_casa = round(asistencia_total / total_casas_red) if total_casas_red > 0 else 0
-    ofrendas_usd_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red_semana)
-    ofrendas_bs_total = sum(rep.get('ofrendas_bs', 0.0) for rep in reportes_red_semana)
-    ninos_total = sum(rep.get('nro_niños', 0) for rep in reportes_red_semana)
-    conversiones_total = sum(rep.get('confesiones', 0) for rep in reportes_red_semana)
+    ofrendas_usd_total = sum(rep.get('ofrendas_usd', 0.0) for rep in reportes_red_periodo)
+    ofrendas_bs_total = sum(rep.get('ofrendas_bs', 0.0) for rep in reportes_red_periodo)
+    ninos_total = sum(rep.get('nro_niños', 0) for rep in reportes_red_periodo)
+    conversiones_total = sum(rep.get('confesiones', 0) for rep in reportes_red_periodo)
 
     distribucion = {
-        'regulares': sum(rep.get('nro_regulares', 0) for rep in reportes_red_semana),
+        'regulares': sum(rep.get('nro_regulares', 0) for rep in reportes_red_periodo),
         'ninos': ninos_total,
-        'visitas': sum(rep.get('nro_visitas', 0) for rep in reportes_red_semana),
-        'comprometidos': sum(rep.get('nro_comprometidos', 0) for rep in reportes_red_semana),
+        'visitas': sum(rep.get('nro_visitas', 0) for rep in reportes_red_periodo),
+        'comprometidos': sum(rep.get('nro_comprometidos', 0) for rep in reportes_red_periodo),
     }
 
-    con_reporte = len([c for c in casas_activas_red if c['id'] in casas_con_rep_7d])
+    con_reporte = len([c for c in casas_activas_red if c['id'] in casas_con_rep_ids])
     cumplimiento = round((con_reporte / total_casas_red * 100) if total_casas_red > 0 else 0)
-    faltantes = [c for c in casas_activas_red if c['id'] not in casas_con_rep_7d]
+    faltantes = [c for c in casas_activas_red if c['id'] not in casas_con_rep_ids]
     total_sin_reporte_7d = len(faltantes)
     casas_sin_reporte_ids = [c['id'] for c in faltantes]
     casas_sin_reporte_codigos = [c.get('codigo') or c.get('nombre') for c in faltantes]
@@ -618,14 +702,14 @@ def get_mock_red(red_id):
     casas_cards = []
     for c in casas_red:
         is_act = bool(c.get('is_active', 1)) and c.get('estado') != 'pausada'
-        rep_7d = c['id'] in casas_con_rep_7d
-        rep_casa_sem = next((r for r in reportes_red_semana if r['cdp_id'] == c['id']), None)
-        asist_casa = rep_casa_sem['asistencia'] if rep_casa_sem else 0
-        vis_casa = rep_casa_sem['nro_visitas'] if rep_casa_sem else 0
+        rep_per = c['id'] in casas_con_rep_ids
+        rep_casa_per = next((r for r in reportes_red_periodo if r['cdp_id'] == c['id']), None)
+        asist_casa = rep_casa_per['asistencia'] if rep_casa_per else 0
+        vis_casa = rep_casa_per['nro_visitas'] if rep_casa_per else 0
 
         if not is_act:
             estado = 'pausada'
-        elif rep_7d:
+        elif rep_per:
             estado = 'verde'
         else:
             estado = 'amarillo'
@@ -637,7 +721,8 @@ def get_mock_red(red_id):
             'asistencia': asist_casa,
             'estado': estado,
             'is_active': is_act,
-            'reporte_reciente_7d': rep_7d,
+            'reporte_reciente_7d': rep_per,
+            'reporte_reciente_periodo': rep_per,
             'lider': c['lider'],
             'visitas': vis_casa
         })
@@ -662,30 +747,94 @@ def get_mock_red(red_id):
         'lider': best_growth['lider'] if best_growth else 'Líder',
     }
 
-    # Tendencia de asistencia de la red (8 semanas simuladas)
-    # Escalar proporcional al número de casas de la red
-    base_factor = max(total_casas_red, 1) * 8
-    tendencia_raw_red = [
-        {'dias_atras': 49, 'asistencia': base_factor + 2},
-        {'dias_atras': 42, 'asistencia': base_factor + 5},
-        {'dias_atras': 35, 'asistencia': base_factor + 3},
-        {'dias_atras': 28, 'asistencia': base_factor + 8},
-        {'dias_atras': 21, 'asistencia': base_factor + 10},
-        {'dias_atras': 14, 'asistencia': base_factor + 7},
-        {'dias_atras': 7,  'asistencia': base_factor + 12},
-        {'dias_atras': 0,  'asistencia': asistencia_total if asistencia_total > 0 else base_factor + 14},
-    ]
-    max_asist_red = max((t['asistencia'] for t in tendencia_raw_red), default=1) or 1
-    tendencia_semanas_red = [
-        {
-            'semana': formatear_fecha_corta(hoy - timedelta(days=t['dias_atras'])),
-            'fecha_completa': (hoy - timedelta(days=t['dias_atras'])).strftime('%d %b %Y'),
-            'asistencia': t['asistencia'],
-            'porcentaje': round(t['asistencia'] / max_asist_red * 100) if max_asist_red > 0 else 0,
-        }
-        for t in tendencia_raw_red
-    ]
-    promedio_tendencia_red = round(sum(t['asistencia'] for t in tendencia_raw_red) / len(tendencia_raw_red)) if tendencia_raw_red else 0
+    # Tendencia de asistencia de la red según período
+    meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+    if periodo == 'anio':
+        # 12 meses fijos del año en curso
+        asist_mes = {m: 0 for m in range(1, 13)}
+        for r in reportes_red:
+            f = r.get('fecha')
+            if f:
+                try:
+                    fd = date.fromisoformat(str(f)[:10])
+                    if fd.year == hoy.year:
+                        asist_mes[fd.month] += r.get('asistencia', 0)
+                except Exception:
+                    pass
+        base_factor = max(total_casas_red, 1) * 8
+        if sum(asist_mes.values()) == 0:
+            for m in range(max(1, hoy.month - 4), hoy.month + 1):
+                asist_mes[m] = base_factor + m * 4
+        meses_activos = [m for m in range(1, 13) if asist_mes[m] > 0]
+        if not meses_activos:
+            meses_activos = [hoy.month]
+        max_asist_red = max((asist_mes[m] for m in meses_activos), default=1) or 1
+        tendencia_semanas_red = [
+            {
+                'semana': meses_nombres[m],
+                'fecha_completa': f"{meses_completos[m]} {hoy.year}",
+                'asistencia': asist_mes[m],
+                'porcentaje': round(asist_mes[m] / max_asist_red * 100) if max_asist_red > 0 else 0,
+            }
+            for m in meses_activos
+        ]
+    elif periodo == 'mes':
+        # Semanas del mes calendario actual (Sem 1 a 4/5)
+        num_dias_mes = fecha_hasta.day
+        total_semanas_mes = 5 if num_dias_mes > 28 else 4
+        asist_sem = {w: 0 for w in range(1, total_semanas_mes + 1)}
+        for r in reportes_red_periodo:
+            try:
+                fd = date.fromisoformat(str(r['fecha'])[:10])
+                day = fd.day
+                w = 1 if day <= 7 else (2 if day <= 14 else (3 if day <= 21 else (4 if day <= 28 else 5)))
+                if w in asist_sem:
+                    asist_sem[w] += r.get('asistencia', 0)
+            except Exception:
+                pass
+        base_factor = max(total_casas_red, 1) * 8
+        if sum(asist_sem.values()) == 0:
+            for w in range(1, total_semanas_mes + 1):
+                asist_sem[w] = base_factor + w * 3
+        max_asist_red = max(asist_sem.values(), default=1) or 1
+        tendencia_semanas_red = []
+        for w in range(1, total_semanas_mes + 1):
+            dia_ini = 1 + (w - 1) * 7
+            dia_fin = min(w * 7, num_dias_mes)
+            d_ini = date(hoy.year, hoy.month, dia_ini)
+            d_fin = date(hoy.year, hoy.month, dia_fin)
+            tendencia_semanas_red.append({
+                'semana': f"Sem {w}",
+                'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
+                'fecha_completa': f"Semana {w} ({formatear_fecha_corta(d_ini)} - {formatear_fecha_corta(d_fin)})",
+                'asistencia': asist_sem[w],
+                'porcentaje': round(asist_sem[w] / max_asist_red * 100) if max_asist_red > 0 else 0,
+            })
+    else:
+        # Período semanal: Desglose individual de asistencia por cada Casa de Paz de la red
+        asist_cdp = {c['codigo']: 0 for c in casas_red}
+        anfitrion_map = {c['codigo']: c.get('anfitrion') or c.get('nombre') for c in casas_red}
+        for r in reportes_red_periodo:
+            cdp_cod = next((c['codigo'] for c in casas_red if c['id'] == r.get('cdp_id')), None)
+            if cdp_cod and cdp_cod in asist_cdp:
+                asist_cdp[cdp_cod] += r.get('asistencia', 0)
+        # Si no hay reportes en la semana, rellenar datos demo proporcionales
+        if sum(asist_cdp.values()) == 0 and casas_red:
+            for idx, c in enumerate(casas_red):
+                asist_cdp[c['codigo']] = 12 + idx * 4
+        max_asist_red = max(asist_cdp.values(), default=1) or 1
+        tendencia_semanas_red = [
+            {
+                'semana': c['codigo'],
+                'fecha_completa': f"{c['codigo']} - {anfitrion_map.get(c['codigo'], 'Casa de Paz')}",
+                'asistencia': asist_cdp.get(c['codigo'], 0),
+                'porcentaje': round(asist_cdp.get(c['codigo'], 0) / max_asist_red * 100) if max_asist_red > 0 else 0,
+            }
+            for c in casas_red
+        ]
+    promedio_tendencia_red = round(sum(t['asistencia'] for t in tendencia_semanas_red) / len(tendencia_semanas_red)) if tendencia_semanas_red else 0
 
     # Actividad reciente: últimos reportes de la red ordenados por fecha desc
     reportes_ordenados = sorted(reportes_red, key=lambda r: r.get('fecha', ''), reverse=True)
@@ -734,9 +883,11 @@ def get_mock_red(red_id):
         'casas_sin_reporte_codigos': casas_sin_reporte_codigos,
         'casas_sin_reporte_7d': casas_sin_reporte_codigos,
         'lideres_red': lideres_cards,
+        'tendencia': tendencia_semanas_red,
         'tendencia_semanas': tendencia_semanas_red,
         'promedio_tendencia': promedio_tendencia_red,
         'actividad_reciente': actividad_reciente,
+        'periodo': periodo,
     }
 
 

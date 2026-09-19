@@ -165,11 +165,13 @@
             let accumulatedPct = 0;
             const segmentElements = {};
 
+            const getLegendItems = () => cardParent ? cardParent.querySelectorAll('.chart-legend li') : [];
+
             const activate = (cat, isDonutHover = false) => {
                 if (centerNumber) centerNumber.textContent = cat.count.toLocaleString();
                 if (centerLabel) centerLabel.textContent = cat.label.toUpperCase();
                 if (segmentElements[cat.key]) segmentElements[cat.key].classList.add('active');
-                legendItems.forEach(li => {
+                getLegendItems().forEach(li => {
                     const liKey = li.dataset.category || (li.querySelector('.dot.regular') ? 'regular' : li.querySelector('.dot.ninos') ? 'ninos' : li.querySelector('.dot.visitas') ? 'visitas' : 'comprometidos');
                     if (liKey === cat.key) {
                         li.classList.add('active');
@@ -195,7 +197,7 @@
                 if (centerNumber) centerNumber.textContent = initialTotalText;
                 if (centerLabel) centerLabel.textContent = initialLabelText;
                 Object.values(segmentElements).forEach(el => el.classList.remove('active'));
-                legendItems.forEach(li => {
+                getLegendItems().forEach(li => {
                     li.classList.remove('active');
                     const tip = li.querySelector('.legend-tooltip');
                     if (tip) tip.setAttribute('aria-hidden', 'true');
@@ -266,25 +268,28 @@
             ring.classList.add('has-svg');
             ring.style.background = 'transparent';
 
-            // Interacción en items de la leyenda
-            legendItems.forEach(li => {
-                const text = li.textContent.trim();
-                let catKey = li.dataset.category;
+            // Interacción en items de la leyenda (clonar nodo para reemplazar listeners previos)
+            const currentLegendItems = cardParent ? cardParent.querySelectorAll('.chart-legend li') : [];
+            currentLegendItems.forEach(li => {
+                const newLi = li.cloneNode(true);
+                li.parentNode.replaceChild(newLi, li);
+                const text = newLi.textContent.trim();
+                let catKey = newLi.dataset.category;
                 if (!catKey) {
-                    if (li.querySelector('.dot.regular') || /regular/i.test(text)) catKey = 'regular';
-                    else if (li.querySelector('.dot.ninos') || /niñ|nino/i.test(text)) catKey = 'ninos';
-                    else if (li.querySelector('.dot.visitas') || /visita/i.test(text)) catKey = 'visitas';
-                    else if (li.querySelector('.dot.comprometidos') || /compromet/i.test(text)) catKey = 'comprometidos';
+                    if (newLi.querySelector('.dot.regular') || /regular/i.test(text)) catKey = 'regular';
+                    else if (newLi.querySelector('.dot.ninos') || /niñ|nino/i.test(text)) catKey = 'ninos';
+                    else if (newLi.querySelector('.dot.visitas') || /visita/i.test(text)) catKey = 'visitas';
+                    else if (newLi.querySelector('.dot.comprometidos') || /compromet/i.test(text)) catKey = 'comprometidos';
                 }
                 const catObj = categories.find(c => c.key === catKey);
                 if (catObj) {
-                    li.addEventListener('mouseenter', () => activate(catObj, false));
-                    li.addEventListener('mouseleave', deactivate);
-                    li.addEventListener('focus', () => activate(catObj, false));
-                    li.addEventListener('blur', deactivate);
-                    li.addEventListener('keydown', (e) => {
+                    newLi.addEventListener('mouseenter', () => activate(catObj, false));
+                    newLi.addEventListener('mouseleave', deactivate);
+                    newLi.addEventListener('focus', () => activate(catObj, false));
+                    newLi.addEventListener('blur', deactivate);
+                    newLi.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') {
-                            li.blur();
+                            newLi.blur();
                             deactivate();
                         }
                     });
@@ -298,15 +303,47 @@
     // -------------------------------------------------------------------------
     function initTrendBars() {
         const trendCols = document.querySelectorAll('.trend-bar-col');
+        
+        function adjustTooltip(col, tip) {
+            if (!col || !tip) return;
+            const chartArea = col.closest('.trend-chart-area');
+            if (!chartArea || !chartArea.classList.contains('has-scroll')) {
+                tip.style.transform = '';
+                tip.style.removeProperty('--arrow-left');
+                return;
+            }
+            tip.style.transform = 'translateX(-50%) translateY(0)';
+            tip.style.removeProperty('--arrow-left');
+            const tipRect = tip.getBoundingClientRect();
+            const areaRect = chartArea.getBoundingClientRect();
+            const pad = 12;
+            if (tipRect.left < areaRect.left + pad) {
+                const shiftX = Math.round((areaRect.left + pad) - tipRect.left);
+                tip.style.transform = `translateX(calc(-50% + ${shiftX}px)) translateY(0)`;
+                tip.style.setProperty('--arrow-left', `calc(50% - ${shiftX}px)`);
+            } else if (tipRect.right > areaRect.right - pad) {
+                const shiftX = Math.round(tipRect.right - (areaRect.right - pad));
+                tip.style.transform = `translateX(calc(-50% - ${shiftX}px)) translateY(0)`;
+                tip.style.setProperty('--arrow-left', `calc(50% + ${shiftX}px)`);
+            }
+        }
+
         trendCols.forEach(col => {
             const tip = col.querySelector('.trend-tooltip');
             const showTip = () => {
                 col.classList.add('tooltip-active');
-                if (tip) tip.setAttribute('aria-hidden', 'false');
+                if (tip) {
+                    tip.setAttribute('aria-hidden', 'false');
+                    adjustTooltip(col, tip);
+                }
             };
             const hideTip = () => {
                 col.classList.remove('tooltip-active');
-                if (tip) tip.setAttribute('aria-hidden', 'true');
+                if (tip) {
+                    tip.setAttribute('aria-hidden', 'true');
+                    tip.style.transform = '';
+                    tip.style.removeProperty('--arrow-left');
+                }
             };
 
             col.addEventListener('mouseenter', showTip);
@@ -319,6 +356,19 @@
                     hideTip();
                 }
             });
+        });
+
+        // Reajustar tooltip activo al hacer scroll
+        document.querySelectorAll('.trend-chart-area.has-scroll').forEach(area => {
+            if (area.dataset.scrollBound) return;
+            area.dataset.scrollBound = 'true';
+            area.addEventListener('scroll', () => {
+                const activeCol = area.querySelector('.trend-bar-col.tooltip-active');
+                if (activeCol) {
+                    const tip = activeCol.querySelector('.trend-tooltip');
+                    adjustTooltip(activeCol, tip);
+                }
+            }, { passive: true });
         });
     }
 
@@ -406,9 +456,12 @@
         const nivel = selectNivel ? selectNivel.value : 'general';
         const searchVal = searchInput ? searchInput.value.trim() : '';
 
-        // Si es la vista general y no hay búsqueda, ir a la URL base limpia
+        // Si es la vista general y no hay búsqueda, ir a la URL base limpia (preservando período si no es semanal)
         if (nivel === 'general' && !searchVal) {
-            window.location.href = filterForm.getAttribute('action') || '/admin/dashboard';
+            const inputPeriodo = document.getElementById('inputPeriodo');
+            const pVal = inputPeriodo ? inputPeriodo.value : 'semana';
+            const baseUrl = filterForm.getAttribute('action') || '/admin/dashboard';
+            window.location.href = (pVal && pVal !== 'semana') ? `${baseUrl}?periodo=${encodeURIComponent(pVal)}` : baseUrl;
             return;
         }
 
@@ -435,7 +488,10 @@
 
             if (nivel === 'general' && !searchVal) {
                 e.preventDefault();
-                window.location.href = filterForm.getAttribute('action') || '/admin/dashboard';
+                const inputPeriodo = document.getElementById('inputPeriodo');
+                const pVal = inputPeriodo ? inputPeriodo.value : 'semana';
+                const baseUrl = filterForm.getAttribute('action') || '/admin/dashboard';
+                window.location.href = (pVal && pVal !== 'semana') ? `${baseUrl}?periodo=${encodeURIComponent(pVal)}` : baseUrl;
                 return;
             }
 
@@ -507,6 +563,504 @@
         });
     }
 
+    // -------------------------------------------------------------------------
+    // Selector Dinámico de Período (Semana / Mes / Año) con AJAX y Persistencia
+    // -------------------------------------------------------------------------
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatMoney(num) {
+        const n = parseFloat(num) || 0;
+        return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function initPeriodToggle() {
+        const periodButtons = document.querySelectorAll('.period-btn');
+        if (!periodButtons.length) return;
+
+        const inputPeriodo = document.getElementById('inputPeriodo');
+
+        function applyPeriodData(data, periodo, nivel) {
+            if (!data) return;
+
+            // 1. Textos y etiquetas dinámicas según período
+            const periodoLabels = {
+                semana: {
+                    cumplimientoTitle: 'Cumplimiento Semanal',
+                    cumplimientoSubRed: 'Casas con reporte enviado esta semana',
+                    trendTitleGen: 'Asistencia por Red esta Semana',
+                    trendTitleRed: 'Asistencia por Casa esta Semana',
+                    trendSubGen: 'Desglose por Red del último reporte recibido',
+                    trendSubRed: `Desglose por Casa de Paz en ${data.nombre_red || ''}`,
+                    distSubGen: 'Composición de membresía y consolidación de la semana activa',
+                    distSubRed: `Composición de asistentes en ${data.nombre_red || ''}`,
+                    rankingSub: 'Cumplimiento y asistencia de la semana'
+                },
+                mes: {
+                    cumplimientoTitle: 'Cumplimiento Mensual',
+                    cumplimientoSubRed: 'Casas con reporte en el mes en curso',
+                    trendTitleGen: 'Evolución Semanal del Mes',
+                    trendTitleRed: 'Evolución Semanal del Mes',
+                    trendSubGen: 'Histórico semanal del mes en curso',
+                    trendSubRed: `Histórico semanal del mes en curso en ${data.nombre_red || ''}`,
+                    distSubGen: 'Composición acumulada de la membresía en el mes en curso',
+                    distSubRed: 'Composición de miembros en el mes en curso',
+                    rankingSub: 'Cumplimiento y asistencia del mes'
+                },
+                anio: {
+                    cumplimientoTitle: 'Cumplimiento Anual',
+                    cumplimientoSubRed: 'Casas con reporte en el año en curso',
+                    trendTitleGen: 'Evolución Mensual del Año',
+                    trendTitleRed: 'Evolución Mensual del Año',
+                    trendSubGen: 'Histórico mes a mes del año en curso',
+                    trendSubRed: `Histórico mes a mes del año en curso en ${data.nombre_red || ''}`,
+                    distSubGen: 'Composición acumulada de la membresía en el año en curso',
+                    distSubRed: 'Composición de miembros en el año en curso',
+                    rankingSub: 'Cumplimiento y asistencia del año'
+                }
+            };
+
+            const labels = periodoLabels[periodo] || periodoLabels.semana;
+
+            if (nivel === 'general') {
+                // Títulos Generales
+                const lblCumplimiento = document.getElementById('lblCumplimientoTitleGen');
+                if (lblCumplimiento) lblCumplimiento.textContent = labels.cumplimientoTitle;
+
+                const lblTrendTitle = document.getElementById('lblTrendTitleGen');
+                if (lblTrendTitle) lblTrendTitle.textContent = labels.trendTitleGen;
+
+                const lblTrendSub = document.getElementById('lblTrendSubGen');
+                if (lblTrendSub) lblTrendSub.textContent = labels.trendSubGen;
+
+                const lblDistSub = document.getElementById('lblDistribucionSubGen');
+                if (lblDistSub) lblDistSub.textContent = labels.distSubGen;
+
+                const lblRankingSub = document.getElementById('lblRankingSubGen');
+                if (lblRankingSub) lblRankingSub.textContent = labels.rankingSub;
+
+                // KPIs Generales
+                const kpiTotal = document.getElementById('kpiTotalAsistenciaGen');
+                if (kpiTotal) kpiTotal.textContent = (data.total_asistencia || 0).toLocaleString();
+
+                const kpiCumplPct = document.getElementById('kpiCumplimientoPctGen');
+                if (kpiCumplPct) kpiCumplPct.textContent = `${data.cumplimiento || 0}%`;
+
+                const kpiCumplSub = document.getElementById('kpiCumplimientoSubGen');
+                if (kpiCumplSub) {
+                    const rep = data.casas_con_reporte !== undefined ? data.casas_con_reporte : (data.reportes_enviados || 0);
+                    const tot = data.total_casas || 0;
+                    kpiCumplSub.textContent = `${rep} de ${tot} CDP`;
+                }
+
+                const kpiOfrendasUsd = document.getElementById('kpiOfrendasUsdGen');
+                if (kpiOfrendasUsd) kpiOfrendasUsd.textContent = `$${formatMoney(data.ofrendas_usd)}`;
+
+                const kpiOfrendasBs = document.getElementById('kpiOfrendasBsGen');
+                if (kpiOfrendasBs) kpiOfrendasBs.textContent = `Bs. ${formatMoney(data.ofrendas_bs)}`;
+
+                const kpiConversiones = document.getElementById('kpiConversionesGen');
+                if (kpiConversiones) kpiConversiones.textContent = (data.conversiones || 0).toLocaleString();
+
+                const frutoConv = document.getElementById('frutoConversionesGen');
+                if (frutoConv) frutoConv.textContent = (data.conversiones || 0).toLocaleString();
+
+                const frutoRecon = document.getElementById('frutoReconciliacionesGen');
+                if (frutoRecon) frutoRecon.textContent = (data.reconciliaciones || 0).toLocaleString();
+
+                // Tendencia de Asistencia General
+                renderTrendBars('Gen', data.tendencia_semanas, data.promedio_tendencia);
+
+                // Distribución Donut General
+                renderDonut('Gen', data.distribucion, data.total_asistencia);
+
+                // Ranking de Redes
+                renderRanking(data.ranking_redes);
+
+            } else if (nivel === 'red') {
+                // Títulos de Red
+                const lblCumplimiento = document.getElementById('lblCumplimientoTitleRed');
+                if (lblCumplimiento) lblCumplimiento.textContent = labels.cumplimientoTitle;
+
+                const lblCumplSub = document.getElementById('lblCumplimientoSubRed');
+                if (lblCumplSub) lblCumplSub.textContent = labels.cumplimientoSubRed;
+
+                const lblTrendTitle = document.getElementById('lblTrendTitleRed');
+                if (lblTrendTitle) lblTrendTitle.textContent = labels.trendTitleRed;
+
+                const lblTrendSub = document.getElementById('lblTrendSubRed');
+                if (lblTrendSub) lblTrendSub.textContent = labels.trendSubRed;
+
+                const lblDistSub = document.getElementById('lblDistribucionSubRed');
+                if (lblDistSub) lblDistSub.textContent = labels.distSubRed;
+
+                // KPIs de Red
+                const kpiTotal = document.getElementById('kpiTotalAsistenciaRed');
+                if (kpiTotal) kpiTotal.textContent = (data.asistencia_total || 0).toLocaleString();
+
+                const kpiProm = document.getElementById('kpiPromedioCasaRed');
+                if (kpiProm) kpiProm.textContent = (data.promedio_casa || 0).toLocaleString();
+
+                const kpiConversiones = document.getElementById('kpiConversionesRed');
+                if (kpiConversiones) kpiConversiones.textContent = (data.conversiones || 0).toLocaleString();
+
+                const kpiOfrendasUsd = document.getElementById('kpiOfrendasUsdRed');
+                if (kpiOfrendasUsd) kpiOfrendasUsd.textContent = `$${formatMoney(data.ofrendas_usd)}`;
+
+                const kpiOfrendasBs = document.getElementById('kpiOfrendasBsRed');
+                if (kpiOfrendasBs) kpiOfrendasBs.textContent = `Bs. ${formatMoney(data.ofrendas_bs)}`;
+
+                // Tarjeta de Cumplimiento de Red
+                const pctRed = document.getElementById('cumplimientoPctRed');
+                if (pctRed) pctRed.textContent = `${data.cumplimiento || 0}%`;
+
+                const fracRed = document.getElementById('cumplimientoFractionRed');
+                if (fracRed) fracRed.textContent = `${data.casas_con_reporte || 0} de ${data.casas_activas || 0} casas`;
+
+                const barRed = document.getElementById('cumplimientoBarRed');
+                if (barRed) barRed.style.setProperty('--bar-width', `${data.cumplimiento || 0}%`);
+
+                const pillAlDia = document.getElementById('pillAlDiaNumRed');
+                if (pillAlDia) pillAlDia.textContent = (data.casas_con_reporte || 0);
+
+                const pillPend = document.getElementById('pillPendientesNumRed');
+                if (pillPend) pillPend.textContent = (data.casas_pendientes || 0);
+
+                // Tendencia de Asistencia de Red
+                renderTrendBars('Red', data.tendencia_semanas, data.promedio_tendencia);
+
+                // Distribución Donut de Red
+                renderDonut('Red', data.distribucion, data.asistencia_total);
+            }
+        }
+
+        function renderTrendBars(suffix, tendencia, promedio) {
+            const container = document.getElementById(`trendBars${suffix}`);
+            const badgeContainer = document.getElementById(`trendBadge${suffix}`);
+            if (!container) return;
+
+            // Alternar scroll horizontal si hay más de 7 elementos (hasta 7 entran completos)
+            const chartArea = container.closest('.trend-chart-area');
+            if (tendencia && tendencia.length > 7) {
+                container.classList.add('has-scroll');
+                if (chartArea) chartArea.classList.add('has-scroll');
+            } else {
+                container.classList.remove('has-scroll');
+                if (chartArea) chartArea.classList.remove('has-scroll');
+            }
+
+            // Variación respecto a la medición anterior o promedio
+            if (badgeContainer) {
+                if (tendencia && tendencia.length > 1 && (tendencia[tendencia.length - 2]?.asistencia || 0) > 0) {
+                    const prev = tendencia[tendencia.length - 2].asistencia;
+                    const curr = tendencia[tendencia.length - 1].asistencia;
+                    const variacion = Math.round(((curr - prev) / prev * 100) * 10) / 10;
+                    const sign = variacion >= 0 ? '+' : '';
+                    const icon = variacion >= 0 ? 'trending_up' : 'trending_down';
+                    const negClass = variacion < 0 ? 'negative' : '';
+                    badgeContainer.innerHTML = `
+                        <div class="trend-badge-pill ${negClass}" role="status" aria-label="Variación: ${sign}${variacion.toFixed(1)}% respecto a la medición anterior">
+                            <span class="material-symbols-outlined">${icon}</span>
+                            <span>${sign}${variacion.toFixed(1)}% vs anterior</span>
+                        </div>
+                    `;
+                } else if (tendencia && tendencia.length > 1 && promedio > 0) {
+                    const curr = tendencia[tendencia.length - 1].asistencia;
+                    const variacion = Math.round(((curr - promedio) / promedio * 100) * 10) / 10;
+                    const sign = variacion >= 0 ? '+' : '';
+                    const icon = variacion >= 0 ? 'trending_up' : 'trending_down';
+                    const negClass = variacion < 0 ? 'negative' : '';
+                    badgeContainer.innerHTML = `
+                        <div class="trend-badge-pill ${negClass}" role="status" aria-label="Variación: ${sign}${variacion.toFixed(1)}% respecto al promedio">
+                            <span class="material-symbols-outlined">${icon}</span>
+                            <span>${sign}${variacion.toFixed(1)}% vs promedio</span>
+                        </div>
+                    `;
+                } else if (tendencia && tendencia.length > 1) {
+                    badgeContainer.innerHTML = `
+                        <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0%">
+                            <span class="material-symbols-outlined">trending_flat</span>
+                            <span>0.0% vs anterior</span>
+                        </div>
+                    `;
+                } else {
+                    badgeContainer.innerHTML = '';
+                }
+            }
+
+            // Renderizado de las columnas de barras
+            if (tendencia && tendencia.length > 0) {
+                let html = '';
+                tendencia.forEach((item, index) => {
+                    const tipId = `trend-tip-${suffix.toLowerCase()}-${index + 1}`;
+                    html += `
+                        <div class="trend-bar-col" tabindex="0" role="graphics-symbol" aria-roledescription="barra de asistencia" aria-describedby="${tipId}" aria-label="${escapeHtml(item.semana)}: ${item.asistencia || 0} asistentes, ${item.porcentaje || 0}% del pico">
+                            <div class="trend-bar-track">
+                                <div class="trend-bar-fill" style="--bar-height: ${item.porcentaje || 0}%;">
+                                    <span class="trend-bar-val">${item.asistencia || 0}</span>
+                                </div>
+                            </div>
+                            <span class="trend-bar-lbl">${escapeHtml(item.semana)}${item.rango_fecha ? `<span class="trend-bar-sublbl">${escapeHtml(item.rango_fecha)}</span>` : ''}</span>
+                            <div class="trend-tooltip" id="${tipId}" role="tooltip" aria-hidden="true">
+                                <span class="tooltip-date">${escapeHtml(item.fecha_completa || item.semana)}</span>
+                                <span class="tooltip-val"><strong>${item.asistencia || 0}</strong> asistentes</span>
+                                <span class="tooltip-pct">${item.porcentaje || 0}% del pico</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                initTrendBars();
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined empty-icon">monitoring</span>
+                        <p class="empty-message">Aún no hay reportes para mostrar una tendencia.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDonut(suffix, dist, totalAsist) {
+            const ring = document.getElementById(`donutRing${suffix}`);
+            const centerNum = document.getElementById(`donutNumber${suffix}`);
+            if (!ring) return;
+
+            const d_reg = (dist && dist.regulares) || 0;
+            const d_nin = (dist && dist.ninos) || 0;
+            const d_vis = (dist && dist.visitas) || 0;
+            const d_com = (dist && dist.comprometidos) || 0;
+            const sum = d_reg + d_nin + d_vis + d_com;
+            const base = sum > 0 ? sum : 1;
+
+            // Actualizar atributos de datos en el anillo
+            ring.dataset.regular = d_reg;
+            ring.dataset.ninos = d_nin;
+            ring.dataset.visitas = d_vis;
+            ring.dataset.comprometidos = d_com;
+
+            if (centerNum) {
+                centerNum.textContent = (totalAsist !== undefined ? totalAsist : sum).toLocaleString();
+            }
+
+            // Actualizar elementos de la leyenda
+            const updateLegendItem = (cat, val, label) => {
+                const item = document.getElementById(`legendItem${cat}${suffix}`);
+                const valSpan = document.getElementById(`legendVal${cat}${suffix}`);
+                if (item) {
+                    const pct = Math.round(val / base * 100);
+                    item.dataset.count = val;
+                    item.dataset.percent = pct;
+                    item.setAttribute('aria-label', `${label}: ${val} personas (${pct}%)`);
+                    const tipVal = item.querySelector('.legend-tooltip .tooltip-val strong');
+                    if (tipVal) tipVal.textContent = val.toLocaleString();
+                    const tipPct = item.querySelector('.legend-tooltip .tooltip-pct');
+                    if (tipPct) tipPct.textContent = `${pct}% del período`;
+                }
+                if (valSpan) {
+                    valSpan.textContent = val;
+                }
+            };
+
+            updateLegendItem('Reg', d_reg, 'Regulares');
+            updateLegendItem('Nin', d_nin, 'Niños');
+            updateLegendItem('Vis', d_vis, 'Visitas');
+            updateLegendItem('Com', d_com, 'Comprometidos');
+
+            // Reconstruir los segmentos SVG interactivos
+            initDonutCharts();
+        }
+
+        function renderRanking(ranking) {
+            const container = document.getElementById('rankingListGen');
+            if (!container) return;
+
+            if (ranking && ranking.length > 0) {
+                let html = '';
+                ranking.slice(0, 3).forEach((red, idx) => {
+                    const pos = idx + 1;
+                    const cumpl = parseInt(red.cumplimiento, 10) || 0;
+                    const asist = parseInt(red.asistencia, 10) || 0;
+                    const asistTot = parseInt(red.asistencia_total, 10) || 0;
+                    const totCasas = parseInt(red.total_casas, 10) || 0;
+                    const repCasas = parseInt(red.casas_reportadas, 10) || 0;
+                    const colorClass = red.color_class || (pos === 1 ? 'gold' : pos === 2 ? 'silver' : 'bronze');
+
+                    const asistTitle = asistTot > 0 ? `${asistTot} asistencias acumuladas` : 'Asistencia del período actual';
+                    const cumplTitle = totCasas > 0 ? `${repCasas} de ${totCasas} Casas de Paz han reportado en este período (${cumpl}%)` : `${cumpl}% de Casas de Paz con reporte en este período`;
+
+                    html += `
+                        <div class="ranking-item podium-${pos}">
+                            <div class="ranking-row">
+                                <div class="ranking-name-box">
+                                    <span class="ranking-pos pos-${pos}" title="Puesto #${pos} del podio ministerial">#${pos}</span>
+                                    <strong>${escapeHtml(red.nombre)}</strong>
+                                    <span class="ranking-sup">(${escapeHtml(red.supervisor)})</span>
+                                </div>
+                                <div class="ranking-stats">
+                                    <span class="ranking-asist" title="${asistTitle}">${asist} asists.</span>
+                                    <span class="ranking-percent" title="${cumplTitle}">${cumpl}% cumpl.</span>
+                                </div>
+                            </div>
+                            <div class="progress-bar" title="${cumplTitle}">
+                                <div class="progress-fill fill-${colorClass}" style="--bar-width: ${cumpl}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined empty-icon">leaderboard</span>
+                        <p class="empty-message">Aún no hay redes con reportes para comparar.</p>
+                    </div>
+                `;
+            }
+        }
+
+        const periodDataCache = {};
+
+        function syncPeriodUrl(periodo, options = {}) {
+            if (!window.history || !window.history.replaceState) return;
+            const { pushHistory = true } = options;
+            const url = new URL(window.location);
+
+            if (periodo && periodo !== 'semana') {
+                url.searchParams.set('periodo', periodo);
+            } else {
+                url.searchParams.delete('periodo');
+            }
+
+            const queryString = url.searchParams.toString();
+            const cleanUrl = queryString ? `${url.pathname}?${queryString}` : url.pathname;
+
+            if (window.location.pathname + window.location.search === cleanUrl) return;
+
+            if (pushHistory && window.history.pushState) {
+                window.history.pushState({ periodo: periodo }, '', cleanUrl);
+            } else {
+                window.history.replaceState({ periodo: periodo }, '', cleanUrl);
+            }
+        }
+
+        function switchPeriod(periodo, btnElement, options = {}) {
+            if (!periodo) return;
+            const { updateUrl = true, pushHistory = true } = options;
+
+            // Actualizar botones visualmente
+            periodButtons.forEach(btn => {
+                const matches = btn.dataset.periodo === periodo;
+                btn.classList.toggle('active', matches);
+                btn.setAttribute('aria-pressed', matches ? 'true' : 'false');
+            });
+
+            // Actualizar input oculto del formulario
+            if (inputPeriodo) {
+                inputPeriodo.value = periodo;
+            }
+
+            // Persistir preferencia en localStorage
+            try {
+                localStorage.setItem('dashboard_periodo', periodo);
+            } catch (e) {
+                // Manejar almacenamiento bloqueado
+            }
+
+            // Sincronizar URL del navegador
+            if (updateUrl) {
+                syncPeriodUrl(periodo, { pushHistory });
+            }
+
+            const nivel = selectNivel ? selectNivel.value : 'general';
+            const redId = selectRed && nivel !== 'general' ? selectRed.value : '';
+            const cdpId = selectCdp && nivel === 'cdp' ? selectCdp.value : '';
+
+            const cacheKey = `${nivel}_${redId}_${cdpId}_${periodo}`;
+            if (periodDataCache[cacheKey]) {
+                applyPeriodData(periodDataCache[cacheKey], periodo, nivel);
+                return;
+            }
+
+            // Efecto visual de carga
+            const loadingCards = document.querySelectorAll('.summary-grid, .chart-card, .participation-card');
+            loadingCards.forEach(c => c.classList.add('metric-loading'));
+
+            const params = new URLSearchParams({
+                nivel: nivel,
+                periodo: periodo
+            });
+            if (redId) params.append('red_id', redId);
+            if (cdpId) params.append('cdp_id', cdpId);
+
+            fetch(`/api/dashboard/datos?${params.toString()}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Error al cargar datos del período');
+                    return res.json();
+                })
+                .then(data => {
+                    periodDataCache[cacheKey] = data;
+                    applyPeriodData(data, periodo, nivel);
+                })
+                .catch(err => {
+                    console.error('[Dashboard] Error cambiando de período:', err);
+                })
+                .finally(() => {
+                    loadingCards.forEach(c => {
+                        c.classList.remove('metric-loading');
+                        c.classList.remove('metric-fade-in');
+                        void c.offsetWidth; // Forzar reflow para reiniciar animación CSS
+                        c.classList.add('metric-fade-in');
+                    });
+                });
+        }
+
+        // Registrar event listeners para cada botón de período
+        periodButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (this.classList.contains('active')) return;
+                const periodo = this.dataset.periodo;
+                switchPeriod(periodo, this, { updateUrl: true, pushHistory: true });
+            });
+        });
+
+        // Soporte para navegación con historial del navegador (Atrás / Adelante)
+        window.addEventListener('popstate', function(e) {
+            const currentParams = new URLSearchParams(window.location.search);
+            const targetPeriodo = currentParams.get('periodo') || 'semana';
+            const targetBtn = document.querySelector(`.period-btn[data-periodo="${targetPeriodo}"]`);
+            if (targetBtn && !targetBtn.classList.contains('active')) {
+                switchPeriod(targetPeriodo, targetBtn, { updateUrl: false });
+            }
+        });
+
+        // Sincronización inicial con localStorage si la URL no especifica período
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPeriodo = urlParams.get('periodo');
+        if (urlPeriodo && ['semana', 'mes', 'anio'].includes(urlPeriodo)) {
+            try {
+                localStorage.setItem('dashboard_periodo', urlPeriodo);
+            } catch (e) {}
+        } else {
+            try {
+                const savedPeriodo = localStorage.getItem('dashboard_periodo');
+                if (savedPeriodo && ['mes', 'anio'].includes(savedPeriodo)) {
+                    const targetBtn = document.querySelector(`.period-btn[data-periodo="${savedPeriodo}"]`);
+                    if (targetBtn) {
+                        switchPeriod(savedPeriodo, targetBtn, { updateUrl: true, pushHistory: false });
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
     // Forzar actualización de visibilidad y filtros al cargar
     setTimeout(function() {
         if (selectRed && selectRed.value) {
@@ -515,6 +1069,7 @@
         updateFilterVisibility();
         initDonutCharts();
         initTrendBars();
+        initPeriodToggle();
     }, 50);
 
     // -------------------------------------------------------------------------

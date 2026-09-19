@@ -37,6 +37,7 @@
     <!-- Filter Bar Jerárquica -->
     <section class="filter-bar-card">
         <form id="filterForm" method="GET" action="{% if has_role('supervisor') %}{{ url_for('supervisor.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="filter-form">
+            <input type="hidden" name="periodo" id="inputPeriodo" value="{{ periodo|default('semana') }}">
             {% if has_role("supervisor") %}
             <!-- Supervisor: selector de nivel (Mi Red o Por Casa de Paz) -->
             <div class="filter-group">
@@ -140,22 +141,40 @@
                 </button>
             </div>
 
+            <!-- Selector de Período Dinámico (Semana / Mes / Año) -->
+            <div class="period-toggle-bar fade-in-1">
+                <div class="period-toggle-group" role="radiogroup" aria-label="Seleccionar período de análisis">
+                    <button type="button" class="period-btn {% if periodo|default('semana') == 'semana' %}active{% endif %}" data-periodo="semana" aria-pressed="{% if periodo|default('semana') == 'semana' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_view_week</span>
+                        <span>Semana</span>
+                    </button>
+                    <button type="button" class="period-btn {% if periodo == 'mes' %}active{% endif %}" data-periodo="mes" aria-pressed="{% if periodo == 'mes' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                        <span>Mes</span>
+                    </button>
+                    <button type="button" class="period-btn {% if periodo == 'anio' %}active{% endif %}" data-periodo="anio" aria-pressed="{% if periodo == 'anio' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        <span>Año</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Summary Cards (KPIs Top) -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Total Asistencia</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0, true) %}{{ metricas.total_asistencia|default(0, true) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" id="kpiTotalAsistenciaGen">{% if metricas.total_casas|default(0, true) %}{{ metricas.total_asistencia|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">check_circle</span>
-                    <h3 class="card-title">Cumplimiento Semanal</h3>
-                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                    <h3 class="card-title" id="lblCumplimientoTitleGen">{% if periodo == 'mes' %}Cumplimiento Mensual{% elif periodo == 'anio' %}Cumplimiento Anual{% else %}Cumplimiento Semanal{% endif %}</h3>
+                    <div class="card-number" id="kpiCumplimientoGen" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.total_casas|default(0, true) %}
-                            <div>{{ metricas.cumplimiento|default(0, true) }}%</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">{{ metricas.casas_con_reporte|default(metricas.reportes_enviados|default(0, true), true) }} de {{ metricas.total_casas|default(0, true) }} CDP</div>
+                            <div id="kpiCumplimientoPctGen">{{ metricas.cumplimiento|default(0, true) }}%</div>
+                            <div id="kpiCumplimientoSubGen" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">{{ metricas.casas_con_reporte|default(metricas.reportes_enviados|default(0, true), true) }} de {{ metricas.total_casas|default(0, true) }} CDP</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -166,10 +185,10 @@
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas Acumuladas</h3>
-                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                    <div class="card-number" id="kpiOfrendasGen" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.total_casas|default(0, true) %}
-                            <div>${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
+                            <div id="kpiOfrendasUsdGen">${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
+                            <div id="kpiOfrendasBsGen" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -180,7 +199,7 @@
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">trending_up</span>
                     <h3 class="card-title">Confesiones de Fe</h3>
-                    <div class="card-number">{% if metricas.total_casas|default(0, true) %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" id="kpiConversionesGen">{% if metricas.total_casas|default(0, true) %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">trending_up</span>
                 </article>
             </section>
@@ -189,48 +208,42 @@
             <div class="dashboard-grid">
                 <!-- Columna Izquierda: Tendencia y Distribución -->
                 <div class="main-column">
-                    <!-- Tarjeta: Gráfica de Tendencia de Asistencia (Últimas 8 semanas) -->
+                    <!-- Tarjeta: Gráfica de Tendencia de Asistencia -->
                     <section class="chart-card fade-in-5">
                         <div class="chart-header">
                             <div>
-                                <h2 class="section-title">Tendencia de Asistencia Semanal</h2>
-                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length if metricas.tendencia_semanas else 0 }} mediciones</p>
+                                <h2 class="section-title" id="lblTrendTitleGen">{% if periodo == 'mes' %}Evolución Semanal del Mes{% elif periodo == 'anio' %}Evolución Mensual del Año{% else %}Asistencia por Red esta Semana{% endif %}</h2>
+                                <p class="section-subtitle" id="lblTrendSubGen">{% if periodo == 'mes' %}Histórico semanal del mes en curso{% elif periodo == 'anio' %}Histórico mes a mes del año en curso{% else %}Desglose por Red del último reporte recibido{% endif %}</p>
                             </div>
+                            <div id="trendBadgeGen">
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
                             {% set asist_prev = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
                             {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
                             {% set variacion = ((asist_curr - asist_prev) / asist_prev * 100)|round(1) %}
-                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion) }}% respecto a la semana anterior">
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación: {{ '%+.1f'|format(variacion) }}% respecto a la medición anterior">
                                 <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
-                                <span>{{ '%+.1f'|format(variacion) }}% vs semana anterior</span>
+                                <span>{{ '%+.1f'|format(variacion) }}% vs anterior</span>
                             </div>
                             {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.promedio_tendencia is defined and metricas.promedio_tendencia|default(0, true) > 0 %}
                             {% set prom = metricas.promedio_tendencia|default(0, true) %}
                             {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
                             {% set variacion = ((asist_curr - prom) / prom * 100)|round(1) %}
-                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion) }}% respecto al promedio del periodo">
+                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación: {{ '%+.1f'|format(variacion) }}% respecto al promedio">
                                 <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
                                 <span>{{ '%+.1f'|format(variacion) }}% vs promedio</span>
                             </div>
-                            {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[0].asistencia|default(0, true) > 0 %}
-                            {% set asist_first = metricas.tendencia_semanas[0].asistencia|default(0, true) %}
-                            {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
-                            {% set variacion = ((asist_curr - asist_first) / asist_first * 100)|round(1) %}
-                            <div class="trend-badge-pill {% if variacion < 0 %}negative{% endif %}" role="status" aria-label="Variación: {{ '%+.1f'|format(variacion) }}% respecto a la primera medición">
-                                <span class="material-symbols-outlined">{% if variacion >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
-                                <span>{{ '%+.1f'|format(variacion) }}% vs primera medición</span>
-                            </div>
                             {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 %}
-                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0% respecto a la semana anterior">
+                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0%">
                                 <span class="material-symbols-outlined">trending_flat</span>
-                                <span>0.0% vs semana anterior</span>
+                                <span>0.0% vs anterior</span>
                             </div>
                             {% endif %}
+                            </div>
                         </div>
 
                         <!-- Gráfico de barras de tendencia -->
-                        <div class="trend-chart-area">
-                            <div class="trend-bars-container" role="region" aria-label="Gráfica de tendencia semanal de asistencia">
+                        <div class="trend-chart-area {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 7 %}has-scroll{% endif %}">
+                            <div class="trend-bars-container {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 7 %}has-scroll{% endif %}" id="trendBarsGen" role="region" aria-label="Gráfica de tendencia de asistencia">
                                 {% if metricas.tendencia_semanas %}
                                 {% for item in metricas.tendencia_semanas %}
                                 {% set tip_id = 'trend-tip-' ~ loop.index %}
@@ -240,7 +253,7 @@
                                             <span class="trend-bar-val">{{ item.asistencia|default(0, true) }}</span>
                                         </div>
                                     </div>
-                                    <span class="trend-bar-lbl">{{ item.semana }}</span>
+                                    <span class="trend-bar-lbl">{{ item.semana }}{% if item.rango_fecha %}<span class="trend-bar-sublbl">{{ item.rango_fecha }}</span>{% endif %}</span>
                                     <div class="trend-tooltip" id="{{ tip_id }}" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-date">{{ item.fecha_completa|default(item.semana) }}</span>
                                         <span class="tooltip-val"><strong>{{ item.asistencia|default(0, true) }}</strong> asistentes</span>
@@ -263,7 +276,7 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Distribución por Categoría</h2>
-                                <p class="section-subtitle">Composición de membresía y consolidación de la semana activa</p>
+                                <p class="section-subtitle" id="lblDistribucionSubGen">{% if periodo == 'mes' %}Composición de membresía y consolidación del mes activo{% elif periodo == 'anio' %}Composición de membresía y consolidación del año activo{% else %}Composición de membresía y consolidación de la semana activa{% endif %}</p>
                             </div>
                         </div>
 
@@ -274,45 +287,45 @@
                             {% set d_com = ((metricas.distribucion.comprometidos if metricas.distribucion else 0)|default(0, true))|int %}
                             {% set sum_dist = (d_reg + d_nin + d_vis + d_com) %}
                             {% set pct_base = sum_dist if sum_dist > 0 else 1 %}
-                            <ul class="chart-legend" role="list" aria-label="Leyenda de distribución de asistencia de la semana">
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-gen" data-category="regular" data-count="{{ d_reg }}" data-percent="{{ (d_reg / pct_base * 100)|round|int }}" aria-label="Regulares: {{ d_reg }} personas ({{ (d_reg / pct_base * 100)|round|int }}%)">
-                                    <span class="dot regular"></span> Regulares ({{ d_reg }})
+                            <ul class="chart-legend" id="chartLegendGen" role="list" aria-label="Leyenda de distribución de asistencia">
+                                <li class="legend-item" id="legendItemRegGen" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-gen" data-category="regular" data-count="{{ d_reg }}" data-percent="{{ (d_reg / pct_base * 100)|round|int }}" aria-label="Regulares: {{ d_reg }} personas ({{ (d_reg / pct_base * 100)|round|int }}%)">
+                                    <span class="dot regular"></span> Regulares (<span id="legendValRegGen">{{ d_reg }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-reg-gen" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Regulares</span>
                                         <span class="tooltip-val"><strong>{{ d_reg }}</strong> personas</span>
-                                        <span class="tooltip-pct">{{ (d_reg / pct_base * 100)|round|int }}% de la semana</span>
+                                        <span class="tooltip-pct">{{ (d_reg / pct_base * 100)|round|int }}% del período</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-gen" data-category="ninos" data-count="{{ d_nin }}" data-percent="{{ (d_nin / pct_base * 100)|round|int }}" aria-label="Niños: {{ d_nin }} personas ({{ (d_nin / pct_base * 100)|round|int }}%)">
-                                    <span class="dot ninos"></span> Niños ({{ d_nin }})
+                                <li class="legend-item" id="legendItemNinGen" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-gen" data-category="ninos" data-count="{{ d_nin }}" data-percent="{{ (d_nin / pct_base * 100)|round|int }}" aria-label="Niños: {{ d_nin }} personas ({{ (d_nin / pct_base * 100)|round|int }}%)">
+                                    <span class="dot ninos"></span> Niños (<span id="legendValNinGen">{{ d_nin }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-nin-gen" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Niños</span>
                                         <span class="tooltip-val"><strong>{{ d_nin }}</strong> personas</span>
-                                        <span class="tooltip-pct">{{ (d_nin / pct_base * 100)|round|int }}% de la semana</span>
+                                        <span class="tooltip-pct">{{ (d_nin / pct_base * 100)|round|int }}% del período</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-gen" data-category="visitas" data-count="{{ d_vis }}" data-percent="{{ (d_vis / pct_base * 100)|round|int }}" aria-label="Visitas: {{ d_vis }} personas ({{ (d_vis / pct_base * 100)|round|int }}%)">
-                                    <span class="dot visitas"></span> Visitas ({{ d_vis }})
+                                <li class="legend-item" id="legendItemVisGen" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-gen" data-category="visitas" data-count="{{ d_vis }}" data-percent="{{ (d_vis / pct_base * 100)|round|int }}" aria-label="Visitas: {{ d_vis }} personas ({{ (d_vis / pct_base * 100)|round|int }}%)">
+                                    <span class="dot visitas"></span> Visitas (<span id="legendValVisGen">{{ d_vis }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-vis-gen" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Visitas</span>
                                         <span class="tooltip-val"><strong>{{ d_vis }}</strong> personas</span>
-                                        <span class="tooltip-pct">{{ (d_vis / pct_base * 100)|round|int }}% de la semana</span>
+                                        <span class="tooltip-pct">{{ (d_vis / pct_base * 100)|round|int }}% del período</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-com-gen" data-category="comprometidos" data-count="{{ d_com }}" data-percent="{{ (d_com / pct_base * 100)|round|int }}" aria-label="Comprometidos: {{ d_com }} personas ({{ (d_com / pct_base * 100)|round|int }}%)">
-                                    <span class="dot comprometidos"></span> Comprometidos ({{ d_com }})
+                                <li class="legend-item" id="legendItemComGen" tabindex="0" role="listitem" aria-describedby="legend-tip-com-gen" data-category="comprometidos" data-count="{{ d_com }}" data-percent="{{ (d_com / pct_base * 100)|round|int }}" aria-label="Comprometidos: {{ d_com }} personas ({{ (d_com / pct_base * 100)|round|int }}%)">
+                                    <span class="dot comprometidos"></span> Comprometidos (<span id="legendValComGen">{{ d_com }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-com-gen" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Comprometidos</span>
                                         <span class="tooltip-val"><strong>{{ d_com }}</strong> personas</span>
-                                        <span class="tooltip-pct">{{ (d_com / pct_base * 100)|round|int }}% de la semana</span>
+                                        <span class="tooltip-pct">{{ (d_com / pct_base * 100)|round|int }}% del período</span>
                                     </div>
                                 </li>
                             </ul>
                             <div class="donut-wrapper" role="region" aria-label="Gráfico de distribución total de asistencia" style="position: relative; width: 220px; height: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0;">
-                                <div class="donut-ring" data-regular="{{ d_reg }}" data-ninos="{{ d_nin }}" data-visitas="{{ d_vis }}" data-comprometidos="{{ d_com }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <div class="donut-ring" id="donutRingGen" data-regular="{{ d_reg }}" data-ninos="{{ d_nin }}" data-visitas="{{ d_vis }}" data-comprometidos="{{ d_com }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                     <div class="donut-center" aria-live="polite" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 10; width: 100px; height: 100px; margin: 0; padding: 0; box-sizing: border-box;">
                                         <span class="donut-label" style="display: block; font-size: 0.8rem; margin-bottom: 0.2rem; line-height: 1.2;">TOTAL</span>
-                                        <span class="donut-number" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.total_asistencia|default(0, true) }}</span>
+                                        <span class="donut-number" id="donutNumberGen" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.total_asistencia|default(0, true) }}</span>
                                     </div>
                                 </div>
                                 <div class="donut-tooltip" id="donut-tooltip-gen" role="tooltip" aria-hidden="true"></div>
@@ -344,31 +357,23 @@
 
                         <div class="alert-list">
                             {% if metricas.alertas %}
-                                {% for alerta in metricas.alertas %}
-                                <article class="alert-item">
-                                    <div class="alert-info-text">
-                                        <h4>{{ alerta.nombre }} <span class="badge-code">{{ alerta.codigo }}</span></h4>
-                                        <p class="alert-meta">{{ alerta.red }} · Supervisor: {{ alerta.lider }}</p>
-                                        <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">schedule</span> {{ alerta.dias_sin_reporte }} días sin reporte</p>
-                                    </div>
-                                    {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Contactar a {{ alerta.lider }} por WhatsApp" title="Contactar por WhatsApp">
-                                        <span class="material-symbols-outlined">chat</span>
-                                        Contactar
-                                    </a>{% endif %}
-                                </article>
-                                {% endfor %}
-                            {% elif metricas.total_casas|default(0) %}
-                            <article class="alert-item positive">
-                                <div>
-                                    <h4>¡Excelente!</h4>
-                                    <p>Todas las Casas de Paz han enviado su reporte a tiempo.</p>
+                            {% for alerta in metricas.alertas %}
+                            <article class="alert-item">
+                                <div class="alert-info-text">
+                                    <h4>{{ alerta.nombre }} <span class="badge-code">{{ alerta.codigo }}</span></h4>
+                                    <p class="alert-meta">{{ alerta.red }} · Líder: {{ alerta.lider }}</p>
+                                    <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                <span class="material-symbols-outlined check-positive">check_circle</span>
+                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
+                                    <span class="material-symbols-outlined">support_agent</span>
+                                    Atender
+                                </a>{% endif %}
                             </article>
+                            {% endfor %}
                             {% else %}
                             <div class="empty-state">
-                                <span class="material-symbols-outlined empty-icon">info</span>
-                                <p class="empty-message">Aún no hay Casas de Paz ni reportes para revisar.</p>
+                                <span class="material-symbols-outlined empty-icon">task_alt</span>
+                                <p class="empty-message">No hay alertas de seguimiento pendientes.</p>
                             </div>
                             {% endif %}
                         </div>
@@ -378,10 +383,10 @@
                     <article class="participation-card">
                         <div class="status-card-header">
                             <h2 class="section-title">Ranking de Redes</h2>
-                            <p class="section-subtitle">Cumplimiento y asistencia de la semana</p>
+                            <p class="section-subtitle" id="lblRankingSubGen">{% if periodo == 'mes' %}Cumplimiento y asistencia del mes{% elif periodo == 'anio' %}Cumplimiento y asistencia del año{% else %}Cumplimiento y asistencia de la semana{% endif %}</p>
                         </div>
                         
-                        <div class="network-ranking-list">
+                        <div class="network-ranking-list" id="rankingListGen">
                             {% if metricas.ranking_redes %}
                             {% for red_item in metricas.ranking_redes[:3] %}
                             {% set red_cumpl = (red_item.cumplimiento|default(0, true))|int %}
@@ -397,11 +402,11 @@
                                         <span class="ranking-sup">({{ red_item.supervisor }})</span>
                                     </div>
                                     <div class="ranking-stats">
-                                        <span class="ranking-asist" title="{% if red_asist_tot > 0 %}{{ red_asist_tot }} asistencias históricas acumuladas{% else %}Asistencia de la semana actual{% endif %}">{{ red_asist }} asists. sem.</span>
-                                        <span class="ranking-percent" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz han reportado esta semana ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de Casas de Paz con reporte esta semana{% endif %}">{{ red_cumpl }}% cumpl. sem.</span>
+                                        <span class="ranking-asist" title="{% if red_asist_tot > 0 %}{{ red_asist_tot }} asistencias acumuladas{% else %}Asistencia del período actual{% endif %}">{{ red_asist }} asists.</span>
+                                        <span class="ranking-percent" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz han reportado en este período ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de Casas de Paz con reporte en este período{% endif %}">{{ red_cumpl }}% cumpl.</span>
                                     </div>
                                 </div>
-                                <div class="progress-bar" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz con reporte esta semana ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de cumplimiento semanal{% endif %}">
+                                <div class="progress-bar" title="{% if red_tot_casas > 0 %}{{ red_casas_rep }} de {{ red_tot_casas }} Casas de Paz con reporte en este período ({{ red_cumpl }}%){% else %}{{ red_cumpl }}% de cumplimiento{% endif %}">
                                     <div class="progress-fill fill-{{ red_item.color_class }}" style="--bar-width: {{ red_cumpl }}%;"></div>
                                 </div>
                             </div>
@@ -427,7 +432,7 @@
                                     <span class="material-symbols-outlined text-success">person_add</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.conversiones|default(0, true) }}</span>
+                                    <span class="fruto-number" id="frutoConversionesGen">{{ metricas.conversiones|default(0, true) }}</span>
                                     <span class="fruto-label">Confesiones de Fe</span>
                                 </div>
                             </div>
@@ -436,7 +441,7 @@
                                     <span class="material-symbols-outlined text-primary">handshake</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.reconciliaciones|default(0, true) }}</span>
+                                    <span class="fruto-number" id="frutoReconciliacionesGen">{{ metricas.reconciliaciones|default(0, true) }}</span>
                                     <span class="fruto-label">Reconciliaciones</span>
                                 </div>
                             </div>
@@ -445,16 +450,16 @@
                                     <span class="material-symbols-outlined text-primary-container">favorite</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.cestas_amor|default(0, true) }}</span>
+                                    <span class="fruto-number" id="frutoCestasGen">{{ metricas.cestas_amor|default(0, true) }}</span>
                                     <span class="fruto-label">Cestas de Amor</span>
                                 </div>
                             </div>
                             <div class="fruto-item">
-                                <div class="fruto-icon bg-secondary-light">
-                                    <span class="material-symbols-outlined text-secondary">visibility</span>
+                                <div class="fruto-icon bg-info-light">
+                                    <span class="material-symbols-outlined text-info">how_to_reg</span>
                                 </div>
                                 <div class="fruto-info">
-                                    <span class="fruto-number">{{ metricas.total_visitas|default(0) }}</span>
+                                    <span class="fruto-number" id="frutoVisitasGen">{{ metricas.total_visitas|default(0, true) }}</span>
                                     <span class="fruto-label">Visitas</span>
                                 </div>
                             </div>
@@ -501,36 +506,54 @@
                 </button>
             </div>
 
+            <!-- Selector de Período Dinámico para Vista Red -->
+            <div class="period-toggle-bar fade-in-1">
+                <div class="period-toggle-group" role="radiogroup" aria-label="Seleccionar período de análisis">
+                    <button type="button" class="period-btn {% if periodo|default('semana') == 'semana' %}active{% endif %}" data-periodo="semana" aria-pressed="{% if periodo|default('semana') == 'semana' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_view_week</span>
+                        <span>Semana</span>
+                    </button>
+                    <button type="button" class="period-btn {% if periodo == 'mes' %}active{% endif %}" data-periodo="mes" aria-pressed="{% if periodo == 'mes' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                        <span>Mes</span>
+                    </button>
+                    <button type="button" class="period-btn {% if periodo == 'anio' %}active{% endif %}" data-periodo="anio" aria-pressed="{% if periodo == 'anio' %}true{% else %}false{% endif %}">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        <span>Año</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- KPIs Top de Red -->
             <section class="summary-grid">
                 <article class="summary-card fade-in-1">
                     <span class="material-symbols-outlined card-icon text-primary">groups</span>
                     <h3 class="card-title">Asistencia Total</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.asistencia_total|default(0, true) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" id="kpiTotalAsistenciaRed">{% if metricas.casas %}{{ metricas.asistencia_total|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">groups</span>
                 </article>
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">home_work</span>
                     <h3 class="card-title">Promedio por Casa</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.promedio_casa|default(0, true) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" id="kpiPromedioCasaRed">{% if metricas.casas %}{{ metricas.promedio_casa|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">home_work</span>
                 </article>
 
                 <article class="summary-card fade-in-3">
                     <span class="material-symbols-outlined card-icon text-primary-container">person_add</span>
                     <h3 class="card-title">Confesiones de Fe</h3>
-                    <div class="card-number">{% if metricas.casas %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
+                    <div class="card-number" id="kpiConversionesRed">{% if metricas.casas %}{{ metricas.conversiones|default(0, true) }}{% else %}Sin datos{% endif %}</div>
                     <span class="material-symbols-outlined watermark-icon">person_add</span>
                 </article>
 
                 <article class="summary-card fade-in-4">
                     <span class="material-symbols-outlined card-icon text-secondary">volunteer_activism</span>
                     <h3 class="card-title">Ofrendas de Red</h3>
-                    <div class="card-number" style="font-size: 1.15rem; line-height: 1.3;">
+                    <div class="card-number" id="kpiOfrendasRed" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.casas %}
-                            <div>${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
+                            <div id="kpiOfrendasUsdRed">${{ '{:,.2f}'.format((metricas.ofrendas_usd|default(0, true))|float) }}</div>
+                            <div id="kpiOfrendasBsRed" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Bs. {{ '{:,.2f}'.format((metricas.ofrendas_bs|default(0, true))|float) }}</div>
                         {% else %}
                             Sin datos
                         {% endif %}
@@ -547,16 +570,17 @@
                     <section class="chart-card fade-in-5">
                         <div class="chart-header">
                             <div>
-                                <h2 class="section-title">Tendencia de Asistencia</h2>
-                                <p class="section-subtitle">Histórico de las últimas {{ metricas.tendencia_semanas|length if metricas.tendencia_semanas else 0 }} mediciones en {{ metricas.nombre_red }}</p>
+                                <h2 class="section-title" id="lblTrendTitleRed">{% if periodo == 'mes' %}Evolución Semanal del Mes{% elif periodo == 'anio' %}Evolución Mensual del Año{% else %}Asistencia por Casa esta Semana{% endif %}</h2>
+                                <p class="section-subtitle" id="lblTrendSubRed">{% if periodo == 'mes' %}Histórico semanal del mes en curso en {{ metricas.nombre_red }}{% elif periodo == 'anio' %}Histórico mes a mes del año en curso en {{ metricas.nombre_red }}{% else %}Desglose por Casa de Paz en {{ metricas.nombre_red }}{% endif %}</p>
                             </div>
+                            <div id="trendBadgeRed">
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
                             {% set asist_prev_red = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
                             {% set asist_curr_red = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
                             {% set variacion_red = ((asist_curr_red - asist_prev_red) / asist_prev_red * 100)|round(1) %}
                             <div class="trend-badge-pill {% if variacion_red < 0 %}negative{% endif %}" role="status" aria-label="Variación semanal: {{ '%+.1f'|format(variacion_red) }}% respecto a la semana anterior">
                                 <span class="material-symbols-outlined">{% if variacion_red >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
-                                <span>{{ '%+.1f'|format(variacion_red) }}% vs semana anterior</span>
+                                <span>{{ '%+.1f'|format(variacion_red) }}% vs anterior</span>
                             </div>
                             {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.promedio_tendencia is defined and metricas.promedio_tendencia|default(0, true) > 0 %}
                             {% set prom_red = metricas.promedio_tendencia|default(0, true) %}
@@ -567,16 +591,17 @@
                                 <span>{{ '%+.1f'|format(variacion_red) }}% vs promedio</span>
                             </div>
                             {% elif metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 %}
-                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0% respecto a la semana anterior">
+                            <div class="trend-badge-pill" role="status" aria-label="Variación: 0.0%">
                                 <span class="material-symbols-outlined">trending_flat</span>
-                                <span>0.0% vs semana anterior</span>
+                                <span>0.0% vs anterior</span>
                             </div>
                             {% endif %}
+                            </div>
                         </div>
 
                         <!-- Gráfico de barras de tendencia de la red -->
-                        <div class="trend-chart-area">
-                            <div class="trend-bars-container" role="region" aria-label="Gráfica de tendencia semanal de asistencia de la red">
+                        <div class="trend-chart-area {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 7 %}has-scroll{% endif %}">
+                            <div class="trend-bars-container {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 7 %}has-scroll{% endif %}" id="trendBarsRed" role="region" aria-label="Gráfica de tendencia de asistencia de la red">
                                 {% if metricas.tendencia_semanas %}
                                 {% for item in metricas.tendencia_semanas %}
                                 {% set tip_id = 'trend-tip-red-' ~ loop.index %}
@@ -586,7 +611,7 @@
                                             <span class="trend-bar-val">{{ item.asistencia|default(0, true) }}</span>
                                         </div>
                                     </div>
-                                    <span class="trend-bar-lbl">{{ item.semana }}</span>
+                                    <span class="trend-bar-lbl">{{ item.semana }}{% if item.rango_fecha %}<span class="trend-bar-sublbl">{{ item.rango_fecha }}</span>{% endif %}</span>
                                     <div class="trend-tooltip" id="{{ tip_id }}" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-date">{{ item.fecha_completa|default(item.semana) }}</span>
                                         <span class="tooltip-val"><strong>{{ item.asistencia|default(0, true) }}</strong> asistentes</span>
@@ -654,7 +679,7 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Distribución de Asistencia</h2>
-                                <p class="section-subtitle">Composición de asistentes en {{ metricas.nombre_red }}</p>
+                                <p class="section-subtitle" id="lblDistribucionSubRed">{% if periodo == 'mes' %}Composición de miembros en el mes activo{% elif periodo == 'anio' %}Composición de miembros en el año activo{% else %}Composición de asistentes en {{ metricas.nombre_red }}{% endif %}</p>
                             </div>
                         </div>
 
@@ -665,33 +690,33 @@
                             {% set d_com_red = ((metricas.distribucion.comprometidos if metricas.distribucion else 0)|default(0, true))|int %}
                             {% set sum_dist_red = (d_reg_red + d_nin_red + d_vis_red + d_com_red) %}
                             {% set pct_base_red = sum_dist_red if sum_dist_red > 0 else 1 %}
-                            <ul class="chart-legend" role="list" aria-label="Leyenda de distribución de asistencia de la red">
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-red" data-category="regular" data-count="{{ d_reg_red }}" data-percent="{{ (d_reg_red / pct_base_red * 100)|round|int }}" aria-label="Regulares: {{ d_reg_red }} personas ({{ (d_reg_red / pct_base_red * 100)|round|int }}%)">
-                                    <span class="dot regular"></span> Regulares ({{ d_reg_red }})
+                            <ul class="chart-legend" id="chartLegendRed" role="list" aria-label="Leyenda de distribución de asistencia de la red">
+                                <li class="legend-item" id="legendItemRegRed" tabindex="0" role="listitem" aria-describedby="legend-tip-reg-red" data-category="regular" data-count="{{ d_reg_red }}" data-percent="{{ (d_reg_red / pct_base_red * 100)|round|int }}" aria-label="Regulares: {{ d_reg_red }} personas ({{ (d_reg_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot regular"></span> Regulares (<span id="legendValRegRed">{{ d_reg_red }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-reg-red" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Regulares</span>
                                         <span class="tooltip-val"><strong>{{ d_reg_red }}</strong> personas</span>
                                         <span class="tooltip-pct">{{ (d_reg_red / pct_base_red * 100)|round|int }}% de la red</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-red" data-category="ninos" data-count="{{ d_nin_red }}" data-percent="{{ (d_nin_red / pct_base_red * 100)|round|int }}" aria-label="Niños: {{ d_nin_red }} personas ({{ (d_nin_red / pct_base_red * 100)|round|int }}%)">
-                                    <span class="dot ninos"></span> Niños ({{ d_nin_red }})
+                                <li class="legend-item" id="legendItemNinRed" tabindex="0" role="listitem" aria-describedby="legend-tip-nin-red" data-category="ninos" data-count="{{ d_nin_red }}" data-percent="{{ (d_nin_red / pct_base_red * 100)|round|int }}" aria-label="Niños: {{ d_nin_red }} personas ({{ (d_nin_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot ninos"></span> Niños (<span id="legendValNinRed">{{ d_nin_red }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-nin-red" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Niños</span>
                                         <span class="tooltip-val"><strong>{{ d_nin_red }}</strong> personas</span>
                                         <span class="tooltip-pct">{{ (d_nin_red / pct_base_red * 100)|round|int }}% de la red</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-red" data-category="visitas" data-count="{{ d_vis_red }}" data-percent="{{ (d_vis_red / pct_base_red * 100)|round|int }}" aria-label="Visitas: {{ d_vis_red }} personas ({{ (d_vis_red / pct_base_red * 100)|round|int }}%)">
-                                    <span class="dot visitas"></span> Visitas ({{ d_vis_red }})
+                                <li class="legend-item" id="legendItemVisRed" tabindex="0" role="listitem" aria-describedby="legend-tip-vis-red" data-category="visitas" data-count="{{ d_vis_red }}" data-percent="{{ (d_vis_red / pct_base_red * 100)|round|int }}" aria-label="Visitas: {{ d_vis_red }} personas ({{ (d_vis_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot visitas"></span> Visitas (<span id="legendValVisRed">{{ d_vis_red }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-vis-red" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Visitas</span>
                                         <span class="tooltip-val"><strong>{{ d_vis_red }}</strong> personas</span>
                                         <span class="tooltip-pct">{{ (d_vis_red / pct_base_red * 100)|round|int }}% de la red</span>
                                     </div>
                                 </li>
-                                <li class="legend-item" tabindex="0" role="listitem" aria-describedby="legend-tip-com-red" data-category="comprometidos" data-count="{{ d_com_red }}" data-percent="{{ (d_com_red / pct_base_red * 100)|round|int }}" aria-label="Comprometidos: {{ d_com_red }} personas ({{ (d_com_red / pct_base_red * 100)|round|int }}%)">
-                                    <span class="dot comprometidos"></span> Comprometidos ({{ d_com_red }})
+                                <li class="legend-item" id="legendItemComRed" tabindex="0" role="listitem" aria-describedby="legend-tip-com-red" data-category="comprometidos" data-count="{{ d_com_red }}" data-percent="{{ (d_com_red / pct_base_red * 100)|round|int }}" aria-label="Comprometidos: {{ d_com_red }} personas ({{ (d_com_red / pct_base_red * 100)|round|int }}%)">
+                                    <span class="dot comprometidos"></span> Comprometidos (<span id="legendValComRed">{{ d_com_red }}</span>)
                                     <div class="legend-tooltip" id="legend-tip-com-red" role="tooltip" aria-hidden="true">
                                         <span class="tooltip-title">Comprometidos</span>
                                         <span class="tooltip-val"><strong>{{ d_com_red }}</strong> personas</span>
@@ -700,10 +725,10 @@
                                 </li>
                             </ul>
                             <div class="donut-wrapper" role="region" aria-label="Gráfico de asistencia de la red" style="position: relative; width: 220px; height: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0;">
-                                <div class="donut-ring" data-regular="{{ d_reg_red }}" data-ninos="{{ d_nin_red }}" data-visitas="{{ d_vis_red }}" data-comprometidos="{{ d_com_red }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <div class="donut-ring" id="donutRingRed" data-regular="{{ d_reg_red }}" data-ninos="{{ d_nin_red }}" data-visitas="{{ d_vis_red }}" data-comprometidos="{{ d_com_red }}" style="position: relative; width: 180px; height: 180px; min-width: 180px; min-height: 180px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                     <div class="donut-center" aria-live="polite" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 10; width: 100px; height: 100px; margin: 0; padding: 0; box-sizing: border-box;">
                                         <span class="donut-label" style="display: block; font-size: 0.8rem; margin-bottom: 0.2rem; line-height: 1.2;">TOTAL</span>
-                                        <span class="donut-number" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.asistencia_total|default(0, true) }}</span>
+                                        <span class="donut-number" id="donutNumberRed" style="display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;">{{ metricas.asistencia_total|default(0, true) }}</span>
                                     </div>
                                 </div>
                                 <div class="donut-tooltip" id="donut-tooltip-red" role="tooltip" aria-hidden="true"></div>
@@ -774,28 +799,28 @@
                         </div>{% else %}<div class="empty-state"><span class="material-symbols-outlined empty-icon">workspace_premium</span><p class="empty-message">Aún no hay datos de crecimiento para destacar.</p></div>{% endif %}
                     </article>
 
-                    <!-- Bloque 3: Cumplimiento Semanal de la Red -->
+                    <!-- Bloque 3: Cumplimiento de la Red -->
                     <article class="participation-card">
                         <div class="status-card-header">
-                            <h2 class="section-title">Cumplimiento Semanal</h2>
-                            <p class="section-subtitle">Casas con reporte enviado esta semana</p>
+                            <h2 class="section-title" id="lblCumplimientoTitleRed">{% if periodo == 'mes' %}Cumplimiento Mensual{% elif periodo == 'anio' %}Cumplimiento Anual{% else %}Cumplimiento Semanal{% endif %}</h2>
+                            <p class="section-subtitle" id="lblCumplimientoSubRed">{% if periodo == 'mes' %}Casas con reporte en el mes activo{% elif periodo == 'anio' %}Casas con reporte en el año activo{% else %}Casas con reporte enviado esta semana{% endif %}</p>
                         </div>
                         <div class="cumplimiento-zonal-box">
                             <div class="cumplimiento-header-row">
-                                <span class="cumplimiento-percentage">{{ metricas.cumplimiento|default(0, true) }}%</span>
-                                <span class="cumplimiento-fraction">{{ metricas.casas_con_reporte|default(0, true) }} de {{ metricas.casas_activas|default(0, true) }} casas</span>
+                                <span class="cumplimiento-percentage" id="cumplimientoPctRed">{{ metricas.cumplimiento|default(0, true) }}%</span>
+                                <span class="cumplimiento-fraction" id="cumplimientoFractionRed">{{ metricas.casas_con_reporte|default(0, true) }} de {{ metricas.casas_activas|default(0, true) }} casas</span>
                             </div>
                             <div class="progress-bar-track">
-                                <div class="progress-bar-fill" style="--bar-width: {{ metricas.cumplimiento|default(0, true) }}%;"></div>
+                                <div class="progress-bar-fill" id="cumplimientoBarRed" style="--bar-width: {{ metricas.cumplimiento|default(0, true) }}%;"></div>
                             </div>
                             <div class="cumplimiento-pills">
-                                <span class="cumplimiento-pill al-dia">
+                                <span class="cumplimiento-pill al-dia" id="pillAlDiaRed">
                                     <span class="material-symbols-outlined">check_circle</span>
-                                    {{ metricas.casas_con_reporte|default(0, true) }} Al día
+                                    <span id="pillAlDiaNumRed">{{ metricas.casas_con_reporte|default(0, true) }}</span> Al día
                                 </span>
-                                <span class="cumplimiento-pill pendientes">
+                                <span class="cumplimiento-pill pendientes" id="pillPendientesRed">
                                     <span class="material-symbols-outlined">schedule</span>
-                                    {{ metricas.casas_pendientes|default(0, true) }} Pendientes
+                                    <span id="pillPendientesNumRed">{{ metricas.casas_pendientes|default(0, true) }}</span> Pendientes
                                 </span>
                             </div>
                         </div>

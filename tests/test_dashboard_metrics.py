@@ -65,11 +65,11 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
         self.assertGreater(data['total_asistencia'], 0)
 
     def test_mock_generales_weekly_trend(self):
-        """La tendencia debe contener 8 semanas consecutivas con fechas cortas y porcentajes relativos al pico."""
-        data = mock_data.get_mock_generales()
+        """La tendencia semanal debe contener el desglose por Red con nombres y porcentajes relativos al pico."""
+        data = mock_data.get_mock_generales(periodo='semana')
         tendencia = data['tendencia_semanas']
 
-        self.assertEqual(len(tendencia), 8, "Debe retornar 8 semanas históricas")
+        self.assertEqual(len(tendencia), 3, "Debe retornar las 3 redes registradas en la semana")
         max_asist = max(item['asistencia'] for item in tendencia)
 
         for item in tendencia:
@@ -80,7 +80,7 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
             self.assertLessEqual(item['porcentaje'], 100)
             self.assertGreaterEqual(item['porcentaje'], 0)
             # El pico debe tener porcentaje 100
-            if item['asistencia'] == max_asist:
+            if item['asistencia'] == max_asist and max_asist > 0:
                 self.assertEqual(item['porcentaje'], 100)
 
     # -------------------------------------------------------------------------
@@ -329,18 +329,18 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
             self.assertEqual(t['porcentaje'], 0)
         self.assertEqual(sanitized['promedio_tendencia'], 0)
 
-    def test_weekly_trend_enforces_max_eight_weeks(self):
-        """sanitize_metricas debe recortar la tendencia a las últimas 8 semanas."""
+    def test_weekly_trend_enforces_max_fifty_items(self):
+        """sanitize_metricas debe permitir hasta 50 puntos en semana para soportar redes con muchas CDPs."""
         raw = {
             'tendencia_semanas': [
-                {'semana': f'Sem {i}', 'asistencia': i * 10}
-                for i in range(1, 15)
+                {'semana': f'CDP-{i}', 'asistencia': i * 10}
+                for i in range(1, 60)
             ]
         }
         sanitized = sanitize_metricas(raw)
-        self.assertEqual(len(sanitized['tendencia_semanas']), 8)
-        self.assertEqual(sanitized['tendencia_semanas'][-1]['semana'], 'Sem 14')
-        self.assertEqual(sanitized['tendencia_semanas'][0]['semana'], 'Sem 7')
+        self.assertEqual(len(sanitized['tendencia_semanas']), 50)
+        self.assertEqual(sanitized['tendencia_semanas'][0]['semana'], 'CDP-1')
+        self.assertEqual(sanitized['tendencia_semanas'][-1]['semana'], 'CDP-50')
 
     # -------------------------------------------------------------------------
     # Edge Cases: Donut Chart (Todas las categorías en 0, datos vacíos)
@@ -652,18 +652,18 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
             self.assertEqual(mod.formatear_fecha_corta("texto-no-fecha"), "texto-no-fecha")
 
     def test_sanitize_metricas_tendencia_clamping_and_zero_peak_recalibration(self):
-        """Verifica que tendencia_semanas se limite a 8 semanas y se recalibren porcentajes relativos al pico del periodo."""
-        # 1. Clamping de >8 semanas a exactamente las últimas 8
-        items = [{'semana': f'Sem {i}', 'asistencia': i * 10} for i in range(1, 13)]
+        """Verifica que tendencia_semanas se limite a max_points y se recalibren porcentajes relativos al pico del periodo."""
+        # 1. Clamping de >50 elementos a exactamente 50
+        items = [{'semana': f'CDP-{i}', 'asistencia': i * 10} for i in range(1, 61)]
         res = sanitize_metricas({'tendencia_semanas': items})
-        self.assertEqual(len(res['tendencia_semanas']), 8)
-        self.assertEqual(res['tendencia_semanas'][0]['semana'], 'Sem 5')
-        self.assertEqual(res['tendencia_semanas'][-1]['semana'], 'Sem 12')
+        self.assertEqual(len(res['tendencia_semanas']), 50)
+        self.assertEqual(res['tendencia_semanas'][0]['semana'], 'CDP-1')
+        self.assertEqual(res['tendencia_semanas'][-1]['semana'], 'CDP-50')
 
-        # El pico de las 8 semanas restantes es 120 (Sem 12) -> debe ser 100%
+        # El pico de los 50 elementos es 500 (CDP-50) -> debe ser 100%
         self.assertEqual(res['tendencia_semanas'][-1]['porcentaje'], 100)
-        # Sem 5 (asistencia 50 / 120 * 100) -> 42%
-        self.assertEqual(res['tendencia_semanas'][0]['porcentaje'], 42)
+        # CDP-1 (asistencia 10 / 500 * 100) -> 2%
+        self.assertEqual(res['tendencia_semanas'][0]['porcentaje'], 2)
 
         # 2. Todas las asistencias en 0 -> todos los porcentajes en 0%
         items_cero = [{'semana': f'Sem {i}', 'asistencia': 0, 'porcentaje': 80} for i in range(1, 6)]
@@ -811,8 +811,8 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
         self.assertNotIn('Semáforo de Cumplimiento Zonal', html)
         self.assertNotIn('semaforo-grid', html)
 
-        # 2. Tendencia de Asistencia presente
-        self.assertIn('Tendencia de Asistencia', html)
+        # 2. Gráfica de Asistencia presente
+        self.assertIn('Asistencia por Casa esta Semana', html)
         self.assertIn('trend-tip-red-', html)
         self.assertIn('trend-bars-container', html)
 
@@ -1034,8 +1034,203 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
             self.assertIn('hace 14 días', html_pend)
 
 
+    # -------------------------------------------------------------------------
+    # Toggle Dinámico de Período (Semana / Mes / Año)
+    # -------------------------------------------------------------------------
+    def test_periodo_a_fecha_calculation(self):
+        """Verifica el cálculo de fecha_desde para cada período soportado según calendario natural."""
+        hoy = date.today()
+        f_semana = db_queries._periodo_a_fecha('semana')
+        self.assertEqual(f_semana, hoy - timedelta(days=7))
+
+        f_mes = db_queries._periodo_a_fecha('mes')
+        self.assertEqual(f_mes, date(hoy.year, hoy.month, 1))
+
+        f_anio = db_queries._periodo_a_fecha('anio')
+        self.assertEqual(f_anio, date(hoy.year, 1, 1))
+
+        # Fallback seguro para valores desconocidos
+        f_default = db_queries._periodo_a_fecha('otro')
+        self.assertEqual(f_default, hoy - timedelta(days=7))
+
+    def test_mock_generales_tendencia_by_periodo(self):
+        """Mock generales debe generar el desglose correcto según el período."""
+        # Semana: Desglose por Red (3 redes en demo)
+        data_sem = mock_data.get_mock_generales(periodo='semana')
+        self.assertEqual(len(data_sem['tendencia_semanas']), 3)
+        self.assertEqual(data_sem.get('periodo'), 'semana')
+        self.assertEqual(data_sem['tendencia_semanas'][0]['semana'], 'Red Hebrón')
+
+        # Mes: Semanas del mes activo (4 o 5)
+        data_mes = mock_data.get_mock_generales(periodo='mes')
+        self.assertIn(len(data_mes['tendencia_semanas']), (4, 5))
+        self.assertEqual(data_mes.get('periodo'), 'mes')
+        self.assertEqual(data_mes['tendencia_semanas'][0]['semana'], 'Sem 1')
+        self.assertIn('rango_fecha', data_mes['tendencia_semanas'][0])
+        self.assertTrue(len(data_mes['tendencia_semanas'][0]['rango_fecha']) > 0)
+
+        # Año: Meses con actividad
+        data_anio = mock_data.get_mock_generales(periodo='anio')
+        self.assertGreaterEqual(len(data_anio['tendencia_semanas']), 1)
+        self.assertLessEqual(len(data_anio['tendencia_semanas']), 12)
+        self.assertEqual(data_anio.get('periodo'), 'anio')
+
+    def test_mock_red_tendencia_by_periodo(self):
+        """Mock red debe adaptar la tendencia a CDPs en semana, semanas en mes o meses con datos en año."""
+        # Red 1 (Red Hebrón) tiene 2 casas activas (HEB-001 y HEB-002)
+        data_sem = mock_data.get_mock_red(1, periodo='semana')
+        self.assertEqual(len(data_sem['tendencia_semanas']), 2)
+        self.assertEqual(data_sem['tendencia_semanas'][0]['semana'], 'HEB-001')
+
+        data_mes = mock_data.get_mock_red(1, periodo='mes')
+        self.assertIn(len(data_mes['tendencia_semanas']), (4, 5))
+        self.assertIn('rango_fecha', data_mes['tendencia_semanas'][0])
+        self.assertTrue(len(data_mes['tendencia_semanas'][0]['rango_fecha']) > 0)
+
+        data_anio = mock_data.get_mock_red(1, periodo='anio')
+        self.assertGreaterEqual(len(data_anio['tendencia_semanas']), 1)
+        self.assertLessEqual(len(data_anio['tendencia_semanas']), 12)
+
+    def test_dashboard_service_sanitize_includes_periodo(self):
+        """sanitize_metricas debe preservar o inicializar el campo periodo."""
+        res = sanitize_metricas({'total_asistencia': 100})
+        self.assertEqual(res.get('periodo'), 'semana')
+
+        res_mes = sanitize_metricas({'total_asistencia': 100, 'periodo': 'mes'})
+        self.assertEqual(res_mes.get('periodo'), 'mes')
+
+    @patch('services.dashboard_service.get_db_connection', return_value=None)
+    @patch('database.get_db_connection', return_value=None)
+    @patch('services.dashboard_service.mock_mode_enabled', return_value=True)
+    def test_api_dashboard_datos_supports_periodo(self, mock_enabled, mock_db1, mock_db2):
+        """Endpoint /api/dashboard/datos debe aceptar parámetro periodo y retornar métricas ajustadas."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-test-uuid'
+            sess['rol'] = 'admin'
+            sess['usuario'] = 'Admin'
+
+        # Mes
+        res_mes = self.client.get('/api/dashboard/datos?nivel=general&periodo=mes')
+        self.assertEqual(res_mes.status_code, 200)
+        json_mes = res_mes.get_json()
+        self.assertIsInstance(json_mes, dict)
+        self.assertEqual(json_mes.get('periodo'), 'mes')
+        self.assertIn(len(json_mes.get('tendencia_semanas', [])), (4, 5))
+
+        # Año
+        res_anio = self.client.get('/api/dashboard/datos?nivel=general&periodo=anio')
+        self.assertEqual(res_anio.status_code, 200)
+        json_anio = res_anio.get_json()
+        self.assertIsInstance(json_anio, dict)
+        self.assertGreaterEqual(len(json_anio.get('tendencia_semanas', [])), 1)
+        self.assertLessEqual(len(json_anio.get('tendencia_semanas', [])), 12)
+
+    @patch('services.dashboard_service.mock_mode_enabled', return_value=True)
+    def test_admin_dashboard_template_renders_period_toggle(self, mock_enabled):
+        """El template dashboard_admin.html debe renderizar la barra de botones de período y reflejar el período activo."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-test-uuid'
+            sess['rol'] = 'admin'
+            sess['usuario'] = 'Admin'
+
+        # Default (semana)
+        res_sem = self.client.get('/admin/dashboard?nivel=general')
+        self.assertEqual(res_sem.status_code, 200)
+        html_sem = res_sem.get_data(as_text=True)
+        self.assertIn('period-toggle-bar', html_sem)
+        self.assertIn('data-periodo="semana"', html_sem)
+        self.assertIn('data-periodo="mes"', html_sem)
+        self.assertIn('data-periodo="anio"', html_sem)
+        self.assertIn('Cumplimiento Semanal', html_sem)
+        self.assertIn('Asistencia por Red esta Semana', html_sem)
+
+        # Mes
+        res_mes = self.client.get('/admin/dashboard?nivel=general&periodo=mes')
+        self.assertEqual(res_mes.status_code, 200)
+        html_mes = res_mes.get_data(as_text=True)
+        self.assertIn('Cumplimiento Mensual', html_mes)
+        self.assertIn('Evolución Semanal del Mes', html_mes)
+        self.assertIn('value="mes"', html_mes)
+        self.assertIn('trend-bar-sublbl', html_mes)
+
+        # Año
+        res_anio = self.client.get('/admin/dashboard?nivel=general&periodo=anio')
+        self.assertEqual(res_anio.status_code, 200)
+        html_anio = res_anio.get_data(as_text=True)
+        self.assertIn('Cumplimiento Anual', html_anio)
+        self.assertIn('Evolución Mensual del Año', html_anio)
+        self.assertIn('value="anio"', html_anio)
+
+    @patch('services.dashboard_service.mock_mode_enabled', return_value=True)
+    def test_admin_dashboard_vista_red_renders_period_toggle(self, mock_enabled):
+        """En Vista Red, el selector de período debe mostrarse y adaptar los títulos a Semanal / Mensual / Anual."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-test-uuid'
+            sess['rol'] = 'admin'
+            sess['usuario'] = 'Admin'
+
+        # Semana
+        res_red_sem = self.client.get('/admin/dashboard?nivel=red&red_id=1&periodo=semana')
+        self.assertEqual(res_red_sem.status_code, 200)
+        html_red_sem = res_red_sem.get_data(as_text=True)
+        self.assertIn('Asistencia por Casa esta Semana', html_red_sem)
+
+        # Mes
+        res_red_mes = self.client.get('/admin/dashboard?nivel=red&red_id=1&periodo=mes')
+        self.assertEqual(res_red_mes.status_code, 200)
+        html_red_mes = res_red_mes.get_data(as_text=True)
+        self.assertIn('period-toggle-bar', html_red_mes)
+        self.assertIn('Cumplimiento Mensual', html_red_mes)
+        self.assertIn('Evolución Semanal del Mes', html_red_mes)
+
+        # Año
+        res_red_anio = self.client.get('/admin/dashboard?nivel=red&red_id=1&periodo=anio')
+        self.assertEqual(res_red_anio.status_code, 200)
+        html_red_anio = res_red_anio.get_data(as_text=True)
+        self.assertIn('Cumplimiento Anual', html_red_anio)
+        self.assertIn('Evolución Mensual del Año', html_red_anio)
+
+    def test_trend_bars_horizontal_scroll_class_when_more_than_seven_items(self):
+        """El contenedor de barras debe incluir la clase has-scroll si hay más de 7 elementos."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-scroll'
+            sess['rol'] = 'admin'
+            sess['usuario'] = 'Admin'
+
+        # Caso > 7: 8 elementos activa has-scroll
+        with patch('services.dashboard_service.get_metricas') as mock_m:
+            mock_m.return_value = {
+                **sanitize_metricas({
+                    'total_asistencia': 100,
+                    'total_casas': 10,
+                    'periodo': 'anio',
+                    'tendencia_semanas': [{'semana': f'M{i}', 'asistencia': 10} for i in range(1, 9)]
+                })
+            }
+            res = self.client.get('/admin/dashboard?nivel=general&periodo=anio')
+            html = res.get_data(as_text=True)
+            self.assertIn('trend-bars-container has-scroll', html)
+            self.assertIn('trend-chart-area has-scroll', html)
+
+        # Caso <= 7: 7 elementos NO activa has-scroll
+        with patch('services.dashboard_service.get_metricas') as mock_m:
+            mock_m.return_value = {
+                **sanitize_metricas({
+                    'total_asistencia': 100,
+                    'total_casas': 7,
+                    'periodo': 'mes',
+                    'tendencia_semanas': [{'semana': f'Sem {i}', 'asistencia': 10} for i in range(1, 8)]
+                })
+            }
+            res = self.client.get('/admin/dashboard?nivel=general&periodo=mes')
+            html = res.get_data(as_text=True)
+            self.assertNotIn('trend-bars-container has-scroll', html)
+            self.assertNotIn('trend-chart-area has-scroll', html)
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
