@@ -20,7 +20,11 @@ def login():
     secret = current_app.config.get("RECAPTCHA_SECRET_KEY")
 
     p = ""
-    is_dev = bool(
+    is_production = bool(
+        current_app.config.get('FLASK_ENV') == 'production'
+        or (not current_app.config.get('DEBUG', False) and not current_app.config.get('TESTING', False) and current_app.config.get('FLASK_ENV') != 'development')
+    )
+    is_dev = not is_production and bool(
         current_app.config.get('DEBUG', False)
         or current_app.config.get('FLASK_ENV') == 'development'
         or current_app.config.get('MOCK_MODE', False)
@@ -58,7 +62,10 @@ def login():
                 captcha_valido = resultado.get("success", False)
                 puntaje = resultado.get("score", 0.0)
                 accion = resultado.get("action", "")
-                current_app.logger.info(f"reCAPTCHA -> Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion}")
+                error_codes = resultado.get("error-codes", [])
+                current_app.logger.info(
+                    f"reCAPTCHA -> Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion} | Errores: {error_codes}"
+                )
             except Exception as e:
                 current_app.logger.error(f"[reCAPTCHA] Error de conexión: {e}")
                 captcha_valido = False
@@ -107,7 +114,7 @@ def login():
                     conn.close()
             else:
                 # Modo demo: ESTRICTAMENTE habilitado SOLO en entorno de desarrollo
-                if is_dev:
+                if is_dev and not is_production:
                     if usuario == "admin" and contrasena == "admin":
                         session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
                         session["usuario"] = "admin"

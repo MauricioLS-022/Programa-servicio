@@ -237,6 +237,125 @@ class TestPerfilRoutes(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 302)
 
+    @patch('services.cdp_service.get_db_connection')
+    def test_get_perfil_data_supervisor_con_red(self, mock_db):
+        """get_perfil_data debe extraer la red asignada al supervisor."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = {
+            'id': 'super-1',
+            'username': 'superpedro',
+            'nombre': 'Pedro',
+            'apellido': 'González',
+            'tipo_usuario': 'supervisor',
+            'red_sup_id': 10,
+            'red_sup_nombre': 'Red Hebrón',
+            'cdp_id': None,
+            'cdp_codigo': None,
+            'cdp_anfitrion': None,
+            'cdp_red_id': None,
+            'cdp_red_nombre': None
+        }
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_db.return_value = mock_conn
+
+        perfil = get_perfil_data('super-1')
+        self.assertEqual(perfil.get('red_nombre'), 'Red Hebrón')
+        self.assertEqual(perfil.get('red_asignada'), 'Red Hebrón')
+
+    @patch('services.cdp_service.get_db_connection')
+    def test_get_perfil_data_lider_con_cdp_y_red(self, mock_db):
+        """get_perfil_data debe extraer la CDP y Red asignadas al líder."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = {
+            'id': 'lider-1',
+            'username': 'juancarlos',
+            'nombre': 'Juan Carlos',
+            'apellido': 'Pérez',
+            'tipo_usuario': 'lider_cdp',
+            'red_sup_id': None,
+            'red_sup_nombre': None,
+            'cdp_id': 5,
+            'cdp_codigo': 'HEB-001',
+            'cdp_anfitrion': 'David Gómez',
+            'cdp_red_id': 10,
+            'cdp_red_nombre': 'Red Hebrón'
+        }
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_db.return_value = mock_conn
+
+        perfil = get_perfil_data('lider-1')
+        self.assertEqual(perfil.get('cdp_codigo'), 'HEB-001')
+        self.assertEqual(perfil.get('red_nombre'), 'Red Hebrón')
+        self.assertIn('HEB-001', perfil.get('cdp_asignada', ''))
+
+    @patch('services.cdp_service.get_db_connection')
+    def test_perfil_supervisor_render_red_asignada(self, mock_db):
+        """La página de perfil del supervisor debe mostrar la red asignada."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = {
+            'id': 'super-uuid-1',
+            'username': 'super',
+            'nombre': 'Carlos',
+            'apellido': 'Mendoza',
+            'tipo_usuario': 'supervisor',
+            'red_sup_id': 1,
+            'red_sup_nombre': 'Red Norte',
+            'cdp_id': None,
+            'cdp_codigo': None,
+            'cdp_anfitrion': None,
+            'cdp_red_id': None,
+            'cdp_red_nombre': None
+        }
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_db.return_value = mock_conn
+
+        with self.client.session_transaction() as sess:
+            sess['usuario'] = 'super'
+            sess['usuario_id'] = 'super-uuid-1'
+            sess['rol'] = 'supervisor'
+
+        response = self.client.get('/supervisor/perfil')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Red Asignada', response.data)
+        self.assertIn(b'Red Norte', response.data)
+
+    @patch('services.cdp_service.get_db_connection')
+    def test_perfil_lider_render_cdp_y_red_asignada(self, mock_db):
+        """La página de perfil del líder debe mostrar la CDP y Red asignadas."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = {
+            'id': 'lider-uuid-1',
+            'username': 'lider',
+            'nombre': 'Pedro',
+            'apellido': 'García',
+            'tipo_usuario': 'lider_cdp',
+            'red_sup_id': None,
+            'red_sup_nombre': None,
+            'cdp_id': 2,
+            'cdp_codigo': 'CDP-BETEL',
+            'cdp_anfitrion': 'Familia García',
+            'cdp_red_id': 3,
+            'cdp_red_nombre': 'Red Central'
+        }
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_db.return_value = mock_conn
+
+        with self.client.session_transaction() as sess:
+            sess['usuario'] = 'lider'
+            sess['usuario_id'] = 'lider-uuid-1'
+            sess['rol'] = 'lider_cdp'
+
+        response = self.client.get('/lider_cdp/perfil')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Casa de Paz Asignada', response.data)
+        self.assertIn(b'CDP-BETEL', response.data)
+        self.assertIn(b'Red Ministerial', response.data)
+        self.assertIn(b'Red Central', response.data)
+
 
 if __name__ == '__main__':
     unittest.main()

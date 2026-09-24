@@ -21,6 +21,7 @@ load_dotenv()
 env = os.getenv('FLASK_ENV', 'development')
 app = Flask(__name__)
 app.config.from_object(config[env])
+config[env].init_app(app)
 app.secret_key = app.config['SECRET_KEY']
 
 # Inicializar extensiones de seguridad (CSRF y Rate Limiting)
@@ -148,5 +149,5 @@ if __name__ == '__main__':
     app.run(
         host=app.config.get('APP_HOST', app.config.get('HOST', '0.0.0.0')),
         port=app.config.get('APP_PORT', app.config.get('PORT', 5000)),
-        debug=app.config.get('DEBUG', True)
+        debug=app.config.get('DEBUG', False)
     )

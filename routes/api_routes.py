@@ -20,6 +20,8 @@ def api_dashboard_datos():
     nivel = request.args.get('nivel', 'general')
     red_id_str = request.args.get('red_id', '')
     cdp_id_str = request.args.get('cdp_id', '')
+    periodo_raw = request.args.get('periodo', 'semana').strip().lower() if request.args.get('periodo') else 'semana'
+    periodo = periodo_raw if periodo_raw in ('semana', 'mes', 'anio') else 'semana'
 
     try:
         red_id = int(red_id_str) if red_id_str and red_id_str.isdigit() else None
@@ -37,10 +39,18 @@ def api_dashboard_datos():
         sup_red = get_supervisor_red_id(usuario_id)
         if not sup_red:
             return jsonify({})
-        nivel = 'red'
+        if nivel not in ('red', 'cdp'):
+            nivel = 'red'
         red_id = sup_red
 
-    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{mock_mode_enabled()}'
+        if nivel == 'cdp' and cdp_id:
+            from services.dashboard_service import get_selectores
+            _, casas = get_selectores()
+            casas_de_red = [c['id'] for c in casas if c.get('red_id') == sup_red]
+            if cdp_id not in casas_de_red:
+                return jsonify({}), 403
+
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{periodo}_{mock_mode_enabled()}'
 
     # Verificar caché primero
     cached = get_cached_value(cache_key)
@@ -48,7 +58,10 @@ def api_dashboard_datos():
         return jsonify(cached)
 
     # Obtener métricas
-    metricas = get_metricas(nivel, red_id, cdp_id)
+    if 'periodo' in request.args:
+        metricas = get_metricas(nivel, red_id, cdp_id, periodo=periodo)
+    else:
+        metricas = get_metricas(nivel, red_id, cdp_id)
     
     if metricas:
         set_cached_value(cache_key, metricas)

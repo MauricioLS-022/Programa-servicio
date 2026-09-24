@@ -2,7 +2,7 @@
 {% block title %}Usuarios{% endblock %}
 
 {% block custom_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/usuario.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/admin/usuario.css') }}?v=1789523500">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 {% endblock %}
 {% block content %}
@@ -111,8 +111,26 @@
                             </td>
                             <td data-label="Acciones" class="text-right">
                                 <div class="action-buttons">
-                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon btn-edit" aria-label="Editar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
-                                    <button class="btn-icon btn-delete" type="button" aria-label="Eliminar usuario {{ nombre or usuario.username }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+                                    {% set u = usuario %}
+                                    {# url_for('admin_routes.usuario_toggle_estado', id=u.id) #}
+                                    <form action="{{ url_for('admin.usuario_toggle_estado', id=usuario.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn-icon btn-toggle" aria-label="{{ 'Desactivar usuario ' ~ (nombre or usuario.username) if usuario.is_active else 'Reactivar usuario ' ~ (nombre or usuario.username) }}" title="{{ 'Desactivar Usuario' if usuario.is_active else 'Reactivar Usuario' }}">
+                                            <span class="material-symbols-outlined text-primary" aria-hidden="true">{{ 'pause_circle' if usuario.is_active else 'play_circle' }}</span>
+                                        </button>
+                                    </form>
+                                    <a href="{{ url_for('admin.usuario_editar', id=usuario.id) }}" class="btn-icon btn-edit" aria-label="Editar usuario {{ nombre or usuario.username }}" title="Editar Usuario"><span class="material-symbols-outlined text-secondary" aria-hidden="true">edit</span></a>
+                                    <button class="btn-icon btn-delete" type="button" 
+                                            aria-label="Eliminar usuario {{ nombre or usuario.username }}" 
+                                            title="Eliminar Usuario"
+                                            data-id="{{ usuario.id }}"
+                                            data-nombre="{{ nombre or usuario.username }}"
+                                            data-is-self="{{ 'true' if session.get('usuario_id') and session.get('usuario_id')|string == usuario.id|string else 'false' }}"
+                                            data-red="{{ usuario.red_nombre or '' }}"
+                                            data-cdp="{{ usuario.cdp_codigo or '' }}"
+                                            data-delete-url="{{ url_for('admin.usuario_eliminar', id=usuario.id) }}">
+                                        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -163,21 +181,51 @@
     </div>
 </main>
 
-<div id="deleteModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-hidden="true">
+<!-- Modal Informativo: Usuario con dependencias o cuenta propia (Bloqueado) -->
+<div id="deleteBlockedModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteBlockedTitle" aria-hidden="true">
     <div class="modal-content">
         <div class="modal-header">
-            <span class="material-symbols-outlined modal-icon" aria-hidden="true">warning</span>
-            <h3 id="deleteModalTitle">Confirmar Eliminación</h3>
+            <span class="material-symbols-outlined modal-icon modal-icon-blocked" aria-hidden="true">block</span>
+            <h3 id="deleteBlockedTitle">No es posible eliminar el usuario</h3>
         </div>
-        <p class="modal-text">¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.</p>
-        <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
-        <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la baja del usuario">
+        <p class="modal-text" id="deleteBlockedReason">
+            Este usuario no puede ser eliminado del sistema.
+        </p>
+        <p class="modal-text text-muted" id="deleteBlockedHint" style="font-size: 0.85rem; margin-top: 0.5rem;">
+            Para eliminarlo, primero debes desvincular o reasignar sus responsabilidades ministeriales.
+        </p>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-            <button class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="confirmDeleteUser()">Eliminar</button>
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Entendido</button>
         </div>
     </div>
 </div>
+
+<!-- Modal de Confirmación: Usuario sin dependencias -->
+<div id="deleteConfirmModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="material-symbols-outlined modal-icon" aria-hidden="true">warning</span>
+            <h3 id="deleteConfirmTitle">Confirmar Eliminación</h3>
+        </div>
+        <p class="modal-text">
+            ¿Estás seguro de que deseas eliminar al usuario <strong id="deleteUserName"></strong>? Esta acción dará de baja su cuenta de forma permanente e irreversible.
+        </p>
+        <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
+        <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la eliminación">
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+            <button type="button" class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="confirmDeleteUser()">
+                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario Oculto para Eliminación Segura -->
+<form id="formEliminarUsuario" method="POST" action="" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
 {% endblock %}
 
 {% block custom_scripts %}

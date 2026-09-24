@@ -67,7 +67,22 @@
       </div>
     </div>
 
-    <div class="form-group full-width">
+    {% if is_edit or cdp %}
+    {% set cdp_active = cdp.is_active if (cdp and cdp.is_active is defined) else 1 %}
+    <div class="form-group half-width">
+      <label for="is_active">Estado de la Casa de Paz</label>
+      <div class="input-wrapper icon-left icon-right">
+        <span class="material-symbols-outlined input-icon">toggle_on</span>
+        <select id="is_active" name="is_active" class="form-control" required>
+          <option value="1" {% if cdp_active == 1 or cdp_active is sameas true or cdp_active == '1' %}selected{% endif %}>Activo</option>
+          <option value="0" {% if cdp_active == 0 or cdp_active is sameas false or cdp_active == '0' %}selected{% endif %}>En pausa / Inactivo</option>
+        </select>
+        <span class="material-symbols-outlined input-icon">expand_more</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="form-group {{ 'half-width' if is_edit or cdp else 'full-width' }}">
       <label for="direccion">Dirección Completa</label>
       <div class="input-wrapper icon-left">
         <span class="material-symbols-outlined input-icon">location_on</span>
@@ -165,7 +180,7 @@
 
     <div class="form-group half-width">
       <label for="password">Contraseña</label>
-      <div class="input-wrapper icon-left">
+      <div class="input-wrapper both-icons">
         <span class="material-symbols-outlined input-icon">lock</span>
         <input
           id="password"
@@ -173,6 +188,7 @@
           type="password"
           placeholder="••••••••"
         />
+        <span class="material-symbols-outlined input-icon clickable" role="button" tabindex="0" aria-label="Mostrar contraseña" title="Mostrar contraseña">visibility</span>
       </div>
       {% if is_edit %}
       <span class="input-hint">Deja en blanco para conservar la contraseña actual.</span>

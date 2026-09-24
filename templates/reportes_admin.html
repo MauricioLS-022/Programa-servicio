@@ -106,7 +106,10 @@
                         <td data-label="Acciones" class="text-center">
                             <div class="action-buttons">
                                 <button class="btn-icon btn-view"
+                                    data-id="{{ reporte.id }}"
+                                    data-cdp-id="{{ reporte.cdp_id }}"
                                     data-fecha="{{ reporte.fecha_formateada }}"
+                                    data-fecha-iso="{{ reporte.fecha }}"
                                     data-lider="{{ reporte.lider_nombre }}"
                                     data-iniciales="{{ reporte.iniciales }}"
                                     data-casa="{{ reporte.cdp_nombre }}"
@@ -121,6 +124,7 @@
                                     data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(0.0)) }}"
                                     data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
+                                    data-cesta-val="{{ 1 if reporte.cesta_amor else 0 }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
                                     aria-label="Ver detalle del reporte de {{ reporte.lider_nombre }} del {{ reporte.fecha_formateada }}">
@@ -128,7 +132,10 @@
                                 </button>
                                 {% if not has_role("supervisor") %}
                                 <button class="btn-icon btn-edit"
+                                    data-id="{{ reporte.id }}"
+                                    data-cdp-id="{{ reporte.cdp_id }}"
                                     data-fecha="{{ reporte.fecha_formateada }}"
+                                    data-fecha-iso="{{ reporte.fecha }}"
                                     data-lider="{{ reporte.lider_nombre }}"
                                     data-iniciales="{{ reporte.iniciales }}"
                                     data-casa="{{ reporte.cdp_nombre }}"
@@ -143,6 +150,7 @@
                                     data-ofrendas-usd="{{ "{:.2f}".format(reporte.ofrendas_usd|default(0.0)) }}"
                                     data-ofrendas-bs="{{ "{:.2f}".format(reporte.ofrendas_bs|default(0.0)) }}"
                                     data-cesta="{{ reporte.cesta_amor_desc }}"
+                                    data-cesta-val="{{ 1 if reporte.cesta_amor else 0 }}"
                                     data-tema="{{ reporte.tema }}"
                                     data-obs="{{ reporte.observaciones }}"
                                     aria-label="Editar reporte de {{ reporte.lider_nombre }} del {{ reporte.fecha_formateada }}">
@@ -201,116 +209,139 @@
         <div class="modal">
             <div class="modal-header">
                 <div class="modal-title-group">
-                    <span class="material-symbols-outlined modal-icon" aria-hidden="true">description</span>
+                    <span class="material-symbols-outlined modal-icon" id="modalHeaderIcon" aria-hidden="true">visibility</span>
                     <h3 class="modal-title" id="modalTitle">Detalle del Reporte</h3>
                 </div>
-                <button class="modal-close" id="modalClose" aria-label="Cerrar modal de detalles">
+                <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar modal de detalles">
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="modal-avatar" id="modalAvatar">RM</div>
+            <form id="reporteForm" method="POST" action="" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" id="modalReporteId" name="reporte_id" value=""/>
+                <input type="hidden" id="modalCdpId" name="cdp_id" value=""/>
+                <div class="modal-body">
+                    <!-- Sección 1: Fecha y Encargado -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -2px; margin-right: 4px;">calendar_today</span>
+                            Fecha y Encargado
+                        </h4>
+                        <div class="modal-grid">
+                            <div class="modal-grid-2">
+                                <div class="modal-field">
+                                    <label for="modalLider">Líder Encargado</label>
+                                    <input type="text" id="modalLider" readonly />
+                                </div>
+                                <div class="modal-field">
+                                    <label for="modalCasa">Casa de Paz</label>
+                                    <input type="text" id="modalCasa" readonly />
+                                </div>
+                            </div>
+                            <div class="modal-grid-2">
+                                <div class="modal-field">
+                                    <label for="modalFecha">Fecha de Reunión</label>
+                                    <input type="text" id="modalFecha" name="fecha" required readonly />
+                                </div>
+                                <div class="modal-field">
+                                    <label for="modalTema">Tema Desarrollado</label>
+                                    <input type="text" id="modalTema" name="tema" required readonly />
+                                </div>
+                            </div>
+                            <div class="modal-grid-2">
+                                <div class="modal-field">
+                                    <label for="modalHoraInicio">Hora de Inicio</label>
+                                    <input type="text" id="modalHoraInicio" name="hr_inicio" required readonly />
+                                </div>
+                                <div class="modal-field">
+                                    <label for="modalHoraFin">Hora de Fin</label>
+                                    <input type="text" id="modalHoraFin" name="hr_fin" required readonly />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="modal-section">
-                    <h4 class="modal-section-title">Información General</h4>
-                    <div class="modal-grid modal-grid-2">
-                        <div class="modal-field">
-                            <label>Líder</label>
-                            <input type="text" id="modalLider" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Casa de Paz</label>
-                            <input type="text" id="modalCasa" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Fecha</label>
-                            <input type="text" id="modalFecha" readonly />
-                        </div>
-                        <div class="modal-field-group">
+                    <!-- Sección 2: Asistencia y Desglose -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -2px; margin-right: 4px;">groups</span>
+                            Asistencia y Desglose
+                        </h4>
+                        <div class="modal-grid-asistencia">
                             <div class="modal-field">
-                                <label>Hora Inicio</label>
-                                <input type="text" id="modalHoraInicio" readonly />
+                                <label for="modalRegulares">Regulares</label>
+                                <input type="number" id="modalRegulares" name="nro_regulares" min="0" required readonly style="text-align: center;" />
                             </div>
                             <div class="modal-field">
-                                <label>Hora Fin</label>
-                                <input type="text" id="modalHoraFin" readonly />
+                                <label for="modalNinos">Niños</label>
+                                <input type="number" id="modalNinos" name="nro_ninos" min="0" required readonly style="text-align: center;" />
+                            </div>
+                            <div class="modal-field">
+                                <label for="modalVisitas">Visitas</label>
+                                <input type="number" id="modalVisitas" name="nro_visitas" min="0" required readonly style="text-align: center;" />
+                            </div>
+                            <div class="modal-field">
+                                <label for="modalComprometidos">Comprometidos</label>
+                                <input type="number" id="modalComprometidos" name="nro_comprometidos" min="0" required readonly style="text-align: center;" />
+                            </div>
+                            <div class="modal-field-total">
+                                <div class="asistencia-total-pill">
+                                    <span>Total Calculado:</span>
+                                    <span id="modalAsistencia" style="font-size: 1.1rem; font-weight: 700;">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 3: Ministerio y Ofrendas -->
+                    <div class="modal-section">
+                        <h4 class="modal-section-title">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -2px; margin-right: 4px;">attach_money</span>
+                            Ministerio y Ofrendas
+                        </h4>
+                        <div class="modal-grid">
+                            <div class="modal-grid-2">
+                                <div class="modal-field">
+                                    <label for="modalReconciliaciones">Reconciliaciones</label>
+                                    <input type="number" id="modalReconciliaciones" name="reconciliaciones" min="0" readonly style="text-align: center;" />
+                                </div>
+                                <div class="modal-field">
+                                    <label for="modalConfesiones">Confesiones de Fe</label>
+                                    <input type="number" id="modalConfesiones" name="confesiones" min="0" readonly style="text-align: center;" />
+                                </div>
+                            </div>
+                            <div class="modal-grid-2">
+                                <div class="modal-field">
+                                    <label for="modalOfrendasBs">Ofrendas en Bolívares (Bs)</label>
+                                    <input type="text" id="modalOfrendasBs" name="ofrendas_bs" required readonly style="text-align: center; font-weight: 700; color: var(--secondary);" />
+                                </div>
+                                <div class="modal-field">
+                                    <label for="modalOfrendasUsd">Ofrendas en Dólares ($)</label>
+                                    <input type="text" id="modalOfrendasUsd" name="ofrendas_usd" required readonly style="text-align: center; font-weight: 700; color: var(--secondary);" />
+                                </div>
+                            </div>
+                            <div class="modal-field">
+                                <label for="modalCesta">¿Cesta de Amor?</label>
+                                <input type="text" id="modalCesta" readonly style="text-align: center; font-weight: 600;" />
+                                <select id="modalCestaSelect" name="cesta_amor" style="display: none;">
+                                    <option value="0">No</option>
+                                    <option value="1">Sí</option>
+                                </select>
+                            </div>
+                            <div class="modal-field">
+                                <label for="modalObs">Observaciones</label>
+                                <textarea id="modalObs" name="observaciones" rows="3" readonly placeholder="Sin observaciones adicionales."></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="modal-section">
-                    <h4 class="modal-section-title">Asistencia</h4>
-                    <div class="modal-grid modal-grid-asistencia">
-                        <div class="modal-field">
-                            <label>Regulares</label>
-                            <input type="number" id="modalRegulares" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Niños</label>
-                            <input type="number" id="modalNinos" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Visitas</label>
-                            <input type="number" id="modalVisitas" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Comprometidos</label>
-                            <input type="number" id="modalComprometidos" readonly />
-                        </div>
-                        <div class="modal-field modal-field-total">
-                            <label>Asistencia Total</label>
-                            <input type="text" id="modalAsistencia" readonly />
-                        </div>
-                    </div>
+                <div class="modal-footer" id="modalFooter">
+                    <button type="button" class="btn-modal btn-modal-cancel" id="modalCancel">Cerrar</button>
+                    <button type="submit" class="btn-modal btn-modal-save" id="modalSave" style="display:none;">
+                        <span class="material-symbols-outlined">save</span> Guardar Cambios
+                    </button>
                 </div>
-
-                <div class="modal-section">
-                    <h4 class="modal-section-title">Actividad Ministerial</h4>
-                    <div class="modal-grid modal-grid-2">
-                        <div class="modal-field">
-                            <label>Reconciliaciones</label>
-                            <input type="number" id="modalReconciliaciones" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Confesiones de Fe</label>
-                            <input type="number" id="modalConfesiones" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Ofrendas en Bs</label>
-                            <input type="text" id="modalOfrendasBs" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Ofrendas en $ (USD)</label>
-                            <input type="text" id="modalOfrendasUsd" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Cesta de Amor</label>
-                            <input type="text" id="modalCesta" readonly />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-section">
-                    <h4 class="modal-section-title">Contenido</h4>
-                    <div class="modal-grid">
-                        <div class="modal-field">
-                            <label>Tema de la Clase</label>
-                            <input type="text" id="modalTema" readonly />
-                        </div>
-                        <div class="modal-field">
-                            <label>Observaciones</label>
-                            <textarea id="modalObs" rows="3" readonly></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" id="modalFooter">
-                <button class="btn-modal btn-modal-cancel" id="modalCancel">Cancelar</button>
-                <button class="btn-modal btn-modal-save" id="modalSave" style="display:none;">
-                    <span class="material-symbols-outlined">save</span> Guardar Cambios
-                </button>
-            </div>
+            </form>
         </div>
     </div>
 

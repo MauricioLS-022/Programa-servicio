@@ -169,9 +169,14 @@
     font-size: 1.15rem;
     pointer-events: auto; /* El usuario puede hacer clic aquí */
     cursor: pointer;
+    user-select: none;
     transition: color 0.2s;
 }
-.both-icons .input-icon.clickable:hover { color: var(--primary); }
+.both-icons .input-icon.clickable:hover,
+.both-icons .input-icon.clickable:focus-visible {
+    color: var(--primary);
+    outline: none;
+}
 .both-icons input {
     padding-left: 2.35rem;
     padding-right: 2.35rem;
@@ -464,5 +469,30 @@
 @media (min-width: 992px) {
     .user-bento-grid {
         grid-template-columns: 1fr; 
+    }
+}
+
+/* =========================================
+   ESTADO DE CARGA / PROTECCIÓN ANTI-DOBLE ENVÍO
+   ========================================= */
+.is-submitting {
+    opacity: 0.75 !important;
+    cursor: wait !important;
+    pointer-events: none !important;
+}
+
+.form-guard-spinner {
+    display: inline-block;
+    animation: formGuardSpin 1s linear infinite;
+    font-size: 1.1rem !important;
+    vertical-align: middle;
+}
+
+@keyframes formGuardSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }

@@ -8,6 +8,7 @@ import os
 import pymysql
 import time
 import threading
+import queue
 from dotenv import load_dotenv
 from flask import current_app, g, has_request_context
 
@@ -19,7 +20,7 @@ STATE_CLOSED = "CLOSED"        # Operación normal con base de datos
 STATE_OPEN = "OPEN"            # Circuito abierto tras fallos; fast-fail sin intentar conexión
 STATE_HALF_OPEN = "HALF_OPEN"  # Prueba de reconexión tras expirar el intervalo de espera
 
-# Estado global del circuit breaker
+# Estado global del circuit breaker y pool persistente
 DB_AVAILABLE = False
 _circuit_state = STATE_CLOSED
 _last_db_attempt = 0.0
@@ -28,18 +29,25 @@ _DB_RETRY_INTERVAL = 15  # segundos entre reintentos si la BD falla
 _DB_TIMEOUT = 5.0        # timeout de conexión en segundos
 _FAIL_THRESHOLD = 1      # fallos consecutivos requeridos para abrir el circuito
 _db_lock = threading.Lock()
+_MAX_POOL_SIZE = 5
+_pool = queue.LifoQueue(maxsize=_MAX_POOL_SIZE)
 
 
 def is_mock_mode():
     """
     Determina si el modo mock está activado en la app o por entorno.
     Permite omitir cualquier intento de conexión hacia la BD.
+    En entornos de producción, el modo mock está estrictamente desactivado (retorna False).
     """
     if has_request_context() or current_app:
         try:
+            if current_app.config.get('FLASK_ENV') == 'production':
+                return False
             return bool(current_app.config.get('MOCK_MODE', False))
         except RuntimeError:
             pass
+    if os.getenv('FLASK_ENV', '').lower() == 'production':
+        return False
     return os.getenv('MOCK_MODE', 'False').lower() in ('true', '1', 't', 'yes')
 
 
@@ -92,6 +100,7 @@ def _create_raw_connection():
 def get_db_connection():
     """
     Obtiene la conexión a MySQL reutilizando la del request actual si existe,
+    reutilizando una conexión viva del pool persistente,
     o creando una nueva si es necesario, protegida por circuit breaker.
     Si MOCK_MODE está activado, retorna None de inmediato sin abrir sockets de red.
     """
@@ -111,10 +120,32 @@ def get_db_connection():
             except Exception:
                 pass
 
+    # 3. Intentar reutilizar conexión viva del pool
+    while not _pool.empty():
+        try:
+            candidate = _pool.get_nowait()
+            if candidate and getattr(candidate, 'open', False):
+                try:
+                    candidate.ping(reconnect=True)
+                    DB_AVAILABLE = True
+                    _circuit_state = STATE_CLOSED
+                    if has_request_context():
+                        scoped = _RequestScopedConnection(candidate)
+                        g._db_conn = scoped
+                        return scoped
+                    return candidate
+                except Exception:
+                    try:
+                        candidate.close()
+                    except Exception:
+                        pass
+        except queue.Empty:
+            break
+
     with _db_lock:
         ahora = time.time()
 
-        # 3. Circuito Abierto: Fast-fail no bloqueante si falló recientemente
+        # 4. Circuito Abierto: Fast-fail no bloqueante si falló recientemente
         if _circuit_state == STATE_OPEN:
             if (ahora - _last_db_attempt) < _DB_RETRY_INTERVAL:
                 DB_AVAILABLE = False
@@ -154,12 +185,20 @@ def get_db_connection():
 
 
 def close_db_connection(e=None):
-    """Cierra la conexión al finalizar el ciclo de vida del request."""
+    """Devuelve la conexión activa al pool o la cierra al finalizar el ciclo de vida del request."""
     if has_request_context():
         scoped = getattr(g, '_db_conn', None)
         if scoped is not None:
-            scoped._actual_close()
+            real_conn = scoped._real_conn
             g._db_conn = None
+            if real_conn and getattr(real_conn, 'open', False):
+                try:
+                    _pool.put_nowait(real_conn)
+                except (queue.Full, Exception):
+                    try:
+                        real_conn.close()
+                    except Exception:
+                        pass
 
 
 def is_db_available():
@@ -182,10 +221,17 @@ def get_circuit_breaker_status():
 
 
 def reset_circuit_breaker():
-    """Reinicia el estado del circuit breaker (útil para tests o mantenimiento)."""
+    """Reinicia el estado del circuit breaker y drena el pool (útil para tests o mantenimiento)."""
     global DB_AVAILABLE, _circuit_state, _db_fail_count, _last_db_attempt
     with _db_lock:
         DB_AVAILABLE = False
         _circuit_state = STATE_CLOSED
         _db_fail_count = 0
         _last_db_attempt = 0.0
+        while not _pool.empty():
+            try:
+                c = _pool.get_nowait()
+                if c and getattr(c, 'open', False):
+                    c.close()
+            except Exception:
+                pass

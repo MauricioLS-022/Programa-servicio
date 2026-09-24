@@ -38,9 +38,9 @@
                     <div class="input-wrapper icon-left">
                         <span class="input-icon material-symbols-outlined">badge</span>
                         <select id="lider_id" name="lider_id">
-                            <option value="" selected>Selecciona el líder encargado (Opcional)...</option>
+                            <option value="" {% if not form_data or not form_data.get('lider_id') %}selected{% endif %}>Selecciona el líder encargado (Opcional)...</option>
                             {% for lider in lideres %}
-                                <option value="{{ lider.id }}">{{ lider.nombre }} {% if lider.apellido %}{{ lider.apellido }}{% endif %}</option>
+                                <option value="{{ lider.id }}" {% if form_data and form_data.get('lider_id')|string == lider.id|string %}selected{% endif %}>{{ lider.nombre }} {% if lider.apellido %}{{ lider.apellido }}{% endif %}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -49,24 +49,24 @@
 
             <div class="grid-row grid-3-col">
                 <div class="form-group compact">
-                    <label for="fecha">Fecha</label>
+                    <label for="fecha">Fecha (Hoy)</label>
                     <div class="input-wrapper icon-left">
                         <span class="input-icon material-symbols-outlined">calendar_today</span>
-                        <input type="date" id="fecha" name="fecha" required>
+                        <input type="date" id="fecha" name="fecha" value="{{ form_data.get('fecha') or hoy }}" readonly max="{{ hoy }}" required title="La fecha del reporte se fija automáticamente al día actual.">
                     </div>
                 </div>
                 <div class="form-group compact">
                     <label for="hr_inicio">Hora de inicio</label>
                     <div class="input-wrapper icon-left">
                         <span class="input-icon material-symbols-outlined">schedule</span>
-                        <input type="time" id="hr_inicio" name="hr_inicio" required>
+                        <input type="time" id="hr_inicio" name="hr_inicio" value="{{ form_data.get('hr_inicio', '') if form_data else '' }}" required>
                     </div>
                 </div>
                 <div class="form-group compact">
                     <label for="hr_fin">Hora de finalización</label>
                     <div class="input-wrapper icon-left">
                         <span class="input-icon material-symbols-outlined">schedule</span>
-                        <input type="time" id="hr_fin" name="hr_fin" required>
+                        <input type="time" id="hr_fin" name="hr_fin" value="{{ form_data.get('hr_fin', '') if form_data else '' }}" required>
                     </div>
                 </div>
             </div>
@@ -91,7 +91,7 @@
                         <span class="material-symbols-outlined">groups</span>
                         <label for="nro_regulares">Regulares</label>
                     </div>
-                    <input type="number" id="nro_regulares" name="nro_regulares" class="attendance-counter" placeholder="0" min="0" required>
+                    <input type="number" id="nro_regulares" name="nro_regulares" class="attendance-counter" placeholder="0" min="0" value="{{ form_data.get('nro_regulares', '') if form_data else '' }}" required>
                 </div>
 
                 <div class="metric-input-card">
@@ -99,7 +99,7 @@
                         <span class="material-symbols-outlined">child_care</span>
                         <label for="nro_ninos">Niños</label>
                     </div>
-                    <input type="number" id="nro_ninos" name="nro_ninos" class="attendance-counter" placeholder="0" min="0" required>
+                    <input type="number" id="nro_ninos" name="nro_ninos" class="attendance-counter" placeholder="0" min="0" value="{{ form_data.get('nro_ninos', '') if form_data else '' }}" required>
                 </div>
 
                 <div class="metric-input-card">
@@ -107,7 +107,7 @@
                         <span class="material-symbols-outlined">person_add</span>
                         <label for="nro_visitas">Visitas</label>
                     </div>
-                    <input type="number" id="nro_visitas" name="nro_visitas" class="attendance-counter" placeholder="0" min="0" required>
+                    <input type="number" id="nro_visitas" name="nro_visitas" class="attendance-counter" placeholder="0" min="0" value="{{ form_data.get('nro_visitas', '') if form_data else '' }}" required>
                 </div>
 
                 <div class="metric-input-card">
@@ -115,7 +115,7 @@
                         <span class="material-symbols-outlined">verified</span>
                         <label for="nro_comprometidos">Comprometidos</label>
                     </div>
-                    <input type="number" id="nro_comprometidos" name="nro_comprometidos" class="attendance-counter" placeholder="0" min="0" required>
+                    <input type="number" id="nro_comprometidos" name="nro_comprometidos" class="attendance-counter" placeholder="0" min="0" value="{{ form_data.get('nro_comprometidos', '') if form_data else '' }}" required>
                 </div>
             </div>
         </section>
@@ -135,14 +135,14 @@
                         <label for="reconciliaciones">Reconciliaciones</label>
                         <div class="input-wrapper icon-left">
                             <span class="input-icon material-symbols-outlined">favorite</span>
-                            <input type="number" id="reconciliaciones" name="reconciliaciones" placeholder="0" min="0">
+                            <input type="number" id="reconciliaciones" name="reconciliaciones" placeholder="0" min="0" value="{{ form_data.get('reconciliaciones', '') if form_data else '' }}">
                         </div>
                     </div>
                     <div class="form-group compact">
                         <label for="confesiones">Confesiones de fe</label>
                         <div class="input-wrapper icon-left">
                             <span class="input-icon material-symbols-outlined">auto_stories</span>
-                            <input type="number" id="confesiones" name="confesiones" placeholder="0" min="0">
+                            <input type="number" id="confesiones" name="confesiones" placeholder="0" min="0" value="{{ form_data.get('confesiones', '') if form_data else '' }}">
                         </div>
                     </div>
                 </div>
@@ -161,14 +161,14 @@
                         <label for="ofrendas_bs">Bs.</label>
                         <div class="input-wrapper icon-left">
                             <span class="input-icon material-symbols-outlined">payments</span>
-                            <input type="number" step="0.01" id="ofrendas_bs" name="ofrendas_bs" placeholder="0.00" min="0" required>
+                            <input type="number" step="0.01" id="ofrendas_bs" name="ofrendas_bs" placeholder="0.00" min="0" value="{{ form_data.get('ofrendas_bs', '') if form_data else '' }}" required>
                         </div>
                     </div>
                     <div class="form-group compact">
                         <label for="ofrendas_usd">USD ($)</label>
                         <div class="input-wrapper icon-left">
                             <span class="input-icon material-symbols-outlined">attach_money</span>
-                            <input type="number" step="0.01" id="ofrendas_usd" name="ofrendas_usd" placeholder="0.00" min="0" required>
+                            <input type="number" step="0.01" id="ofrendas_usd" name="ofrendas_usd" placeholder="0.00" min="0" value="{{ form_data.get('ofrendas_usd', '') if form_data else '' }}" required>
                         </div>
                     </div>
                     <div class="form-group compact">
@@ -176,8 +176,8 @@
                         <div class="input-wrapper icon-left">
                             <span class="input-icon material-symbols-outlined">shopping_basket</span>
                             <select id="cesta_amor" name="cesta_amor" required>
-                                <option value="0" selected>No</option>
-                                <option value="1">Sí</option>
+                                <option value="0" {% if not form_data or form_data.get('cesta_amor')|string == '0' %}selected{% endif %}>No</option>
+                                <option value="1" {% if form_data and form_data.get('cesta_amor')|string == '1' %}selected{% endif %}>Sí</option>
                             </select>
                         </div>
                     </div>
@@ -198,7 +198,7 @@
                     <label for="tema">Tema de la clase</label>
                     <div class="input-wrapper icon-left">
                         <span class="input-icon material-symbols-outlined">subject</span>
-                        <input type="text" id="tema" name="tema" placeholder="Ej. El poder del perdón" required>
+                        <input type="text" id="tema" name="tema" placeholder="Ej. El poder del perdón" value="{{ form_data.get('tema', '') if form_data else '' }}" required>
                     </div>
                 </div>
                 <div class="form-group compact">
@@ -206,7 +206,7 @@
                         <span class="material-symbols-outlined label-inline-icon">edit_note</span>
                         <span>Observaciones</span>
                     </label>
-                    <textarea id="observaciones" name="observaciones" rows="2" placeholder="Escribe aquí cualquier eventualidad, petición o testimonio relevante..."></textarea>
+                    <textarea id="observaciones" name="observaciones" rows="2" placeholder="Escribe aquí cualquier eventualidad, petición o testimonio relevante...">{{ form_data.get('observaciones', '') if form_data else '' }}</textarea>
                 </div>
             </div>
         </section>

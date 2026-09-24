@@ -61,3 +61,29 @@ def owner_required(param_name="id"):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+def is_safe_url(target):
+    """
+    Valida que una URL de destino sea segura y pertenezca al mismo host de la aplicación,
+    previniendo vulnerabilidades de redirección abierta (Open Redirect).
+    """
+    from urllib.parse import urlparse, urljoin
+    from flask import request
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+
+def safe_redirect(fallback_endpoint, **fallback_kwargs):
+    """
+    Redirige al referrer si es seguro (pertenece al mismo host),
+    o redirige al endpoint institucional de fallback.
+    """
+    from flask import request
+    referrer = request.referrer
+    if referrer and is_safe_url(referrer):
+        return redirect(referrer)
+    return redirect(url_for(fallback_endpoint, **fallback_kwargs))

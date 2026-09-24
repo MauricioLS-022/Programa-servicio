@@ -48,28 +48,92 @@
                 <div class="identity-fields">
                     <div class="identity-field">
                         <span class="material-symbols-outlined field-icon">person</span>
-                        <div>
+                        <div class="field-content">
                             <span class="field-label">Nombre completo</span>
                             <span class="field-value">{{ perfil_data.nombre or '-' }} {{ perfil_data.apellido or '' }}</span>
                         </div>
                     </div>
                     <div class="identity-field">
                         <span class="material-symbols-outlined field-icon">badge</span>
-                        <div>
+                        <div class="field-content">
                             <span class="field-label">Nombre de usuario</span>
                             <span class="field-value">{{ perfil_data.username or usuario }}</span>
                         </div>
                     </div>
                     <div class="identity-field">
                         <span class="material-symbols-outlined field-icon">shield_person</span>
-                        <div>
+                        <div class="field-content">
                             <span class="field-label">Tipo de cuenta</span>
                             <span class="field-value">{{ perfil_data.tipo_usuario|default(rol)|replace('_', ' ')|title }}</span>
                         </div>
                     </div>
+
+                    {% if rol == 'supervisor' or perfil_data.tipo_usuario == 'supervisor' %}
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">hub</span>
+                        <div class="field-content">
+                            <span class="field-label">Red Asignada</span>
+                            <span class="field-value">
+                                {% if perfil_data.red_nombre or perfil_data.red_asignada %}
+                                    <span class="assignment-badge badge-red">
+                                        <span class="material-symbols-outlined assignment-icon">account_tree</span>
+                                        {{ perfil_data.red_nombre or perfil_data.red_asignada }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-unassigned">Sin red asignada</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% elif rol in ['lider_cdp', 'cdp'] or perfil_data.tipo_usuario in ['lider_cdp', 'cdp'] %}
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">home_work</span>
+                        <div class="field-content">
+                            <span class="field-label">Casa de Paz Asignada</span>
+                            <span class="field-value">
+                                {% if perfil_data.cdp_codigo or perfil_data.cdp_asignada %}
+                                    <span class="assignment-badge badge-cdp">
+                                        <span class="material-symbols-outlined assignment-icon">home</span>
+                                        {{ perfil_data.cdp_asignada or ('Casa "' ~ perfil_data.cdp_codigo ~ '"') }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-unassigned">Sin Casa de Paz asignada</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% if perfil_data.red_nombre or perfil_data.red_asignada %}
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">hub</span>
+                        <div class="field-content">
+                            <span class="field-label">Red Ministerial</span>
+                            <span class="field-value">
+                                <span class="assignment-badge badge-red">
+                                    <span class="material-symbols-outlined assignment-icon">account_tree</span>
+                                    {{ perfil_data.red_nombre or perfil_data.red_asignada }}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% elif rol == 'admin' or perfil_data.tipo_usuario == 'admin' %}
+                    <div class="identity-field">
+                        <span class="material-symbols-outlined field-icon">corporate_fare</span>
+                        <div class="field-content">
+                            <span class="field-label">Alcance Administrativo</span>
+                            <span class="field-value">
+                                <span class="assignment-badge badge-admin">
+                                    <span class="material-symbols-outlined assignment-icon">public</span>
+                                    Acceso Global
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="identity-field">
                         <span class="material-symbols-outlined field-icon">verified_user</span>
-                        <div>
+                        <div class="field-content">
                             <span class="field-label">Estado</span>
                             <span class="field-value status-active-text">
                                 <span class="status-dot active"></span> Activo

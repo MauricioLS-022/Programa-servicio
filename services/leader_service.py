@@ -14,14 +14,24 @@ from db_queries import (
     eliminar_red,
     insertar_red,
     toggle_estado_red,
-    obtener_red_por_id
+    obtener_red_por_id,
+    insertar_lider,
+    obtener_lider_por_id,
+    actualizar_lider,
+    eliminar_pausar_lider,
+    get_cdps_para_lideres,
+    toggle_estado_lider
 )
 from mock_data import get_mock_lideres, get_redes_demo, get_casas_demo
 from services.dashboard_service import mock_mode_enabled
 from werkzeug.security import generate_password_hash
 
-from utils.validators import validate_name_red
+from utils.validators import validate_name_red, validate_phone, validate_person_name
 
+
+# =====================================================================
+# SERVICIOS PARA GESTIÓN DE LÍDERES (EQUIPO MINISTERIAL DE CASAS DE PAZ)
+# =====================================================================
 
 def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_page=5, supervisor_red_id=None):
     """Retorna líderes reales o mock junto con filtros y paginación."""
@@ -76,6 +86,307 @@ def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_pag
         'red_id': red_id,
         'cdp_id': cdp_id,
     }
+
+def crear_lider_servicio(form_data: dict) -> tuple[bool, str]:
+    """
+    Valida y registra un nuevo líder o sublíder asignado a una Casa de Paz activa.
+    Retorna: (exito: bool, mensaje: str)
+    """
+
+    nombre_raw = form_data.get('nombre', '').strip()
+    apellido_raw = form_data.get('apellido', '').strip()
+    telefono_raw = form_data.get('telefono', '').strip()
+    rol = form_data.get('rol', '').strip()
+    cdp_id_raw = form_data.get('cdp_id', '').strip()
+
+    # 1. Validaciones defensivas de nombres
+    ok_nom, res_nom = validate_person_name(nombre_raw, 'Nombre')
+    if not ok_nom:
+        return False, res_nom
+
+    ok_ape, res_ape = validate_person_name(apellido_raw, 'Apellido')
+    if not ok_ape:
+        return False, res_ape
+
+    # 2. Validación de teléfono
+    if not telefono_raw:
+        return False, "El teléfono de contacto es obligatorio."
+    
+    ok_tel, clean_tel, error_tel = validate_phone(telefono_raw)
+    if not ok_tel:
+        return False, error_tel
+
+    # 3. Validación de rol
+    if not rol in ('Lider', 'Sublider'):
+        return False, "El rol debe ser 'Lider' o 'Sublider'."
+
+    # 4. Validación de Casa de Paz seleccionada
+    try:
+        cdp_id = int(cdp_id_raw)
+    except (ValueError, TypeError):
+        return False, "Debe seleccionar una Casa de Paz válida."
+
+    conn = get_db_connection()
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, f"Líder '{res_nom} {res_ape}' registrado exitosamente (modo demo)."
+        return False, "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            # Candado: Comprobar que la Casa de Paz existe y está activa
+            cursor.execute("SELECT id, codigo, is_active FROM cdp WHERE id = %s", (cdp_id,))
+            cdp = cursor.fetchone()
+            if not cdp:
+                return False, "La Casa de Paz seleccionada no existe."
+
+            if not bool(cdp.get('is_active', 1)):
+                return False, f"La Casa de Paz '{cdp.get('codigo')}' se encuentra inactiva/pausada. No se pueden asignar líderes a casas inactivas."
+
+            # Candado anti-duplicados: Comprobar que no exista ya un líder con el mismo nombre y apellido en esa casa
+            cursor.execute("SELECT id FROM lider WHERE nombre = %s AND apellido = %s AND cdp_id = %s", (res_nom, res_ape, cdp_id))
+            if cursor.fetchone():
+                return False, f"Ya existe un líder registrado como '{res_nom} {res_ape}' en la Casa de Paz '{cdp.get('codigo')}'."
+
+            # Insertar el nuevo líder
+            insertar_lider(cursor, res_nom, res_ape, clean_tel, rol, cdp_id)
+
+        conn.commit()
+        try:
+            invalidate_dashboard_cache()
+        except Exception:
+            pass
+        return True, f"Líder '{res_nom} {res_ape}' registrado exitosamente."
+
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al registrar líder: %s", e)
+        return False, f"Error interno al registrar el líder: {str(e)}"
+    finally:
+        conn.close()
+
+def obtener_lider_servicio(lider_id: int):
+    """
+    Obtiene los datos completos de un líder por su ID.
+    Retorna el diccionario del líder o None si no existe.
+    """
+    try:
+        lider_id = int(lider_id)
+    except (ValueError, TypeError):
+        return None
+
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cursor:
+            return obtener_lider_por_id(cursor, lider_id)
+    except Exception as e:
+        current_app.logger.error("Error al obtener líder %s: %s", lider_id, e)
+        return None
+    finally:
+        conn.close()
+
+
+def actualizar_lider_servicio(lider_id: int, form_data: dict, is_active: int = None) -> tuple[bool, str]:
+    """
+    Valida y actualiza los datos personales, rol o Casa de Paz de un líder.
+    Valida jerarquía: si se activa o asigna, la Casa de Paz debe estar activa.
+    Retorna: (exito: bool, mensaje: str)
+    """
+    try:
+        lider_id = int(lider_id)
+    except (ValueError, TypeError):
+        return False, "Identificador de líder no válido."
+
+    nombre_raw = form_data.get('nombre', '').strip()
+    apellido_raw = form_data.get('apellido', '').strip()
+    telefono_raw = form_data.get('telefono', '').strip()
+    rol = form_data.get('rol', '').strip()
+    cdp_id_raw = form_data.get('cdp_id', '').strip()
+
+    is_active_raw = is_active if is_active is not None else form_data.get('is_active')
+    is_active_val = None
+    if is_active_raw is not None and str(is_active_raw).strip() != '':
+        is_active_val = 1 if str(is_active_raw).strip().lower() in ('1', 'true', 'on', 'si', 'sí') or is_active_raw is True or is_active_raw == 1 else 0
+
+    # 1. Validaciones defensivas de nombres
+    ok_nom, res_nom = validate_person_name(nombre_raw, 'Nombre')
+    if not ok_nom:
+        return False, res_nom
+
+    ok_ape, res_ape = validate_person_name(apellido_raw, 'Apellido')
+    if not ok_ape:
+        return False, res_ape
+
+    # 2. Validación de teléfono
+    if not telefono_raw:
+        return False, "El teléfono de contacto es obligatorio."
+    
+    ok_tel, clean_tel, error_tel = validate_phone(telefono_raw)
+    if not ok_tel:
+        return False, error_tel
+
+    # 3. Validación de rol
+    if rol not in ('Lider', 'Sublider'):
+        return False, "El rol debe ser 'Lider' o 'Sublider'."
+
+    # 4. Validación de Casa de Paz seleccionada
+    try:
+        cdp_id = int(cdp_id_raw)
+    except (ValueError, TypeError):
+        return False, "Debe seleccionar una Casa de Paz válida."
+
+    conn = get_db_connection()
+    if not conn:
+        return False, "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            # 1. Verificar existencia del líder
+            cursor.execute("SELECT id, nombre, apellido, is_active FROM lider WHERE id = %s", (lider_id,))
+            lider = cursor.fetchone()
+            if not lider:
+                return False, "El líder especificado no existe."
+
+            # 2. Candado: Verificar que la Casa de Paz destino exista y esté activa
+            cursor.execute("SELECT id, codigo, is_active FROM cdp WHERE id = %s", (cdp_id,))
+            cdp = cursor.fetchone()
+            if not cdp:
+                return False, "La Casa de Paz seleccionada no existe."
+
+            # Si el líder quedará activo, validar que la Casa de Paz esté activa
+            lider_sera_activo = (is_active_val == 1) if is_active_val is not None else bool(lider.get('is_active', 1))
+            if lider_sera_activo and not bool(cdp.get('is_active', 1)):
+                return False, f"No se puede reactivar al líder porque su Casa de Paz asignada ('{cdp.get('codigo')}') se encuentra en pausa o inactiva. Debe reactivar la Casa primero o reasignar al líder a una Casa activa."
+
+            # 3. Actualizar datos
+            if is_active_val is not None:
+                actualizar_lider(cursor, lider_id, res_nom, res_ape, clean_tel, rol, cdp_id, is_active=is_active_val)
+            else:
+                actualizar_lider(cursor, lider_id, res_nom, res_ape, clean_tel, rol, cdp_id)
+
+        conn.commit()
+        try:
+            invalidate_dashboard_cache()
+        except Exception:
+            pass
+        return True, "Líder actualizado exitosamente."
+
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al actualizar líder %s: %s", lider_id, e)
+        return False, f"Error interno al actualizar el líder: {str(e)}"
+    finally:
+        conn.close()
+
+
+def toggle_lider_servicio(lider_id: int) -> tuple[bool, str, str]:
+    """
+    Alterna el estado (pausa o reactivación) de un líder de Casa de Paz.
+    Valida la jerarquía con la Casa de Paz asignada antes de reactivar.
+    Retorna: (ok: bool, status: str, message: str)
+    status: 'reactivado' | 'pausado' | 'bloqueada' | 'error'
+    """
+    try:
+        lider_id = int(lider_id)
+    except (ValueError, TypeError):
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, 'reactivado', f"Líder {lider_id} actualizado (modo demo)."
+        return False, 'error', "Identificador de líder no válido."
+
+    conn = get_db_connection()
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, 'reactivado', f"Líder {lider_id} actualizado (modo demo)."
+        return False, 'error', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            ok, status, mensaje = toggle_estado_lider(cursor, lider_id)
+            if ok:
+                conn.commit()
+                try:
+                    invalidate_dashboard_cache()
+                except Exception:
+                    pass
+                return True, status, mensaje
+            else:
+                conn.rollback()
+                return False, status, mensaje
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al alternar estado de líder %s: %s", lider_id, e)
+        return False, 'error', f"Error interno al alternar el estado del líder: {e}"
+    finally:
+        conn.close()
+
+
+def eliminar_lider_servicio(lider_id_raw: int) -> tuple[bool, str, str]:
+    """
+    Gestiona la baja de un líder con candados de integridad llamando a eliminar_pausar_lider.
+    Retorna: (exito: bool, categoria_flash: str, mensaje: str)
+    """
+    try:
+        lider_id = int(lider_id_raw)
+    except (ValueError, TypeError) as e:
+        return False, "danger", "Identificador de líder no válido."
+
+    conn = get_db_connection()
+
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_reportes
+            lideres = get_mock_lideres()
+            target = next((l for l in lideres if str(l.get('id')) == str(lider_id)), None)
+            nombre = f"{target.get('nombre', '')} {target.get('apellido', '')}".strip() if target else f"Líder #{lider_id}"
+            reportes = get_mock_reportes()
+            total_reps = sum(1 for r in reportes if r.get('lider_nombre') == nombre or (target and r.get('cdp_id') == target.get('cdp_id')))
+            if total_reps > 0:
+                return False, 'danger', (
+                    f"No se puede eliminar al líder '{nombre}' porque tiene {total_reps} reporte(s) registrado(s). "
+                    f"Para evitar datos huérfanos y preservar el historial ministerial, debes ponerlo en pausa en su lugar."
+                )
+            return True, 'success', f"El líder '{nombre}' ha sido eliminado exitosamente del sistema."
+        return False, 'danger', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+
+            exito, accion, mensaje = eliminar_pausar_lider(cursor, lider_id)
+
+            categorias = {
+                'eliminado': 'success',  # Verde
+                'pausado':   'warning',  # Amarillo / Ámbar
+                'bloqueada': 'danger',   # Rojo
+                'error':     'danger'    # Rojo
+            }
+
+            categoria_flash = categorias.get(accion, 'danger')
+            if exito:
+                conn.commit()
+
+                try:
+                    invalidate_dashboard_cache()
+                except Exception:
+                    pass
+
+                return True, categoria_flash, mensaje
+            else:
+                conn.rollback()
+                return False, categoria_flash, mensaje
+
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error en baja de líder %s: %s", lider_id, e)
+        return False, "danger", f"Error interno al procesar la baja del líder: {e}"
+    finally:
+        conn.close()
+
 
 def crear_nuevo_usuario(form_data):
     """

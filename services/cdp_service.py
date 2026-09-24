@@ -51,6 +51,24 @@ def process_reporte(cdp_id, form_data):
 
     try:
         with conn.cursor() as cursor:
+            # Candado de unicidad e idempotencia: Comprobar si ya existe un reporte para esta Casa de Paz en la misma fecha
+            cursor.execute(
+                "SELECT id FROM reporte WHERE cdp_id = %s AND fecha = %s LIMIT 1",
+                (datos_reporte['cdp_id'], datos_reporte['fecha'])
+            )
+            reporte_existente = cursor.fetchone()
+            if reporte_existente:
+                fecha_str = str(datos_reporte['fecha'])
+                try:
+                    from utils.date_helpers import formatear_fecha_corta
+                    fecha_fmt = formatear_fecha_corta(datos_reporte['fecha'])
+                except Exception:
+                    fecha_fmt = fecha_str
+                return ProcessReporteResult((
+                    False,
+                    f"Ya existe un reporte registrado para esta Casa de Paz en la fecha {fecha_fmt}. Puedes consultarlo o editarlo en el historial."
+                ))
+
             db_queries.insertar_reporte(cursor, datos_reporte)
         conn.commit()  # Confirmar la transacción
         
@@ -72,10 +90,10 @@ def process_reporte(cdp_id, form_data):
 
 def get_perfil_data(usuario_id):
     """
-    Obtiene los datos del perfil del usuario.
+    Obtiene los datos del perfil del usuario, incluyendo su asignación de CDP o Red.
     
     Returns:
-        dict con los datos del perfil
+        dict con los datos del perfil y asignaciones correspondientes
     """
     conn = get_db_connection()
     if not conn:
@@ -86,23 +104,109 @@ def get_perfil_data(usuario_id):
             user = next((u for u in usuarios if str(u['id']) == str(usuario_id) or str(u.get('username')) == str(usuario_id)), None)
             if not user:
                 user = usuarios[0]
-            return {
+            perfil = {
                 'id': user['id'],
                 'username': user['username'],
                 'nombre': user['nombre'],
                 'apellido': user['apellido'],
-                'tipo_usuario': user['rol']
+                'tipo_usuario': user.get('tipo_usuario') or user.get('rol', '')
             }
+            tipo = perfil['tipo_usuario']
+            if tipo == 'supervisor':
+                from mock_data import get_redes_demo
+                red = next((r for r in get_redes_demo() if str(r.get('supervisor_id')) == str(user['id'])), None)
+                if red:
+                    perfil['red_id'] = red.get('id')
+                    perfil['red_nombre'] = red.get('nombre')
+                    perfil['red_asignada'] = red.get('nombre')
+            elif tipo in ('lider_cdp', 'cdp'):
+                from mock_data import get_casas_demo, get_mock_lideres
+                casas = get_casas_demo()
+                casa = next((c for c in casas if str(c.get('lider_id')) == str(user['id'])), None)
+                if not casa:
+                    lideres_all = get_mock_lideres()
+                    lider_match = next((l for l in lideres_all if str(l.get('usuario_id')) == str(user['id'])), None)
+                    if lider_match:
+                        casa = next((c for c in casas if c['id'] == lider_match.get('cdp_id')), None)
+                if not casa and casas:
+                    casa = casas[0]
+                if casa:
+                    perfil['cdp_id'] = casa.get('id')
+                    perfil['cdp_codigo'] = casa.get('codigo')
+                    perfil['cdp_nombre'] = casa.get('nombre')
+                    perfil['cdp_anfitrion'] = casa.get('anfitrion')
+                    perfil['cdp_asignada'] = f'Casa "{casa.get("codigo")}"'
+                    perfil['red_id'] = casa.get('red_id')
+                    perfil['red_nombre'] = casa.get('red_nombre')
+                    perfil['red_asignada'] = casa.get('red_nombre')
+            elif tipo == 'admin':
+                perfil['asignacion_admin'] = 'Acceso Global'
+                perfil['red_asignada'] = 'Todas las Redes'
+
+            return perfil
         return {}
     
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT id, username, nombre, apellido, tipo_usuario
-                FROM usuario 
-                WHERE id = %s
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.nombre, 
+                    u.apellido, 
+                    u.tipo_usuario,
+                    r_sup.id AS red_sup_id,
+                    r_sup.nombre AS red_sup_nombre,
+                    c.id AS cdp_id,
+                    c.codigo AS cdp_codigo,
+                    c.anfitrion AS cdp_anfitrion,
+                    r_cdp.id AS cdp_red_id,
+                    r_cdp.nombre AS cdp_red_nombre
+                FROM usuario u
+                LEFT JOIN red r_sup ON r_sup.supervisor_id = u.id
+                LEFT JOIN cdp c ON c.usuario_id = u.id
+                LEFT JOIN red r_cdp ON c.red_id = r_cdp.id
+                WHERE u.id = %s
             """, (str(usuario_id),))
-            return cursor.fetchone() or {}
+            row = cursor.fetchone() or {}
+            if not row:
+                return {}
+
+            perfil = {
+                'id': row.get('id'),
+                'username': row.get('username'),
+                'nombre': row.get('nombre'),
+                'apellido': row.get('apellido'),
+                'tipo_usuario': row.get('tipo_usuario'),
+            }
+            tipo = perfil.get('tipo_usuario')
+            if tipo == 'supervisor':
+                perfil['red_id'] = row.get('red_sup_id')
+                perfil['red_nombre'] = row.get('red_sup_nombre')
+                perfil['red_asignada'] = row.get('red_sup_nombre')
+            elif tipo in ('lider_cdp', 'cdp'):
+                perfil['cdp_id'] = row.get('cdp_id')
+                perfil['cdp_codigo'] = row.get('cdp_codigo')
+                perfil['cdp_anfitrion'] = row.get('cdp_anfitrion')
+                if row.get('cdp_codigo'):
+                    perfil['cdp_asignada'] = f'Casa "{row.get("cdp_codigo")}"'
+                perfil['red_id'] = row.get('cdp_red_id')
+                perfil['red_nombre'] = row.get('cdp_red_nombre')
+                perfil['red_asignada'] = row.get('cdp_red_nombre')
+            elif tipo == 'admin':
+                perfil['asignacion_admin'] = 'Acceso Global'
+                perfil['red_asignada'] = 'Todas las Redes'
+            else:
+                if row.get('red_sup_nombre'):
+                    perfil['red_nombre'] = row.get('red_sup_nombre')
+                    perfil['red_asignada'] = row.get('red_sup_nombre')
+                if row.get('cdp_codigo'):
+                    perfil['cdp_codigo'] = row.get('cdp_codigo')
+                    perfil['cdp_asignada'] = f'Casa "{row.get("cdp_codigo")}"'
+                    perfil['red_nombre'] = row.get('cdp_red_nombre')
+                    perfil['red_asignada'] = row.get('cdp_red_nombre')
+
+            return perfil
     except Exception as e:
         print(f"[DB] Error perfil: {e}")
         return {}
@@ -444,8 +548,19 @@ def actualizar_reporte(reporte_id, cdp_id, form_data):
     if not reporte_id:
         return False, "Identificador de reporte no válido."
 
+    try:
+        cdp_id = int(cdp_id) if cdp_id else 0
+    except (ValueError, TypeError):
+        cdp_id = 0
+
+    if not cdp_id:
+        return False, "Identificador de Casa de Paz no válido."
+
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, "Reporte actualizado exitosamente."
         return False, "No se pudo conectar a la base de datos."
 
     from utils.validators import validate_report_form
@@ -682,10 +797,16 @@ def get_cdp_detalle(cdp_id):
                     }
         except Exception as e:
             print(f"[DB] Error al obtener detalles de CDP {cdp_id}: {e}")
+            return None
         finally:
             conn.close()
+        return None
             
-    # Mock / Demo fallback cuando DB no está conectada o no existe el id
+    # En producción, NUNCA se hace fallback a datos mock bajo ninguna circunstancia
+    if current_app and current_app.config.get('FLASK_ENV') == 'production':
+        return None
+
+    # Fallback demo para desarrollo offline y pruebas automáticas cuando no hay BD
     from mock_data import get_mock_cdp_detalle
     return get_mock_cdp_detalle(cdp_id)
 
@@ -859,7 +980,7 @@ def crear_cdp_servicio(form_data: dict) -> tuple[bool, str]:
     finally:
         conn.close()
 
-def actualizar_cdp_servicio(cdp_id: int, form_data: dict) -> tuple[bool, str]: 
+def actualizar_cdp_servicio(cdp_id: int, form_data: dict, is_active: int = None) -> tuple[bool, str]: 
     """Actualiza los datos de la Casa de Paz y del usuario líder vinculado."""
 
     try:
@@ -880,6 +1001,11 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict) -> tuple[bool, str]:
     apellido_user = form_data.get('apellido', '').strip()
     username_raw = form_data.get('username', '').strip()
     password_nueva = form_data.get('password', '').strip()
+
+    is_active_raw = is_active if is_active is not None else form_data.get('is_active')
+    is_active_val = None
+    if is_active_raw is not None and str(is_active_raw).strip() != '':
+        is_active_val = 1 if str(is_active_raw).strip().lower() in ('1', 'true', 'on', 'si', 'sí') or is_active_raw is True or is_active_raw == 1 else 0
 
     # 1. Validaciones de datos de la Casa
     if not codigo or len(codigo) < 2:
@@ -937,13 +1063,25 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict) -> tuple[bool, str]:
 
             user_id = fila_cdp.get('usuario_id')
 
+            # Validar jerarquía de Red si se solicita activar
+            if is_active_val == 1:
+                cursor.execute("SELECT id, nombre, is_active FROM red WHERE id = %s", (red_id,))
+                red_parent = cursor.fetchone()
+                if not red_parent:
+                    return False, "La Red Ministerial seleccionada no existe."
+                if not red_parent.get('is_active', 1):
+                    return False, f"No se puede reactivar la Casa de Paz '{codigo}' porque su Red Ministerial '{red_parent.get('nombre', '')}' se encuentra en pausa. Debe reactivar la Red primero."
+
             # Comprobar duplicado de código en otra CDP
             cursor.execute("SELECT id FROM cdp WHERE codigo = %s AND id != %s", (codigo, cdp_id))
             if cursor.fetchone():
                 return False, f"Ya existe otra Casa de Paz con el código '{codigo}'."
 
             # Actualizar datos de la Casa
-            db_queries.actualizar_cdp_admin(cursor, cdp_id, codigo, res_anf, res_tel, direccion, red_id)
+            if is_active_val is not None:
+                db_queries.actualizar_cdp_admin(cursor, cdp_id, codigo, res_anf, res_tel, direccion, red_id, is_active=is_active_val)
+            else:
+                db_queries.actualizar_cdp_admin(cursor, cdp_id, codigo, res_anf, res_tel, direccion, red_id)
 
             if es_modo_existente:
                 # Comprobar que el usuario existente sea válido
@@ -998,6 +1136,17 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict) -> tuple[bool, str]:
                     """, (nuevo_user_id, res_user, pass_hash, res_nom, res_ape))
                     cursor.execute("UPDATE cdp SET usuario_id = %s WHERE id = %s", (nuevo_user_id, cdp_id))
 
+            # Sincronizar estado del usuario vinculado si se especificó is_active
+            if is_active_val is not None:
+                if es_modo_existente:
+                    target_sync_uid = usuario_existente_id
+                elif not user_id:
+                    target_sync_uid = locals().get('nuevo_user_id')
+                else:
+                    target_sync_uid = str(user_id)
+                if target_sync_uid:
+                    cursor.execute("UPDATE usuario SET is_active = %s WHERE id = %s", (is_active_val, str(target_sync_uid)))
+
         conn.commit()
 
         try:
@@ -1011,6 +1160,49 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict) -> tuple[bool, str]:
         conn.rollback()
         current_app.logger.error("Error al actualizar CDP %s: %s", cdp_id, e)
         return False, "Error interno al actualizar la Casa de Paz."
+    finally:
+        conn.close()
+
+
+def toggle_cdp_servicio(cdp_id: int) -> tuple[bool, str, str]:
+    """
+    Alterna el estado (pausa o reactivación) de una Casa de Paz y su cuenta vinculada.
+    Valida la jerarquía con la Red Ministerial correspondiente.
+    Retorna: (ok: bool, status: str, message: str)
+    status: 'reactivada' | 'pausada' | 'bloqueada' | 'error'
+    """
+    try:
+        cdp_id = int(cdp_id)
+    except (ValueError, TypeError):
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, 'reactivada', f"Casa de Paz {cdp_id} actualizada (modo demo)."
+        return False, 'error', "Identificador de Casa de Paz no válido."
+
+    conn = get_db_connection()
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            return True, 'reactivada', f"Casa de Paz {cdp_id} actualizada (modo demo)."
+        return False, 'error', "Error de conexión a la base de datos."
+
+    try:
+        with conn.cursor() as cursor:
+            ok, status, mensaje = db_queries.toggle_estado_cdp(cursor, cdp_id)
+            if ok:
+                conn.commit()
+                try:
+                    invalidate_dashboard_cache()
+                except Exception:
+                    pass
+                return True, status, mensaje
+            else:
+                conn.rollback()
+                return False, status, mensaje
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al alternar estado de CDP %s: %s", cdp_id, e)
+        return False, 'error', f"Error interno al alternar el estado de la Casa de Paz: {e}"
     finally:
         conn.close()
 
@@ -1101,14 +1293,19 @@ def check_cdp_reporte_7d(cdp_id) -> dict:
             conn.close()
 
     # Demo fallback
-    detalle = get_cdp_detalle(cdp_id)
-    return {
-        'cdp_id': detalle.get('id'),
-        'codigo': detalle.get('codigo'),
-        'tiene_reporte': bool(detalle.get('reporte_reciente_7d', False)),
-        'is_active': bool(detalle.get('is_active', True)),
-        'estado': detalle.get('estado_reporte_7d', 'pendiente')
-    }
+    from services.dashboard_service import mock_mode_enabled
+    if mock_mode_enabled():
+        detalle = get_cdp_detalle(cdp_id)
+        if detalle:
+            return {
+                'cdp_id': detalle.get('id', cdp_id),
+                'codigo': detalle.get('codigo', ''),
+                'tiene_reporte': bool(detalle.get('reporte_reciente_7d', False)),
+                'is_active': bool(detalle.get('is_active', True)),
+                'estado': detalle.get('estado_reporte_7d', 'pendiente')
+            }
+
+    return {'cdp_id': cdp_id, 'tiene_reporte': False, 'is_active': False, 'estado': 'inactiva'}
 
 
 def get_casas_sin_reporte_7d(red_id=None):
@@ -1117,3 +1314,23 @@ def get_casas_sin_reporte_7d(red_id=None):
     """
     from services.dashboard_service import get_casas_sin_reporte_7d as _get_sin_rep
     return _get_sin_rep(red_id=red_id)
+
+def obtener_cdps_para_select():
+    """Retorna las Casas de Paz activas para desplegables en formularios."""
+    conn = get_db_connection()
+    if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_casas
+            return [c for c in get_mock_casas() if c.get('is_active', 1) == 1]
+        return []
+
+    try:
+        with conn.cursor() as cursor:
+            return db_queries.get_cdps_para_lideres(cursor)
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error("Error al obtener CDPs para select: %s", e)
+        return []
+    finally:
+        conn.close()

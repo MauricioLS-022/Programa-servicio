@@ -103,6 +103,7 @@ class TestLiderCDPService(unittest.TestCase):
         """Verifica que process_reporte inserte correctamente y confirme transacción."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         mock_db.return_value = mock_conn
 
@@ -128,6 +129,36 @@ class TestLiderCDPService(unittest.TestCase):
             self.assertEqual(datos['ofrendas_bs'], 450.00)
             self.assertEqual(datos['ofrendas_usd'], 25.00)
             self.assertEqual(datos['cesta_amor'], 1)
+
+    @patch('services.cdp_service.get_db_connection')
+    @patch('services.cdp_service.db_queries.insertar_reporte')
+    def test_process_reporte_rechaza_duplicado_misma_fecha(self, mock_insert, mock_db):
+        """Verifica que process_reporte rechace el guardado si ya existe un reporte para la misma CDP y fecha."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = {'id': 'rep-existente-1', 'fecha': '2026-08-22'}
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_db.return_value = mock_conn
+
+        form_data = {
+            'fecha': '2026-08-22',
+            'hr_inicio': '18:30',
+            'hr_fin': '20:00',
+            'tema': 'Comunión y Servicio',
+            'nro_regulares': '12',
+            'nro_ninos': '3',
+            'nro_visitas': '2',
+            'nro_comprometidos': '1',
+            'ofrendas_bs': '450.00',
+            'ofrendas_usd': '25.00',
+            'cesta_amor': '1'
+        }
+        with app.app_context():
+            exito = process_reporte(1, form_data)
+            self.assertFalse(exito)
+            self.assertIn("Ya existe un reporte registrado", exito[1])
+            mock_insert.assert_not_called()
+            mock_conn.commit.assert_not_called()
 
 
 class TestLiderCDPRoutes(unittest.TestCase):
