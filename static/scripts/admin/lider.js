@@ -49,14 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const roleEl = tr.querySelector('.badge');
             const netEl = tr.querySelector('td[data-label="Red"]');
             const cdpEl = tr.querySelector('td[data-label="Casa de Paz"]');
-            const phoneEl = tr.querySelector('td[data-label="Teléfono"]');
+            const phoneTd = tr.querySelector('td[data-label="Teléfono"]');
+            
+            let linkPhone = phoneTd ? phoneTd.querySelector('a') : null;
+            let telefonoText = '';
+            if (linkPhone) {
+                telefonoText = linkPhone.getAttribute('href').replace('tel:', '').trim();
+            } else if (phoneTd) {
+                telefonoText = phoneTd.textContent.includes('Sin teléfono') ? 'Sin teléfono' : '';
+            }
 
             data.push({
                 nombre: nameEl ? nameEl.textContent.trim() : '',
                 rol: roleEl ? roleEl.textContent.trim() : '',
                 red: netEl ? netEl.textContent.trim() : '',
                 cdp: cdpEl ? cdpEl.textContent.trim() : '',
-                telefono: phoneEl ? phoneEl.textContent.replace('call', '').replace('Llamar', '').trim() : ''
+                telefono: telefonoText
             });
         });
 
@@ -290,4 +298,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
