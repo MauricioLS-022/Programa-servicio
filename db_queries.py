@@ -239,24 +239,63 @@ def formatear_mes_nombre(fecha_val) -> str:
     return str(fecha_val)
 
 
-def _obtener_rango_periodo(periodo='semana'):
+def _obtener_rango_periodo(periodo='semana', mes=None, anio=None):
     """Retorna (fecha_inicio, fecha_fin) para el período solicitado según el calendario natural."""
     hoy = date.today()
+    try:
+        target_year = int(anio) if anio is not None and str(anio).isdigit() else hoy.year
+    except Exception:
+        target_year = hoy.year
+
     if periodo == 'mes':
-        inicio = date(hoy.year, hoy.month, 1)
-        if hoy.month == 12:
-            fin = date(hoy.year, 12, 31)
+        try:
+            target_month = int(mes) if mes is not None and str(mes).isdigit() and 1 <= int(mes) <= 12 else hoy.month
+        except Exception:
+            target_month = hoy.month
+        inicio = date(target_year, target_month, 1)
+        if target_month == 12:
+            fin = date(target_year, 12, 31)
         else:
-            fin = date(hoy.year, hoy.month + 1, 1) - timedelta(days=1)
+            fin = date(target_year, target_month + 1, 1) - timedelta(days=1)
         return inicio, fin
     elif periodo == 'anio':
-        return date(hoy.year, 1, 1), date(hoy.year, 12, 31)
+        return date(target_year, 1, 1), date(target_year, 12, 31)
     return hoy - timedelta(days=7), hoy
 
 
-def _periodo_a_fecha(periodo='semana'):
+def _obtener_metadatos_periodo(periodo='semana', fecha_desde=None, fecha_hasta=None, mes=None, anio=None):
+    """Genera etiquetas amigables del período para títulos y subtítulos del dashboard."""
+    hoy = date.today()
+    target_year = fecha_desde.year if (fecha_desde and hasattr(fecha_desde, 'year')) else hoy.year
+    target_month = fecha_desde.month if (fecha_desde and hasattr(fecha_desde, 'month')) else hoy.month
+    meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+    if periodo == 'mes':
+        nombre_m = meses_completos[target_month]
+        return {
+            'periodo_nombre': f"{nombre_m} {target_year}",
+            'nombre_mes': nombre_m,
+            'mes_numero': target_month,
+            'anio': target_year,
+        }
+    elif periodo == 'anio':
+        return {
+            'periodo_nombre': f"Año {target_year}",
+            'nombre_mes': '',
+            'mes_numero': None,
+            'anio': target_year,
+        }
+    return {
+        'periodo_nombre': 'Esta Semana',
+        'nombre_mes': '',
+        'mes_numero': None,
+        'anio': target_year,
+    }
+
+
+def _periodo_a_fecha(periodo='semana', mes=None, anio=None):
     """Convierte un período ('semana', 'mes', 'anio') a la fecha límite desde."""
-    return _obtener_rango_periodo(periodo)[0]
+    return _obtener_rango_periodo(periodo, mes=mes, anio=anio)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -282,13 +321,14 @@ def _ensure_currency_columns(cursor):
         pass
 
 
-def get_metricas_generales(conn, periodo='semana', include_alertas=True):
+def get_metricas_generales(conn, periodo='semana', include_alertas=True, mes=None, anio=None):
     """Query real de métricas generales de toda la iglesia según el período ('semana', 'mes', 'anio')."""
     cur = conn.cursor()
     _ensure_currency_columns(cur)
 
     hoy = date.today()
-    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo)
+    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo, mes=mes, anio=anio)
+    periodo_meta = _obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
 
     # --- KPIs principales (filtrados por el período analizado) ---
     try:
@@ -349,7 +389,7 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True):
 
     # --- Tendencia adaptada al período ---
     if periodo == 'anio':
-        # Agrupación mensual en el año (solo meses con reportes/asistencia de momento)
+        # Agrupación mensual en el año (rango continuo entre primer y último mes con reportes)
         cur.execute("""
             SELECT
                 MONTH(rep.fecha) AS num_mes,
@@ -362,33 +402,41 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True):
             ORDER BY num_mes ASC
         """, (fecha_desde, fecha_hasta))
         rows = cur.fetchall() or []
+        asist_map = {int(r['num_mes']): int(r['asistencia'] or 0) for r in rows}
+        meses_con_asistencia = [int(r['num_mes']) for r in rows if (r.get('asistencia') or 0) > 0]
+
         meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-        if rows:
+
+        if meses_con_asistencia:
+            min_mes = min(meses_con_asistencia)
+            max_mes = max(meses_con_asistencia)
             tendencia = [
                 {
-                    'semana': meses_nombres[r['num_mes']],
-                    'asistencia': int(r['asistencia'] or 0),
+                    'semana': meses_nombres[m],
+                    'num_mes': m,
+                    'asistencia': asist_map.get(m, 0),
                     'porcentaje': 0,
-                    'fecha_completa': f"{meses_completos[r['num_mes']]} {hoy.year}",
+                    'fecha_completa': f"{meses_completos[m]} {fecha_desde.year}",
                 }
-                for r in rows
+                for m in range(min_mes, max_mes + 1)
             ]
         else:
-            m_curr = hoy.month
+            m_curr = fecha_desde.month if fecha_desde else hoy.month
             tendencia = [
                 {
                     'semana': meses_nombres[m_curr],
+                    'num_mes': m_curr,
                     'asistencia': 0,
                     'porcentaje': 0,
-                    'fecha_completa': f"{meses_completos[m_curr]} {hoy.year}",
+                    'fecha_completa': f"{meses_completos[m_curr]} {fecha_desde.year if fecha_desde else hoy.year}",
                 }
             ]
         max_asistencia = max((item['asistencia'] for item in tendencia), default=0)
         for item in tendencia:
             item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
     elif periodo == 'mes':
-        # Agrupación semanal en el mes calendario actual (Semanas 1 a 4/5)
+        # Agrupación semanal en el mes calendario analizado (Semanas 1 a 4/5)
         cur.execute("""
             SELECT
                 CASE
@@ -412,8 +460,8 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True):
         for w in range(1, total_semanas_mes + 1):
             dia_ini = 1 + (w - 1) * 7
             dia_fin = min(w * 7, num_dias_mes)
-            d_ini = date(hoy.year, hoy.month, dia_ini)
-            d_fin = date(hoy.year, hoy.month, dia_fin)
+            d_ini = date(fecha_desde.year, fecha_desde.month, dia_ini)
+            d_fin = date(fecha_desde.year, fecha_desde.month, dia_fin)
             tendencia.append({
                 'semana': f"Sem {w}",
                 'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
@@ -557,13 +605,14 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True):
         'ranking_redes': ranking,
         'alertas': alertas,
         'periodo': periodo,
+        **periodo_meta,
     }
 
 
 # ---------------------------------------------------------------------------
 # Vista Red
 # ---------------------------------------------------------------------------
-def get_metricas_red(conn, red_id, periodo='semana'):
+def get_metricas_red(conn, red_id, periodo='semana', mes=None, anio=None):
     """Query real de métricas para una red específica según el período ('semana', 'mes', 'anio')."""
     cur = conn.cursor()
 
@@ -590,7 +639,8 @@ def get_metricas_red(conn, red_id, periodo='semana'):
 
     # --- KPIs de la red (Base: Casas activas, Ventana: período analizado) ---
     hoy = date.today()
-    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo)
+    fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo, mes=mes, anio=anio)
+    periodo_meta = _obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
     try:
         cur.execute("""
             SELECT
@@ -745,7 +795,7 @@ def get_metricas_red(conn, red_id, periodo='semana'):
 
     # --- Tendencia de asistencia en la red adaptada al período ---
     if periodo == 'anio':
-        # Agrupación mensual en el año (solo meses con reportes/asistencia de momento)
+        # Agrupación mensual en el año para la red (rango continuo entre primer y último mes con reportes)
         cur.execute("""
             SELECT
                 MONTH(rep.fecha) AS num_mes,
@@ -758,33 +808,41 @@ def get_metricas_red(conn, red_id, periodo='semana'):
             ORDER BY num_mes ASC
         """, (red_id, fecha_desde, fecha_hasta))
         rows = cur.fetchall() or []
+        asist_map = {int(r['num_mes']): int(r['asistencia'] or 0) for r in rows}
+        meses_con_asistencia = [int(r['num_mes']) for r in rows if (r.get('asistencia') or 0) > 0]
+
         meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-        if rows:
+
+        if meses_con_asistencia:
+            min_mes = min(meses_con_asistencia)
+            max_mes = max(meses_con_asistencia)
             tendencia_red = [
                 {
-                    'semana': meses_nombres[r['num_mes']],
-                    'asistencia': int(r['asistencia'] or 0),
+                    'semana': meses_nombres[m],
+                    'num_mes': m,
+                    'asistencia': asist_map.get(m, 0),
                     'porcentaje': 0,
-                    'fecha_completa': f"{meses_completos[r['num_mes']]} {hoy.year}",
+                    'fecha_completa': f"{meses_completos[m]} {fecha_desde.year}",
                 }
-                for r in rows
+                for m in range(min_mes, max_mes + 1)
             ]
         else:
-            m_curr = hoy.month
+            m_curr = fecha_desde.month if fecha_desde else hoy.month
             tendencia_red = [
                 {
                     'semana': meses_nombres[m_curr],
+                    'num_mes': m_curr,
                     'asistencia': 0,
                     'porcentaje': 0,
-                    'fecha_completa': f"{meses_completos[m_curr]} {hoy.year}",
+                    'fecha_completa': f"{meses_completos[m_curr]} {fecha_desde.year if fecha_desde else hoy.year}",
                 }
             ]
         max_asistencia = max((item['asistencia'] for item in tendencia_red), default=0)
         for item in tendencia_red:
             item['porcentaje'] = round(item['asistencia'] / max_asistencia * 100) if max_asistencia > 0 else 0
     elif periodo == 'mes':
-        # Agrupación semanal en el mes calendario actual (Semanas 1 a 4/5)
+        # Agrupación semanal en el mes calendario analizado (Semanas 1 a 4/5)
         cur.execute("""
             SELECT
                 CASE
@@ -808,8 +866,8 @@ def get_metricas_red(conn, red_id, periodo='semana'):
         for w in range(1, total_semanas_mes + 1):
             dia_ini = 1 + (w - 1) * 7
             dia_fin = min(w * 7, num_dias_mes)
-            d_ini = date(hoy.year, hoy.month, dia_ini)
-            d_fin = date(hoy.year, hoy.month, dia_fin)
+            d_ini = date(fecha_desde.year, fecha_desde.month, dia_ini)
+            d_fin = date(fecha_desde.year, fecha_desde.month, dia_fin)
             tendencia_red.append({
                 'semana': f"Sem {w}",
                 'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
@@ -930,6 +988,7 @@ def get_metricas_red(conn, red_id, periodo='semana'):
         'promedio_tendencia': promedio_tendencia,
         'actividad_reciente': actividad_reciente,
         'periodo': periodo,
+        **periodo_meta,
     }
 
 

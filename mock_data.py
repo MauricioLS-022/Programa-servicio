@@ -457,30 +457,70 @@ def get_mock_reportes():
 
 
 # ---------------------------------------------------------------------------
-def _mock_obtener_rango_periodo(periodo='semana'):
+def _mock_obtener_rango_periodo(periodo='semana', mes=None, anio=None):
     """Calcula (fecha_inicio, fecha_fin) para datos mock según el período natural."""
     hoy = date.today()
+    try:
+        target_year = int(anio) if anio is not None and str(anio).isdigit() else hoy.year
+    except Exception:
+        target_year = hoy.year
+
     if periodo == 'mes':
-        inicio = date(hoy.year, hoy.month, 1)
-        fin = date(hoy.year, 12, 31) if hoy.month == 12 else date(hoy.year, hoy.month + 1, 1) - timedelta(days=1)
+        try:
+            target_month = int(mes) if mes is not None and str(mes).isdigit() and 1 <= int(mes) <= 12 else hoy.month
+        except Exception:
+            target_month = hoy.month
+        inicio = date(target_year, target_month, 1)
+        fin = date(target_year, 12, 31) if target_month == 12 else date(target_year, target_month + 1, 1) - timedelta(days=1)
         return inicio, fin
     elif periodo == 'anio':
-        return date(hoy.year, 1, 1), date(hoy.year, 12, 31)
+        return date(target_year, 1, 1), date(target_year, 12, 31)
     return hoy - timedelta(days=7), hoy
 
 
-def _mock_periodo_a_fecha(periodo='semana'):
+def _mock_obtener_metadatos_periodo(periodo='semana', fecha_desde=None, fecha_hasta=None, mes=None, anio=None):
+    """Genera etiquetas amigables del período para títulos y subtítulos del dashboard."""
+    hoy = date.today()
+    target_year = fecha_desde.year if (fecha_desde and hasattr(fecha_desde, 'year')) else hoy.year
+    target_month = fecha_desde.month if (fecha_desde and hasattr(fecha_desde, 'month')) else hoy.month
+    meses_completos = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+    if periodo == 'mes':
+        nombre_m = meses_completos[target_month]
+        return {
+            'periodo_nombre': f"{nombre_m} {target_year}",
+            'nombre_mes': nombre_m,
+            'mes_numero': target_month,
+            'anio': target_year,
+        }
+    elif periodo == 'anio':
+        return {
+            'periodo_nombre': f"Año {target_year}",
+            'nombre_mes': '',
+            'mes_numero': None,
+            'anio': target_year,
+        }
+    return {
+        'periodo_nombre': 'Esta Semana',
+        'nombre_mes': '',
+        'mes_numero': None,
+        'anio': target_year,
+    }
+
+
+def _mock_periodo_a_fecha(periodo='semana', mes=None, anio=None):
     """Calcula la fecha límite desde según el período para datos mock."""
-    return _mock_obtener_rango_periodo(periodo)[0]
+    return _mock_obtener_rango_periodo(periodo, mes=mes, anio=anio)[0]
 
 
 # ---------------------------------------------------------------------------
 # Vista General
 # ---------------------------------------------------------------------------
-def get_mock_generales(periodo='semana'):
+def get_mock_generales(periodo='semana', mes=None, anio=None):
     """Métricas mock para la vista general de la iglesia según el período ('semana', 'mes', 'anio')."""
     hoy = date.today()
-    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo)
+    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo, mes=mes, anio=anio)
+    periodo_meta = _mock_obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
 
     reportes = get_mock_reportes()
     casas = get_casas_demo()
@@ -540,14 +580,19 @@ def get_mock_generales(periodo='semana'):
             # Simular meses activos hasta el mes en curso (máx 6 meses)
             for m in range(max(1, hoy.month - 4), hoy.month + 1):
                 asist_mes[m] = 120 + m * 8
-        meses_activos = [m for m in range(1, 13) if asist_mes[m] > 0]
-        if not meses_activos:
-            meses_activos = [hoy.month]
+        meses_con_asist = [m for m in range(1, 13) if asist_mes[m] > 0]
+        if meses_con_asist:
+            min_m = min(meses_con_asist)
+            max_m = max(meses_con_asist)
+            meses_activos = list(range(min_m, max_m + 1))
+        else:
+            meses_activos = [fecha_desde.month]
         max_asist_tend = max((asist_mes[m] for m in meses_activos), default=1) or 1
         tendencia_semanas = [
             {
                 'semana': meses_nombres[m],
-                'fecha_completa': f"{meses_completos[m]} {hoy.year}",
+                'num_mes': m,
+                'fecha_completa': f"{meses_completos[m]} {fecha_desde.year}",
                 'asistencia': asist_mes[m],
                 'porcentaje': round(asist_mes[m] / max_asist_tend * 100) if max_asist_tend > 0 else 0,
             }
@@ -575,8 +620,8 @@ def get_mock_generales(periodo='semana'):
         for w in range(1, total_semanas_mes + 1):
             dia_ini = 1 + (w - 1) * 7
             dia_fin = min(w * 7, num_dias_mes)
-            d_ini = date(hoy.year, hoy.month, dia_ini)
-            d_fin = date(hoy.year, hoy.month, dia_fin)
+            d_ini = date(fecha_desde.year, fecha_desde.month, dia_ini)
+            d_fin = date(fecha_desde.year, fecha_desde.month, dia_fin)
             tendencia_semanas.append({
                 'semana': f"Sem {w}",
                 'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
@@ -640,16 +685,18 @@ def get_mock_generales(periodo='semana'):
         ][:3],
         'alertas': [],
         'periodo': periodo,
+        **periodo_meta,
     }
 
 
 # ---------------------------------------------------------------------------
 # Vista Red
 # ---------------------------------------------------------------------------
-def get_mock_red(red_id, periodo='semana'):
+def get_mock_red(red_id, periodo='semana', mes=None, anio=None):
     """Métricas mock para la vista de una red específica según el período ('semana', 'mes', 'anio')."""
     hoy = date.today()
-    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo)
+    fecha_desde, fecha_hasta = _mock_obtener_rango_periodo(periodo, mes=mes, anio=anio)
+    periodo_meta = _mock_obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
 
     redes = get_redes_demo()
     red = next((r for r in redes if str(r['id']) == str(red_id)), None)
@@ -759,7 +806,7 @@ def get_mock_red(red_id, periodo='semana'):
             if f:
                 try:
                     fd = date.fromisoformat(str(f)[:10])
-                    if fd.year == hoy.year:
+                    if fd.year == fecha_desde.year:
                         asist_mes[fd.month] += r.get('asistencia', 0)
                 except Exception:
                     pass
@@ -767,14 +814,19 @@ def get_mock_red(red_id, periodo='semana'):
         if sum(asist_mes.values()) == 0:
             for m in range(max(1, hoy.month - 4), hoy.month + 1):
                 asist_mes[m] = base_factor + m * 4
-        meses_activos = [m for m in range(1, 13) if asist_mes[m] > 0]
-        if not meses_activos:
-            meses_activos = [hoy.month]
+        meses_con_asist = [m for m in range(1, 13) if asist_mes[m] > 0]
+        if meses_con_asist:
+            min_m = min(meses_con_asist)
+            max_m = max(meses_con_asist)
+            meses_activos = list(range(min_m, max_m + 1))
+        else:
+            meses_activos = [fecha_desde.month]
         max_asist_red = max((asist_mes[m] for m in meses_activos), default=1) or 1
         tendencia_semanas_red = [
             {
                 'semana': meses_nombres[m],
-                'fecha_completa': f"{meses_completos[m]} {hoy.year}",
+                'num_mes': m,
+                'fecha_completa': f"{meses_completos[m]} {fecha_desde.year}",
                 'asistencia': asist_mes[m],
                 'porcentaje': round(asist_mes[m] / max_asist_red * 100) if max_asist_red > 0 else 0,
             }
@@ -803,8 +855,8 @@ def get_mock_red(red_id, periodo='semana'):
         for w in range(1, total_semanas_mes + 1):
             dia_ini = 1 + (w - 1) * 7
             dia_fin = min(w * 7, num_dias_mes)
-            d_ini = date(hoy.year, hoy.month, dia_ini)
-            d_fin = date(hoy.year, hoy.month, dia_fin)
+            d_ini = date(fecha_desde.year, fecha_desde.month, dia_ini)
+            d_fin = date(fecha_desde.year, fecha_desde.month, dia_fin)
             tendencia_semanas_red.append({
                 'semana': f"Sem {w}",
                 'rango_fecha': f"{d_ini.strftime('%d')}-{formatear_fecha_corta(d_fin)}",
@@ -888,6 +940,7 @@ def get_mock_red(red_id, periodo='semana'):
         'promedio_tendencia': promedio_tendencia_red,
         'actividad_reciente': actividad_reciente,
         'periodo': periodo,
+        **periodo_meta,
     }
 
 

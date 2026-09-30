@@ -973,10 +973,42 @@
 @media print {
   .detail-actions,
   .sidebar,
+  .sidebar-overlay,
   .topbar,
+  .mobile-header,
+  .mobile-bottom-nav,
+  .breadcrumb,
+  .watermark-container,
+  .toast-container,
   .btn-action-sm,
   .team-member-actions {
     display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  .crud-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .cdp-detail-wrapper {
+    gap: 1.25rem !important;
+    width: 100% !important;
   }
 
   .detail-header {
@@ -984,11 +1016,15 @@
     color: #ffffff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    box-shadow: none !important;
+    border-radius: 8px !important;
   }
 
   .detail-card, .metric-card {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 

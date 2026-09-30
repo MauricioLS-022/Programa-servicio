@@ -1228,6 +1228,79 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
             self.assertNotIn('trend-chart-area has-scroll', html)
 
 
+    @patch('db_queries._ensure_currency_columns')
+    def test_periodo_anio_interpola_meses_continuos_con_cero(self, mock_ensure_cols):
+        """En período año, si hay reportes en meses discontinuos (ej: mes 1 y mes 3), el mes 2 debe incluirse con asistencia 0."""
+        from db_queries import get_metricas_generales
+        
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+
+        # fetchone:
+        # 1. KPIs
+        # 2. Total casas
+        mock_cursor.fetchone.side_effect = [
+            {'total_asistencia': 80, 'ofrendas_usd': 50.0, 'ofrendas_bs': 1000.0, 'conversiones': 2, 'visitas': 5, 'bautizos': 1, 'casas_con_reporte': 4, 'total_reportes': 4},
+            {'total': 5}
+        ]
+        
+        # fetchall:
+        # 1: faltantes_global
+        # 2: tendencia meses (Enero: 50, Marzo: 30)
+        # 3: ranking redes
+        # 4: alertas
+        mock_cursor.fetchall.side_effect = [
+            [], # faltantes_global
+            [
+                {'num_mes': 1, 'asistencia': 50},
+                {'num_mes': 3, 'asistencia': 30}
+            ],
+            [], # ranking
+            []  # alertas
+        ]
+
+        metricas = get_metricas_generales(mock_conn, periodo='anio', anio=2026)
+        self.assertEqual(metricas['periodo'], 'anio')
+        tendencia = metricas.get('tendencia_semanas', [])
+        # Deben haber 3 meses continuos: Ene (1), Feb (2), Mar (3)
+        self.assertEqual(len(tendencia), 3)
+        
+        meses_nombres = [t['semana'] for t in tendencia]
+        self.assertEqual(meses_nombres, ['Ene', 'Feb', 'Mar'])
+        
+        # Feb debe tener asistencia 0
+        febrero = tendencia[1]
+        self.assertEqual(febrero['semana'], 'Feb')
+        self.assertEqual(febrero['asistencia'], 0)
+        self.assertEqual(febrero['num_mes'], 2)
+        
+        # Ene y Mar deben conservar sus valores
+        self.assertEqual(tendencia[0]['asistencia'], 50)
+        self.assertEqual(tendencia[0]['num_mes'], 1)
+        self.assertEqual(tendencia[2]['asistencia'], 30)
+        self.assertEqual(tendencia[2]['num_mes'], 3)
+
+    @patch('services.dashboard_service.get_db_connection', return_value=None)
+    @patch('database.get_db_connection', return_value=None)
+    @patch('services.dashboard_service.mock_mode_enabled', return_value=True)
+    def test_api_dashboard_datos_acepta_mes_y_anio_especificos(self, mock_enabled, mock_db1, mock_db2):
+        """API /api/dashboard/datos debe aceptar mes y año, devolviendo metadatos consistentes."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-test-uuid'
+            sess['rol'] = 'admin'
+            sess['usuario'] = 'Admin'
+
+        res = self.client.get('/api/dashboard/datos?nivel=general&periodo=mes&mes=5&anio=2025')
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertEqual(data.get('periodo'), 'mes')
+        self.assertEqual(data.get('mes_numero'), 5)
+        self.assertEqual(data.get('anio'), 2025)
+        self.assertEqual(data.get('nombre_mes'), 'Mayo')
+        self.assertIn('Mayo 2025', data.get('periodo_nombre', ''))
+
+
 if __name__ == '__main__':
     unittest.main()
 

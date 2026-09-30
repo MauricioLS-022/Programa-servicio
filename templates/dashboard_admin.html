@@ -170,7 +170,7 @@
 
                 <article class="summary-card fade-in-2">
                     <span class="material-symbols-outlined card-icon text-secondary">check_circle</span>
-                    <h3 class="card-title" id="lblCumplimientoTitleGen">{% if periodo == 'mes' %}Cumplimiento Mensual{% elif periodo == 'anio' %}Cumplimiento Anual{% else %}Cumplimiento Semanal{% endif %}</h3>
+                    <h3 class="card-title" id="lblCumplimientoTitleGen">{% if periodo == 'mes' %}Cumplimiento Mensual ({{ metricas.periodo_nombre|default('Mes') }}){% elif periodo == 'anio' %}Cumplimiento Anual ({{ metricas.periodo_nombre|default('Año') }}){% else %}Cumplimiento Semanal{% endif %}</h3>
                     <div class="card-number" id="kpiCumplimientoGen" style="font-size: 1.15rem; line-height: 1.3;">
                         {% if metricas.total_casas|default(0, true) %}
                             <div id="kpiCumplimientoPctGen">{{ metricas.cumplimiento|default(0, true) }}%</div>
@@ -212,8 +212,8 @@
                     <section class="chart-card fade-in-5">
                         <div class="chart-header">
                             <div>
-                                <h2 class="section-title" id="lblTrendTitleGen">{% if periodo == 'mes' %}Evolución Semanal del Mes{% elif periodo == 'anio' %}Evolución Mensual del Año{% else %}Asistencia por Red esta Semana{% endif %}</h2>
-                                <p class="section-subtitle" id="lblTrendSubGen">{% if periodo == 'mes' %}Histórico semanal del mes en curso{% elif periodo == 'anio' %}Histórico mes a mes del año en curso{% else %}Desglose por Red del último reporte recibido{% endif %}</p>
+                                <h2 class="section-title" id="lblTrendTitleGen">{% if periodo == 'mes' %}Evolución Semanal del Mes ({{ metricas.periodo_nombre|default('Mes') }}){% elif periodo == 'anio' %}Evolución Mensual del Año ({{ metricas.periodo_nombre|default('Año') }}){% else %}Asistencia por Red esta Semana{% endif %}</h2>
+                                <p class="section-subtitle" id="lblTrendSubGen">{% if periodo == 'mes' %}Histórico semanal de {{ metricas.periodo_nombre|default('el mes en curso') }}{% elif periodo == 'anio' %}Histórico mes a mes de {{ metricas.periodo_nombre|default('el año en curso') }}{% else %}Desglose por Red del último reporte recibido{% endif %}</p>
                             </div>
                             <div id="trendBadgeGen">
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
@@ -276,7 +276,7 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title">Distribución por Categoría</h2>
-                                <p class="section-subtitle" id="lblDistribucionSubGen">{% if periodo == 'mes' %}Composición de membresía y consolidación del mes activo{% elif periodo == 'anio' %}Composición de membresía y consolidación del año activo{% else %}Composición de membresía y consolidación de la semana activa{% endif %}</p>
+                                <p class="section-subtitle" id="lblDistribucionSubGen">{% if periodo == 'mes' %}Composición acumulada de la membresía en {{ metricas.periodo_nombre|default('el mes en curso') }}{% elif periodo == 'anio' %}Composición de membresía y consolidación de {{ metricas.periodo_nombre|default('el año activo') }}{% else %}Composición de membresía y consolidación de la semana activa{% endif %}</p>
                             </div>
                         </div>
 
@@ -383,7 +383,7 @@
                     <article class="participation-card">
                         <div class="status-card-header">
                             <h2 class="section-title">Ranking de Redes</h2>
-                            <p class="section-subtitle" id="lblRankingSubGen">{% if periodo == 'mes' %}Cumplimiento y asistencia del mes{% elif periodo == 'anio' %}Cumplimiento y asistencia del año{% else %}Cumplimiento y asistencia de la semana{% endif %}</p>
+                            <p class="section-subtitle" id="lblRankingSubGen">{% if periodo == 'mes' %}Cumplimiento y asistencia de {{ metricas.periodo_nombre|default('el mes') }}{% elif periodo == 'anio' %}Cumplimiento y asistencia de {{ metricas.periodo_nombre|default('el año') }}{% else %}Cumplimiento y asistencia de la semana{% endif %}</p>
                         </div>
                         
                         <div class="network-ranking-list" id="rankingListGen">
@@ -570,8 +570,8 @@
                     <section class="chart-card fade-in-5">
                         <div class="chart-header">
                             <div>
-                                <h2 class="section-title" id="lblTrendTitleRed">{% if periodo == 'mes' %}Evolución Semanal del Mes{% elif periodo == 'anio' %}Evolución Mensual del Año{% else %}Asistencia por Casa esta Semana{% endif %}</h2>
-                                <p class="section-subtitle" id="lblTrendSubRed">{% if periodo == 'mes' %}Histórico semanal del mes en curso en {{ metricas.nombre_red }}{% elif periodo == 'anio' %}Histórico mes a mes del año en curso en {{ metricas.nombre_red }}{% else %}Desglose por Casa de Paz en {{ metricas.nombre_red }}{% endif %}</p>
+                                <h2 class="section-title" id="lblTrendTitleRed">{% if periodo == 'mes' %}Evolución Semanal del Mes ({{ metricas.periodo_nombre|default('Mes') }}){% elif periodo == 'anio' %}Evolución Mensual del Año ({{ metricas.periodo_nombre|default('Año') }}){% else %}Asistencia por Casa esta Semana{% endif %}</h2>
+                                <p class="section-subtitle" id="lblTrendSubRed">{% if periodo == 'mes' %}Histórico semanal de {{ metricas.periodo_nombre|default('el mes en curso') }} en {{ metricas.nombre_red }}{% elif periodo == 'anio' %}Histórico mes a mes de {{ metricas.periodo_nombre|default('el año en curso') }} en {{ metricas.nombre_red }}{% else %}Desglose por Casa de Paz en {{ metricas.nombre_red }}{% endif %}</p>
                             </div>
                             <div id="trendBadgeRed">
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
@@ -802,8 +802,8 @@
                     <!-- Bloque 3: Cumplimiento de la Red -->
                     <article class="participation-card">
                         <div class="status-card-header">
-                            <h2 class="section-title" id="lblCumplimientoTitleRed">{% if periodo == 'mes' %}Cumplimiento Mensual{% elif periodo == 'anio' %}Cumplimiento Anual{% else %}Cumplimiento Semanal{% endif %}</h2>
-                            <p class="section-subtitle" id="lblCumplimientoSubRed">{% if periodo == 'mes' %}Casas con reporte en el mes activo{% elif periodo == 'anio' %}Casas con reporte en el año activo{% else %}Casas con reporte enviado esta semana{% endif %}</p>
+                            <h2 class="section-title" id="lblCumplimientoTitleRed">{% if periodo == 'mes' %}Cumplimiento Mensual ({{ metricas.periodo_nombre|default('Mes') }}){% elif periodo == 'anio' %}Cumplimiento Anual ({{ metricas.periodo_nombre|default('Año') }}){% else %}Cumplimiento Semanal{% endif %}</h2>
+                            <p class="section-subtitle" id="lblCumplimientoSubRed">{% if periodo == 'mes' %}Casas con reporte en {{ metricas.periodo_nombre|default('el mes activo') }}{% elif periodo == 'anio' %}Casas con reporte en {{ metricas.periodo_nombre|default('el año activo') }}{% else %}Casas con reporte enviado esta semana{% endif %}</p>
                         </div>
                         <div class="cumplimiento-zonal-box">
                             <div class="cumplimiento-header-row">
