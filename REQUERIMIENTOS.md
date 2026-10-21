@@ -3,7 +3,7 @@
 ## Descripción General
 Aplicación web de gestión y reportes para un servicio comunitario (ministerio "Vino Nuevo").  
 **Stack:** Python Flask + MySQL (PyMySQL) + HTML/CSS/JS (Jinja2)  
-**Cobertura y Calidad:** 238 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
+**Cobertura y Calidad:** 257 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
 
 ---
 
@@ -222,3 +222,19 @@ graph TD
   - Validar y formatear prefijo de país internacional (E.164) en todos los formularios para enlaces directos `wa.me`.
 - [ ] **Despliegue y Verificación en Servidor de Producción**:
   - Verificación final de arranque con `ProductionConfig` y ejecución en servidor de despliegue.
+
+
+### ✅ Fase 6 — Arquitectura Modular y Encapsulamiento del Backend (Completada)
+- [x] **Encapsulamiento del Backend en `backend/`**: Aislamiento formal del código operativo del servidor Flask (`backend/`), plantillas Jinja2, archivos estáticos y suite de pruebas (`backend/tests/`), separando completamente el backend del proyecto React SPA (`frontend/`).
+- [x] **Modularización de la API REST (`backend/routes/api/`)**: Descomposición del monolito `api_routes.py` en submódulos especializados por dominio (`auth_api.py`, `reportes_api.py`, `estructura_api.py`, `dashboard_api.py`, `system_api.py`) con contratos JSON estandarizados y exención centralizada de CSRF.
+- [x] **Segregación del Repositorio de Consultas SQL (`backend/services/queries/`)**: Descomposición modular de consultas SQL por dominio (`reportes_queries.py`, `estructura_queries.py`, `lideres_queries.py`, `usuarios_queries.py`, `metricas_queries.py`, `helpers.py`), con fachada de compatibilidad transparente en `backend/db_queries.py`.
+- [x] **Configuración de Despliegue en Render**: Actualización de `render.yaml` con `startCommand: gunicorn --chdir backend app:app`.
+- [x] **Verificación Integral y 0 Regresiones**: 257 pruebas automatizadas ejecutadas y aprobadas exitosamente (`unittest`).
+
+### ✅ Fase 7 — Single Page Application (SPA) en React y Paridad Visual/Funcional (Completada)
+- [x] **Scaffold y Tooling (`frontend/`)**: Vite + React + TypeScript, Tailwind CSS, PostCSS, Lucide React, TanStack Query y React Router.
+- [x] **Design System Espejo**: Paleta institucional exacta (`--color1: #4A0203`, `--color2: #780204`, etc.), fuentes Manrope y Noto Serif, sombras `--shadow-card`, soporte para tema oscuro (`data-theme="dark"`) y scrollbars institucionales de 5px (`scrollbar-gutter: stable`).
+- [x] **Capa Desacoplada Mobile-Ready**: Cliente HTTP `client.ts` con credenciales de sesión HttpOnly y manejo de errores, hooks (`useAuth`, `useReportes`, `useDashboard`) y modelos tipados TypeScript sin dependencias DOM para portabilidad futura a React Native.
+- [x] **Vistas y Componentes Espejo**: `LoginPage`, `DashboardPage` (selector dinámico Semana/Mes/Año, gráficos interactivos, tooltips de fecha y scroll adaptativo), `ReportesPage` (paginación ±2, modales de edición/eliminación), `GenerarReportePage` (cálculo reactivo USD/Bs en tiempo real con tasa dinámica y prevención de doble envío) y `EstructuraPage` (live search, badges 7d y contacto directo WhatsApp).
+- [x] **Servicio Híbrido de Producción**: Endpoint `/app` y `/assets` en Flask para servir la SPA compilada (`frontend/dist`) con fallback SPA y 0 colisiones con las rutas server-side Jinja2.
+- [x] **Verificación Integral y 0 Regresiones**: Suite completa de 257 pruebas unitarias backend aprobadas al 100% y bundle frontend compilado sin errores de TypeScript.
