@@ -372,9 +372,9 @@ class TestProductionFallbacksAndDataIntegrity(unittest.TestCase):
             sess['rol'] = 'supervisor'
 
         mock_casas = [{'id': 1, 'codigo': 'HEB-001', 'red_id': 1}, {'id': 2, 'codigo': 'SUR-001', 'red_id': 2}]
-        with patch('routes.api_routes.get_supervisor_red_id', return_value=1), \
+        with patch('routes.api.dashboard_api.get_supervisor_red_id', return_value=1), \
              patch('services.dashboard_service.get_selectores', return_value=([], mock_casas)), \
-             patch('routes.api_routes.get_metricas', return_value={'codigo': 'HEB-001', 'asistencia': 20}) as mock_m:
+             patch('routes.api.dashboard_api.get_metricas', return_value={'codigo': 'HEB-001', 'asistencia': 20}) as mock_m:
             
             resp = self.client.get('/api/dashboard/datos?nivel=cdp&cdp_id=1')
             self.assertEqual(resp.status_code, 200)
@@ -388,7 +388,7 @@ class TestProductionFallbacksAndDataIntegrity(unittest.TestCase):
             sess['rol'] = 'supervisor'
 
         mock_casas = [{'id': 1, 'codigo': 'HEB-001', 'red_id': 1}, {'id': 2, 'codigo': 'SUR-001', 'red_id': 2}]
-        with patch('routes.api_routes.get_supervisor_red_id', return_value=1), \
+        with patch('routes.api.dashboard_api.get_supervisor_red_id', return_value=1), \
              patch('services.dashboard_service.get_selectores', return_value=([], mock_casas)):
             
             resp = self.client.get('/api/dashboard/datos?nivel=cdp&cdp_id=2')

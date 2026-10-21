@@ -3,6 +3,7 @@ Pruebas de prevención de doble envío e idempotencia en formularios.
 Verifica que el servicio de reportes impida registros duplicados en la misma fecha,
 que las plantillas incluyan form_guard.js y que se mantenga la integridad referencial.
 """
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 from app import app
@@ -55,17 +56,17 @@ class TestFormIdempotency(unittest.TestCase):
     def test_form_guard_script_included_in_layouts(self):
         """Verifica que form_guard.js esté enlazado en los layouts administrativos."""
         with app.test_request_context():
-            with open('templates/admin_layout.html', 'r', encoding='utf-8') as f:
+            with open(os.path.join(app.root_path, 'templates', 'admin_layout.html'), 'r', encoding='utf-8') as f:
                 admin_html = f.read()
             self.assertIn('scripts/form_guard.js', admin_html)
 
-            with open('templates/admin_form_layout.html', 'r', encoding='utf-8') as f:
+            with open(os.path.join(app.root_path, 'templates', 'admin_form_layout.html'), 'r', encoding='utf-8') as f:
                 form_layout_html = f.read()
             self.assertIn('scripts/form_guard.js', form_layout_html)
 
     def test_form_guard_css_classes_present(self):
         """Verifica que form.css contenga las clases de estado .is-submitting y .form-guard-spinner."""
-        with open('static/styles/admin/form.css', 'r', encoding='utf-8') as f:
+        with open(os.path.join(app.root_path, 'static', 'styles', 'admin', 'form.css'), 'r', encoding='utf-8') as f:
             css_content = f.read()
         self.assertIn('.is-submitting', css_content)
         self.assertIn('.form-guard-spinner', css_content)

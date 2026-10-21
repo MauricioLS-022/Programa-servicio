@@ -85,8 +85,8 @@ class TestApiAccessAndIDOR(unittest.TestCase):
             sess['usuario'] = 'supervisor1'
             sess['rol'] = 'supervisor'
 
-        with patch('routes.api_routes.get_supervisor_red_id', return_value=2), \
-             patch('routes.api_routes.get_metricas', return_value={'asistencia': 100}) as mock_metricas:
+        with patch('routes.api.dashboard_api.get_supervisor_red_id', return_value=2), \
+             patch('routes.api.dashboard_api.get_metricas', return_value={'asistencia': 100}) as mock_metricas:
             # Intento de consultar red_id=1 siendo supervisor de la red 2
             response = self.client.get('/api/dashboard/datos?nivel=general&red_id=1')
             self.assertEqual(response.status_code, 200)

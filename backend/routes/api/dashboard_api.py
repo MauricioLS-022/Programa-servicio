@@ -1,13 +1,11 @@
 """
-Rutas de API: /api/dashboard/datos
+routes/api/dashboard_api.py - Endpoints REST protegidos para métricas temporales de dashboard.
 """
-from flask import Blueprint, request, jsonify, session
+from flask import request, jsonify, session
 from services.dashboard_service import get_metricas, mock_mode_enabled, get_supervisor_red_id
-from database import get_db_connection
 from utils.cache import get_cached_value, set_cached_value
 from utils.auth import login_required, role_required
-
-api_bp = Blueprint('api', __name__, url_prefix='/api')
+from .base import api_bp, _serialize_item
 
 
 @api_bp.route('/dashboard/datos')
@@ -60,7 +58,7 @@ def api_dashboard_datos():
     # Verificar caché primero
     cached = get_cached_value(cache_key)
     if cached:
-        return jsonify(cached)
+        return jsonify(_serialize_item(cached))
 
     # Obtener métricas
     kwargs = {}
@@ -79,4 +77,4 @@ def api_dashboard_datos():
     if metricas:
         set_cached_value(cache_key, metricas)
 
-    return jsonify(metricas)
+    return jsonify(_serialize_item(metricas))

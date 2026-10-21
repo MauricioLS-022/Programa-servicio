@@ -3,16 +3,20 @@ Punto de entrada de la aplicación Flask.
 Inicializa la app y registra los Blueprints.
 """
 import os
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, send_from_directory
 from dotenv import load_dotenv
 
 from config import config
 from extensions import csrf, limiter
+try:
+    from flask_cors import CORS
+except ImportError:
+    CORS = None
 from routes.auth_routes import auth_bp
 from routes.admin_routes import admin_bp
 from routes.supervisor_routes import supervisor_bp
 from routes.lider_cdp_routes import lider_cdp_bp
-from routes.api_routes import api_bp
+from routes.api import api_bp
 from utils.context import context_functions
 from database import get_db_connection, close_db_connection
 
@@ -45,6 +49,12 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(supervisor_bp)
 app.register_blueprint(lider_cdp_bp)
 app.register_blueprint(api_bp)
+
+# Desacoplamiento de API REST: exención de CSRF por formulario y soporte CORS
+csrf.exempt(api_bp)
+cors_origins = app.config.get('CORS_ORIGINS', [])
+if CORS and cors_origins and env != 'production':
+    CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
 
 # ---------------------------------------------------------------------------
 # Context Processors
@@ -111,6 +121,31 @@ def apply_security_headers(response):
 # ---------------------------------------------------------------------------
 # Error Handlers
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Servicio de Single Page Application (SPA en React)
+# ---------------------------------------------------------------------------
+frontend_dist_dir = os.path.abspath(os.path.join(app.root_path, '..', 'frontend', 'dist'))
+
+@app.route('/app', defaults={'path': ''})
+@app.route('/app/<path:path>')
+def serve_spa(path):
+    """Sirve la SPA en React compilada bajo /app/ sin colisionar con rutas Flask."""
+    if os.path.exists(frontend_dist_dir):
+        target_path = os.path.join(frontend_dist_dir, path)
+        if path != '' and os.path.exists(target_path):
+            return send_from_directory(frontend_dist_dir, path)
+        return send_from_directory(frontend_dist_dir, 'index.html')
+    return render_template('404.html'), 404
+
+@app.route('/assets/<path:path>')
+def serve_spa_assets(path):
+    """Sirve los assets estáticos generados por Vite en dist/assets/."""
+    assets_dir = os.path.join(frontend_dist_dir, 'assets')
+    if os.path.exists(os.path.join(assets_dir, path)):
+        return send_from_directory(assets_dir, path)
+    return render_template('404.html'), 404
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404

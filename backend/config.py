@@ -32,6 +32,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 7200
+    CORS_ORIGINS = [orig.strip() for orig in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if orig.strip()]
 
     RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "")
     RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "")
