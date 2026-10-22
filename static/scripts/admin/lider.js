@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let linkPhone = phoneTd ? phoneTd.querySelector('a') : null;
             let telefonoText = '';
             if (linkPhone) {
-                telefonoText = linkPhone.getAttribute('href').replace('tel:', '').trim();
+                telefonoText = (linkPhone.getAttribute('href') || '').replace('tel:', '').trim();
             } else if (phoneTd) {
                 telefonoText = phoneTd.textContent.includes('Sin teléfono') ? 'Sin teléfono' : '';
             }

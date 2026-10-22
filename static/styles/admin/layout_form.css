@@ -455,3 +455,35 @@ body {
 .toast-close:hover {
     opacity: 1;
 }
+
+/* ==========================================================================
+   PRINT STYLES BASE (FORM LAYOUT)
+   ========================================================================== */
+@media print {
+    .sidebar,
+    .sidebar-overlay,
+    .mobile-header,
+    .mobile-bottom-nav,
+    .breadcrumb,
+    .watermark-container,
+    .toast-container {
+        display: none !important;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        min-height: auto !important;
+    }
+
+    .crud-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}

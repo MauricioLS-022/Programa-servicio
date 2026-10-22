@@ -23,9 +23,9 @@
     </div>
 
     <div class="detail-actions">
-      <button type="button" onclick="window.print()" class="btn-secondary" aria-label="Imprimir ficha de Casa de Paz">
-        <span class="material-symbols-outlined" aria-hidden="true">print</span>
-        <span>Imprimir</span>
+      <button type="button" onclick="exportCdpToPDF(event)" class="btn-secondary btn-export-pdf" aria-label="Exportar Ficha Técnica de Casa de Paz en PDF">
+        <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+        <span>Exportar PDF</span>
       </button>
 
       {% if has_role("admin") %}
@@ -362,5 +362,9 @@
     </section>
   </div>
 </div>
+{% endblock %}
+
+{% block custom_scripts %}
+  <script src="{{ url_for('static', filename='scripts/admin/detalles_cdp.js') }}" defer></script>
 {% endblock %}
 

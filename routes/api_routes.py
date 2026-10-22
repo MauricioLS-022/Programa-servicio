@@ -33,6 +33,11 @@ def api_dashboard_datos():
     except (ValueError, TypeError):
         cdp_id = None
 
+    mes_str = request.args.get('mes', '').strip()
+    anio_str = request.args.get('anio', '').strip()
+    mes = int(mes_str) if mes_str and mes_str.isdigit() and 1 <= int(mes_str) <= 12 else None
+    anio = int(anio_str) if anio_str and anio_str.isdigit() else None
+
     # Aislamiento defensivo de rol supervisor:
     # No puede consultar nivel 'general' ni redes ajenas
     if rol == 'supervisor':
@@ -50,7 +55,7 @@ def api_dashboard_datos():
             if cdp_id not in casas_de_red:
                 return jsonify({}), 403
 
-    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{periodo}_{mock_mode_enabled()}'
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{periodo}_{mes}_{anio}_{mock_mode_enabled()}'
 
     # Verificar caché primero
     cached = get_cached_value(cache_key)
@@ -58,8 +63,16 @@ def api_dashboard_datos():
         return jsonify(cached)
 
     # Obtener métricas
+    kwargs = {}
     if 'periodo' in request.args:
-        metricas = get_metricas(nivel, red_id, cdp_id, periodo=periodo)
+        kwargs['periodo'] = periodo
+    if mes is not None:
+        kwargs['mes'] = mes
+    if anio is not None:
+        kwargs['anio'] = anio
+
+    if kwargs:
+        metricas = get_metricas(nivel, red_id, cdp_id, **kwargs)
     else:
         metricas = get_metricas(nivel, red_id, cdp_id)
     

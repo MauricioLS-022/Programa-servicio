@@ -3,7 +3,7 @@
 ## Descripción General
 Aplicación web de gestión y reportes para un servicio comunitario (ministerio "Vino Nuevo").  
 **Stack:** Python Flask + MySQL (PyMySQL) + HTML/CSS/JS (Jinja2)  
-**Cobertura y Calidad:** 236 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
+**Cobertura y Calidad:** 238 pruebas automatizadas ejecutadas y pasando al 100% (`unittest`).
 
 ---
 
@@ -16,7 +16,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 1 | **INSERT y Guardado de Reportes en BD** | ✅ Implementado | `services/cdp_service.py:process_reporte()` y `db_queries.insertar_reporte()`. Formulario conectado en `POST /lider_cdp/generar_reporte`, con UUID(), invalidación de caché, soporte de ofrendas duales (USD/Bs), cálculo dinámico desacoplado (`generar_reporte.js`), idempotencia de envío (`form_guard.js`) y control transaccional con rollback. |
 | 2 | **Edición y Eliminación de Reportes (Líder CDP)** | ✅ Implementado | Modales funcionales en `index.html` con endpoints `POST /lider_cdp/reporte/<id>/editar` y `POST /lider_cdp/reporte/<id>/eliminar`, control de permisos por CDP, validación anti-IDOR de `cdp_id` y confirmación. |
 | 3 | **Script de Poblado y Test Data** | ✅ Implementado | `insert_test_data.py` con soporte para SSL en BD remota (Aiven/Cloud), dotenv, generación de UUIDs, hashes Werkzeug y 8 semanas de reportes históricos e idempotencia. Script de saneamiento `scripts/cleanup_duplicate_reports.py`. |
-| 4 | **Dashboard con Datos Reales, Períodos Dinámicos (Semana/Mes/Año) y Gráficos Interactivos** | ✅ Cumplido | `dashboard_service.py`, `db_queries.py` y `mock_data.py` con métricas jerárquicas (General, Red, CDP) y selector interactivo de períodos (**Semana / Mes / Año**). Adaptación dinámica de títulos, ranking de redes con porcentajes de eficiencia, tooltips con rangos de fechas (`rango_fecha`), scroll horizontal adaptativo para series extensas (> 7 puntos), estados vacíos y caché en memoria compuesta con invalidación inteligente (`tests/test_dashboard_metrics.py`). |
+| 4 | **Dashboard con Datos Reales, Períodos Dinámicos (Semana/Mes/Año) y Gráficos Interactivos** | ✅ Cumplido | `dashboard_service.py`, `db_queries.py` y `mock_data.py` con métricas jerárquicas (General, Red, CDP) y selector interactivo de períodos (**Semana / Mes / Año**). Adaptación dinámica de títulos con nombre de período/mes específico (ej: "Septiembre 2026"), interpolación continua de meses en período anual (incluyendo meses intermedios con asistencia 0 entre el primer y último mes con reportes), navegación por clic desde las barras del año hacia el mes respectivo, sincronización completa de KPIs (fruto y visitas), tooltips con rangos de fechas (`rango_fecha`), scroll horizontal adaptativo para series extensas (> 7 puntos), estados vacíos y caché compuesta con invalidación inteligente (`tests/test_dashboard_metrics.py`). |
 | 5 | **Filtros de Reportes (Admin & Supervisor)** | ✅ Implementado | Búsqueda por texto libre, red, Casa de Paz y rango de fechas (`fecha_desde`, `fecha_hasta`) en vistas de administración y supervisión regional. |
 | 6 | **Paginación Real Server-Side** | ✅ Implementado | Paginación con ventana deslizante (±2 páginas) y puntos suspensivos en **Reportes**, **Usuarios**, **Líderes** y en el historial del **Dashboard de Líder CDP**. |
 | 7 | **Vistas de Supervisor Aisladas por Red y Protección de API** | ✅ Implementado | Dashboard, Estructura, Reportes y Directorio de Líderes con filtrado y aislamiento estricto por la red asignada al supervisor. Endpoint `/api/dashboard/datos` con validación estricta que impide consultas fuera de la red del supervisor (403 Forbidden / Anti-IDOR). |
@@ -39,7 +39,7 @@ Aplicación web de gestión y reportes para un servicio comunitario (ministerio 
 | 24 | **Modularización de Scripts JS y Desacoplamiento CSP** | ✅ Implementado | Extracción de scripts inline a módulos externos en `static/scripts/`: `theme_init.js`, `toast.js`, `login.js`, `generar_reporte.js`, `dashboard.js`, `form_guard.js`, `admin/form_cdp.js`, `admin/form_redes.js`, `admin/form_usuario.js` y `admin/lider.js`. |
 | 25 | **Búsqueda Client-Side en Tiempo Real** | ⚠️ Parcial | **Completado en la vista de Estructura** (`static/scripts/estructura.js`): Búsqueda instantánea en vivo por código, líder, anfitrión y zona en `#casasSearchInput` sin recarga. <br>**Falta:** Extender el filtrado instantáneo en vivo (live search client-side) a las tablas de Usuarios y Líderes. |
 | 26 | **Integración de Contacto por WhatsApp** | ⚠️ Parcial | Enlaces `wa.me` generados con compatibilidad en detalles de CDP, directorio de líderes y tarjetas de estructura. <br>**Falta:** Normalización estricta de códigos telefónicos internacionales (E.164) en todos los formularios de edición restantes. |
-| 27 | **Exportación a PDF y Excel** | ❌ Pendiente | Botones visuales maquetados en reportes y listados. <br>**Falta:** Implementar endpoints con descarga física en PDF (reportes consolidados con resumen de asistencia y ofrendas) y Excel (`.xlsx` o `.csv`) para reportes, usuarios, líderes y CDPs con filtros aplicados. |
+| 27 | **Exportación a PDF y Excel** | 🔄 En Progreso | Implementada exportación oficial a PDF de la **Ficha Técnica de Casa de Paz** (`detalles_cdp.html`, `detalles_cdp.js`) con diseño institucional imprimible, resumen de KPIs, desglose histórico de reuniones y equipo ministerial. <br>**Falta:** Implementar endpoints con descarga física en PDF (reportes consolidados con resumen de asistencia y ofrendas) y Excel (`.xlsx` o `.csv`) para reportes, usuarios, líderes y CDPs con filtros aplicados. |
 
 ---
 
@@ -210,8 +210,10 @@ graph TD
 - [x] **Pool Persistente de Conexiones MySQL**: Reutilización segura de conexiones vivas (`LifoQueue`) en `database.py` para mitigar latencia de red SSL/TCP y drenado automático en reset del circuit breaker.
 - [x] **Accesibilidad en Formularios y Retención de Datos**: Alternancia de contraseñas por teclado (Enter/Espacio) con atributos ARIA y preservación de campos (`form_data`) con fecha por defecto en la generación de reportes.
 
-### ⏳ Fase 5 — Exportación y Optimizaciones Finales (Próximo Paso)
-- [ ] **Generación de Reportes PDF/Excel**:
+### ⏳ Fase 5 — Exportación y Optimizaciones Finales (En Curso)
+- [x] **Exportación a PDF de Ficha Técnica de Casas de Paz**:
+  - Generación de documento oficial imprimible/PDF (`detalles_cdp.js`, `detalles_cdp.html`) con membrete institucional, datos de anfitrión, supervisor, KPIs, integrantes y auditoría ministerial.
+- [ ] **Generación de Reportes PDF/Excel Consolidados**:
   - Exportación de reportes filtrados a PDF con resumen de asistencia y ofrendas.
   - Exportación de listados de usuarios, líderes y Casas de Paz a Excel (`.xlsx` o `.csv`).
 - [ ] **Búsqueda Instantánea Client-Side (Live Search)**:

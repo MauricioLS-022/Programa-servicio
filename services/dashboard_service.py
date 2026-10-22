@@ -89,6 +89,10 @@ def sanitize_metricas(metricas):
         'dias_desde_reporte': None,
         'ultimo_reporte_reciente': False,
         'periodo': 'semana',
+        'periodo_nombre': '',
+        'nombre_mes': '',
+        'mes_numero': None,
+        'anio': None,
     }
     
     # Merge con valores por defecto
@@ -156,6 +160,11 @@ def sanitize_metricas(metricas):
                 'fecha_completa': str(t.get('fecha_completa') or t.get('semana') or ''),
                 'asistencia': asist,
             }
+            if t.get('num_mes') is not None:
+                try:
+                    clean_item['num_mes'] = int(t['num_mes'])
+                except (ValueError, TypeError):
+                    pass
             if t.get('rango_fecha'):
                 clean_item['rango_fecha'] = str(t['rango_fecha'])
             if 'porcentaje' in t and t.get('porcentaje') is not None:
@@ -513,7 +522,7 @@ def get_casas_sin_reporte_7d(red_id=None):
     return []
 
 
-def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, supervisor_red_id=None, periodo='semana'):
+def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, supervisor_red_id=None, periodo='semana', mes=None, anio=None):
     """
     Obtiene las métricas según el nivel y período solicitados.
     
@@ -524,6 +533,8 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
         is_supervisor: Si es supervisor, filtra por su red
         supervisor_red_id: ID de la red del supervisor
         periodo: 'semana', 'mes', o 'anio' (default: 'semana')
+        mes: Número de mes opcional (1-12)
+        anio: Año opcional
     
     Returns:
         dict con las métricas y flag mock_used
@@ -531,7 +542,7 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
     if not periodo or periodo not in ('semana', 'mes', 'anio'):
         periodo = 'semana'
 
-    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{periodo}_{mock_mode_enabled()}'
+    cache_key = f'metricas_{nivel}_{red_id}_{cdp_id}_{periodo}_{mes}_{anio}_{mock_mode_enabled()}'
     cached = get_cached_value(cache_key)
     
     if cached:
@@ -545,9 +556,9 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
     try:
         if nivel == 'general':
             if db_connected:
-                metricas = get_metricas_generales(conn, periodo=periodo)
+                metricas = get_metricas_generales(conn, periodo=periodo, mes=mes, anio=anio)
             elif mock_mode_enabled():
-                metricas = get_mock_generales(periodo=periodo)
+                metricas = get_mock_generales(periodo=periodo, mes=mes, anio=anio)
                 mock_used = True
             else:
                 metricas = get_empty_generales()
@@ -557,10 +568,10 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
             if not rid:
                 metricas = get_empty_red(None)
             elif db_connected:
-                result = get_metricas_red(conn, rid, periodo=periodo)
+                result = get_metricas_red(conn, rid, periodo=periodo, mes=mes, anio=anio)
                 metricas = result if result else get_empty_red(rid)
             elif mock_mode_enabled():
-                metricas = get_mock_red(rid, periodo=periodo)
+                metricas = get_mock_red(rid, periodo=periodo, mes=mes, anio=anio)
                 mock_used = True
             else:
                 metricas = get_empty_red(rid)
@@ -616,6 +627,11 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
     cdp_id_str = request.args.get('cdp_id', '')
     periodo_raw = request.args.get('periodo', 'semana').strip().lower() if request.args.get('periodo') else 'semana'
     periodo = periodo_raw if periodo_raw in ('semana', 'mes', 'anio') else 'semana'
+
+    mes_str = request.args.get('mes', '').strip()
+    anio_str = request.args.get('anio', '').strip()
+    mes = int(mes_str) if mes_str and mes_str.isdigit() and 1 <= int(mes_str) <= 12 else None
+    anio = int(anio_str) if anio_str and anio_str.isdigit() else None
 
     # Parsear IDs
     try:
@@ -698,7 +714,7 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
         metricas['periodo'] = periodo
         mock_used = False
     else:
-        metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id, periodo=periodo)
+        metricas = get_metricas(nivel, red_id, cdp_id, is_supervisor, supervisor_red_id, periodo=periodo, mes=mes, anio=anio)
         mock_used = metricas.pop('mock_used', False)
 
     # Si estamos en nivel cdp sin cdp asignada pero con red_id, asegurar nombre_red en métricas
@@ -713,6 +729,8 @@ def get_dashboard_context(usuario_id, is_supervisor=False, default_nivel='genera
         'red_id': red_id,
         'cdp_id': cdp_id,
         'periodo': periodo,
+        'mes': mes,
+        'anio': anio,
         'redes': redes,
         'casas': casas,
         'metricas': metricas,

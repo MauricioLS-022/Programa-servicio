@@ -604,26 +604,26 @@
                     rankingSub: 'Cumplimiento y asistencia de la semana'
                 },
                 mes: {
-                    cumplimientoTitle: 'Cumplimiento Mensual',
-                    cumplimientoSubRed: 'Casas con reporte en el mes en curso',
-                    trendTitleGen: 'Evolución Semanal del Mes',
-                    trendTitleRed: 'Evolución Semanal del Mes',
-                    trendSubGen: 'Histórico semanal del mes en curso',
-                    trendSubRed: `Histórico semanal del mes en curso en ${data.nombre_red || ''}`,
-                    distSubGen: 'Composición acumulada de la membresía en el mes en curso',
-                    distSubRed: 'Composición de miembros en el mes en curso',
-                    rankingSub: 'Cumplimiento y asistencia del mes'
+                    cumplimientoTitle: data.periodo_nombre ? `Cumplimiento de ${data.periodo_nombre}` : 'Cumplimiento Mensual',
+                    cumplimientoSubRed: data.periodo_nombre ? `Casas con reporte en ${data.periodo_nombre}` : 'Casas con reporte en el mes en curso',
+                    trendTitleGen: data.periodo_nombre ? `Evolución Semanal de ${data.periodo_nombre}` : 'Evolución Semanal del Mes',
+                    trendTitleRed: data.periodo_nombre ? `Evolución Semanal de ${data.periodo_nombre}` : 'Evolución Semanal del Mes',
+                    trendSubGen: data.periodo_nombre ? `Histórico semanal de ${data.periodo_nombre}` : 'Histórico semanal del mes en curso',
+                    trendSubRed: data.periodo_nombre ? `Histórico semanal de ${data.periodo_nombre} en ${data.nombre_red || ''}` : `Histórico semanal en ${data.nombre_red || ''}`,
+                    distSubGen: data.periodo_nombre ? `Composición acumulada de ${data.periodo_nombre}` : 'Composición acumulada de la membresía en el mes en curso',
+                    distSubRed: data.periodo_nombre ? `Composición de miembros en ${data.periodo_nombre}` : 'Composición de miembros en el mes en curso',
+                    rankingSub: data.periodo_nombre ? `Cumplimiento y asistencia de ${data.periodo_nombre}` : 'Cumplimiento y asistencia del mes'
                 },
                 anio: {
-                    cumplimientoTitle: 'Cumplimiento Anual',
-                    cumplimientoSubRed: 'Casas con reporte en el año en curso',
-                    trendTitleGen: 'Evolución Mensual del Año',
-                    trendTitleRed: 'Evolución Mensual del Año',
-                    trendSubGen: 'Histórico mes a mes del año en curso',
-                    trendSubRed: `Histórico mes a mes del año en curso en ${data.nombre_red || ''}`,
-                    distSubGen: 'Composición acumulada de la membresía en el año en curso',
-                    distSubRed: 'Composición de miembros en el año en curso',
-                    rankingSub: 'Cumplimiento y asistencia del año'
+                    cumplimientoTitle: data.periodo_nombre ? `Cumplimiento Anual (${data.periodo_nombre})` : 'Cumplimiento Anual',
+                    cumplimientoSubRed: data.periodo_nombre ? `Casas con reporte en ${data.periodo_nombre}` : 'Casas con reporte en el año en curso',
+                    trendTitleGen: data.periodo_nombre ? `Evolución Mensual de ${data.periodo_nombre}` : 'Evolución Mensual del Año',
+                    trendTitleRed: data.periodo_nombre ? `Evolución Mensual de ${data.periodo_nombre}` : 'Evolución Mensual del Año',
+                    trendSubGen: data.periodo_nombre ? `Histórico mes a mes de ${data.periodo_nombre}` : 'Histórico mes a mes del año en curso',
+                    trendSubRed: data.periodo_nombre ? `Histórico mes a mes de ${data.periodo_nombre} en ${data.nombre_red || ''}` : `Histórico mes a mes en ${data.nombre_red || ''}`,
+                    distSubGen: data.periodo_nombre ? `Composición acumulada de ${data.periodo_nombre}` : 'Composición acumulada de la membresía en el año en curso',
+                    distSubRed: data.periodo_nombre ? `Composición de miembros en ${data.periodo_nombre}` : 'Composición de miembros en el año en curso',
+                    rankingSub: data.periodo_nombre ? `Cumplimiento y asistencia de ${data.periodo_nombre}` : 'Cumplimiento y asistencia del año'
                 }
             };
 
@@ -674,6 +674,12 @@
 
                 const frutoRecon = document.getElementById('frutoReconciliacionesGen');
                 if (frutoRecon) frutoRecon.textContent = (data.reconciliaciones || 0).toLocaleString();
+
+                const frutoCestas = document.getElementById('frutoCestasGen');
+                if (frutoCestas) frutoCestas.textContent = (data.cestas_amor || 0).toLocaleString();
+
+                const frutoVis = document.getElementById('frutoVisitasGen');
+                if (frutoVis) frutoVis.textContent = (data.total_visitas || 0).toLocaleString();
 
                 // Tendencia de Asistencia General
                 renderTrendBars('Gen', data.tendencia_semanas, data.promedio_tendencia);
@@ -800,8 +806,12 @@
                 let html = '';
                 tendencia.forEach((item, index) => {
                     const tipId = `trend-tip-${suffix.toLowerCase()}-${index + 1}`;
+                    const hasNumMes = item.num_mes !== undefined && item.num_mes !== null;
+                    const clickClass = hasNumMes ? ' clickable-month-bar' : '';
+                    const clickStyle = hasNumMes ? ' style="cursor: pointer;"' : '';
+                    const dataMesAttr = hasNumMes ? ` data-mes="${item.num_mes}"` : '';
                     html += `
-                        <div class="trend-bar-col" tabindex="0" role="graphics-symbol" aria-roledescription="barra de asistencia" aria-describedby="${tipId}" aria-label="${escapeHtml(item.semana)}: ${item.asistencia || 0} asistentes, ${item.porcentaje || 0}% del pico">
+                        <div class="trend-bar-col${clickClass}"${clickStyle}${dataMesAttr} tabindex="0" role="graphics-symbol" aria-roledescription="barra de asistencia" aria-describedby="${tipId}" aria-label="${escapeHtml(item.semana)}: ${item.asistencia || 0} asistentes, ${item.porcentaje || 0}% del pico">
                             <div class="trend-bar-track">
                                 <div class="trend-bar-fill" style="--bar-height: ${item.porcentaje || 0}%;">
                                     <span class="trend-bar-val">${item.asistencia || 0}</span>
@@ -812,12 +822,25 @@
                                 <span class="tooltip-date">${escapeHtml(item.fecha_completa || item.semana)}</span>
                                 <span class="tooltip-val"><strong>${item.asistencia || 0}</strong> asistentes</span>
                                 <span class="tooltip-pct">${item.porcentaje || 0}% del pico</span>
+                                ${hasNumMes ? '<span class="tooltip-hint" style="display:block; font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Haz clic para ver semanas</span>' : ''}
                             </div>
                         </div>
                     `;
                 });
                 container.innerHTML = html;
                 initTrendBars();
+
+                // Permitir clic en mes de la gráfica anual para profundizar al mes en cuestión
+                container.querySelectorAll('.clickable-month-bar').forEach(bar => {
+                    bar.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const mesVal = this.dataset.mes;
+                        if (mesVal) {
+                            const btnMes = document.querySelector('.period-btn[data-periodo="mes"]');
+                            switchPeriod('mes', btnMes, { mes: mesVal });
+                        }
+                    });
+                });
             } else {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -953,7 +976,7 @@
 
         function switchPeriod(periodo, btnElement, options = {}) {
             if (!periodo) return;
-            const { updateUrl = true, pushHistory = true } = options;
+            const { updateUrl = true, pushHistory = true, mes = '', anio = '' } = options;
 
             // Actualizar botones visualmente
             periodButtons.forEach(btn => {
@@ -983,7 +1006,7 @@
             const redId = selectRed && nivel !== 'general' ? selectRed.value : '';
             const cdpId = selectCdp && nivel === 'cdp' ? selectCdp.value : '';
 
-            const cacheKey = `${nivel}_${redId}_${cdpId}_${periodo}`;
+            const cacheKey = `${nivel}_${redId}_${cdpId}_${periodo}_${mes}_${anio}`;
             if (periodDataCache[cacheKey]) {
                 applyPeriodData(periodDataCache[cacheKey], periodo, nivel);
                 return;
@@ -999,6 +1022,8 @@
             });
             if (redId) params.append('red_id', redId);
             if (cdpId) params.append('cdp_id', cdpId);
+            if (mes) params.append('mes', mes);
+            if (anio) params.append('anio', anio);
 
             fetch(`/api/dashboard/datos?${params.toString()}`)
                 .then(res => {
