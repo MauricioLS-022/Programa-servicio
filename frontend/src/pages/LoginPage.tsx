@@ -3,13 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
-import { Church, Lock, User as UserIcon, Moon, Sun, AlertCircle } from 'lucide-react';
+import { Icon } from '../components/ui/Icon';
+import '../styles/login.css';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const { login, isLoggingIn } = useAuth();
@@ -47,83 +47,125 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-surface dark:bg-neutral-900 p-4 relative transition-colors duration-200">
-      {/* Theme Switcher Button */}
+    <div className="login-page-wrapper">
+      {/* Botón Flotante para Alternar Modo Oscuro / Claro */}
       <button
         type="button"
         onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2.5 rounded-full bg-white dark:bg-neutral-800 border border-border-subtle dark:border-neutral-700 shadow-sm text-text-muted hover:text-text-main dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-        aria-label="Alternar tema"
+        className="theme-toggle-btn"
+        id="themeToggleBtn"
+        aria-label="Cambiar tema de color"
+        title={`Alternar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}
       >
-        {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+        <Icon
+          name={theme === 'dark' ? 'light_mode' : 'dark_mode'}
+          size={22}
+          className="text-vino dark:text-neutral-100"
+        />
       </button>
 
-      {/* Main Card */}
-      <div className="w-full max-w-md bg-white dark:bg-neutral-800/90 rounded-2xl border border-border-subtle dark:border-neutral-700/80 shadow-elevated p-8 sm:p-10 transition-all duration-200">
-        {/* Header Branding */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-vino text-white flex items-center justify-center shadow-lg shadow-vino/20 mb-4">
-            <Church className="w-9 h-9" />
+      {/* Tarjeta Principal de Autenticación */}
+      <main className="login-card">
+        {/* Cabecera del Login */}
+        <div className="brand-header">
+          <div className="brand-logo-wrap">
+            <img
+              src="/logo3.webp"
+              alt="Logotipo Vino Nuevo"
+              className="brand-logo-img"
+            />
           </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-text-main dark:text-neutral-100 tracking-tight">
-            Vino Nuevo
-          </h1>
-          <p className="text-xs font-semibold uppercase tracking-wider text-vino dark:text-vino-light mt-1">
-            Gestión y Reportes de Casas de Paz
-          </p>
+          <h1 className="brand-title">Vino Nuevo</h1>
+          <p className="brand-subtitle">Ministerio Comunitario · Iniciar Sesión</p>
         </div>
 
-        {/* Error Alert */}
+        {/* Mensaje de Alerta / Error */}
         {errorMsg && (
-          <div className="mb-6 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-3 text-red-800 dark:text-red-300 text-xs font-medium">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+          <div className="login-alert" role="alert">
+            <Icon name="error" size={20} className="shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Input
-            label="Usuario"
-            placeholder="Ingresa tu nombre de usuario"
-            icon={<UserIcon className="w-4 h-4" />}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={isLoggingIn}
-            autoComplete="username"
-            autoFocus
-          />
+        {/* Formulario de Acceso */}
+        <form onSubmit={handleSubmit} className="login-form" noValidate={false}>
+          <div className="form-group">
+            <label htmlFor="usuario" className="form-label">
+              Usuario
+            </label>
+            <div className="input-wrapper">
+              <Icon name="person" size={20} className="input-icon-left" />
+              <input
+                type="text"
+                name="usuario"
+                id="usuario"
+                className="form-input"
+                placeholder="Ingresa tu usuario"
+                required
+                autoComplete="username"
+                autoFocus
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isLoggingIn}
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Contraseña"
-            type="password"
-            placeholder="••••••••"
-            icon={<Lock className="w-4 h-4" />}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoggingIn}
-            autoComplete="current-password"
-          />
+          <div className="form-group">
+            <label htmlFor="contrasena" className="form-label">
+              Contraseña
+            </label>
+            <div className="input-wrapper">
+              <Icon name="lock" size={20} className="input-icon-left" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="contrasena"
+                id="contrasena"
+                className="form-input form-input-password"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoggingIn}
+              />
+              <button
+                type="button"
+                className="btn-toggle-password"
+                id="btnTogglePassword"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                <Icon
+                  name={showPassword ? 'visibility_off' : 'visibility'}
+                  size={20}
+                />
+              </button>
+            </div>
+          </div>
 
-          <Button
+          <button
             type="submit"
-            size="lg"
-            variant="primary"
-            isLoading={isLoggingIn}
-            className="w-full mt-2 font-semibold shadow-md"
+            className="btn-login"
+            id="btnSubmit"
+            disabled={isLoggingIn}
           >
-            Iniciar Sesión
-          </Button>
+            <span>{isLoggingIn ? 'Accediendo...' : 'Ingresar al Sistema'}</span>
+            <Icon
+              name={isLoggingIn ? 'progress_activity' : 'arrow_forward'}
+              size={20}
+              className={`btn-icon ${isLoggingIn ? 'animate-spin' : ''}`}
+            />
+          </button>
         </form>
 
-        {/* Footer info / Demo hint */}
-        <div className="mt-8 pt-6 border-t border-border-subtle/80 dark:border-neutral-700/80 text-center">
-          <p className="text-xs text-text-muted dark:text-neutral-400">
-            ¿Problemas con tus credenciales? Contacta a tu supervisor de red.
-          </p>
-        </div>
-      </div>
+        <footer className="login-footer">
+          <p>© {new Date().getFullYear()} Vino Nuevo · Sistema de Casas de Paz</p>
+        </footer>
+      </main>
     </div>
   );
 };
 
+export default LoginPage;

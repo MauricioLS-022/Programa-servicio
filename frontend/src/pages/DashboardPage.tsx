@@ -1,281 +1,351 @@
-import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useDashboard, useRedes } from '../hooks/useDashboard';
-import { Card } from '../components/ui/Card';
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  HeartHandshake,
-  Calendar,
-  Layers,
-  ArrowRight,
-  Loader2,
-} from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useDashboard, useRedes, useCasasDePaz } from '../hooks/useDashboard';
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { DashboardEmptyState } from '../components/dashboard/DashboardEmptyState';
+import { DashboardPeriodToggle, type PeriodoTipo } from '../components/dashboard/DashboardPeriodToggle';
+import { DashboardFilterBar } from '../components/dashboard/DashboardFilterBar';
+import { DashboardKpiCards } from '../components/dashboard/DashboardKpiCards';
+import { DashboardTrendChart } from '../components/dashboard/DashboardTrendChart';
+import { DashboardCategoryDonut } from '../components/dashboard/DashboardCategoryDonut';
+import { DashboardAlertsCard } from '../components/dashboard/DashboardAlertsCard';
+import { DashboardRankingCard } from '../components/dashboard/DashboardRankingCard';
+import { DashboardFrutoCard } from '../components/dashboard/DashboardFrutoCard';
+import { DashboardRedDetail } from '../components/dashboard/DashboardRedDetail';
+import { DashboardCdpDetail } from '../components/dashboard/DashboardCdpDetail';
+import { Loader2, RefreshCw } from 'lucide-react';
+import '../styles/dashboard.css';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const [periodo, setPeriodo] = useState<'semana' | 'mes' | 'anio'>('semana');
-  const [selectedRedId, setSelectedRedId] = useState<number | string>('');
+  const isSupervisor = user?.rol === 'supervisor';
 
+  // Estados de control jerárquico
+  const [periodo, setPeriodo] = useState<PeriodoTipo>('semana');
+  const [nivel, setNivel] = useState<'general' | 'red' | 'cdp'>(isSupervisor ? 'red' : 'general');
+  const [redId, setRedId] = useState<number | string>('');
+  const [cdpId, setCdpId] = useState<number | string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Carga de selectores y métricas del dashboard
   const { redes } = useRedes();
-  const { metricas, isLoading } = useDashboard({
-    nivel: user?.rol === 'admin' ? (selectedRedId ? 'red' : 'general') : 'red',
-    red_id: selectedRedId || undefined,
+  const { casas: allCasas } = useCasasDePaz();
+  const { metricas, isLoading, isError, error, refetch } = useDashboard({
+    nivel,
+    red_id: redId || undefined,
+    cdp_id: cdpId || undefined,
     periodo,
   });
 
-  const kpis = metricas?.kpis || {};
-  const grafico = metricas?.grafico;
-  const rankingRedes = metricas?.ranking_redes || [];
+  // Filtrado reactivo de Casas de Paz por búsqueda rápida
+  const filteredCasas = useMemo(() => {
+    if (!searchQuery.trim()) return allCasas;
+    const q = searchQuery.toLowerCase().trim();
+    return allCasas.filter(
+      (c) =>
+        c.codigo?.toLowerCase().includes(q) ||
+        c.anfitrion?.toLowerCase().includes(q) ||
+        c.red_nombre?.toLowerCase().includes(q)
+    );
+  }, [allCasas, searchQuery]);
+
+  // Auto-selección reactiva de Red y Casa de Paz al conmutar niveles
+  React.useEffect(() => {
+    if (nivel === 'red') {
+      if (!redId && redes.length > 0) {
+        setRedId(redes[0].id);
+      }
+    } else if (nivel === 'cdp') {
+      const activeRed = redId || (redes.length > 0 ? redes[0].id : '');
+      if (!redId && activeRed) {
+        setRedId(activeRed);
+      }
+      if (!cdpId && allCasas.length > 0) {
+        const candidateCasas = activeRed
+          ? allCasas.filter((c) => c.red_id === Number(activeRed))
+          : allCasas;
+        if (candidateCasas.length > 0) {
+          setCdpId(candidateCasas[0].id);
+        } else if (allCasas.length > 0) {
+          setCdpId(allCasas[0].id);
+        }
+      }
+    }
+  }, [nivel, redId, cdpId, redes, allCasas]);
+
+  // Manejo de reinicio de filtros
+  const handleReset = () => {
+    setSearchQuery('');
+    setPeriodo('semana');
+    setNivel(isSupervisor ? 'red' : 'general');
+    setRedId('');
+    setCdpId('');
+  };
+
+  // Validación de estado de supervisor sin red asignada
+  const supervisorSinRed = isSupervisor && (metricas?.sin_red_asignada || (metricas && Object.keys(metricas).length === 0 && !isLoading));
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Top Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-text-main dark:text-neutral-100 tracking-tight">
-            Panel de Indicadores
-          </h1>
-          <p className="text-xs sm:text-sm text-text-muted dark:text-neutral-400 mt-1">
-            Resumen ministerial de asistencia, fruto y ofrendas
-          </p>
-        </div>
+    <div className="dashboard-admin-wrapper">
+      <main className="dashboard-main">
+        {/* Cabecera dinámica de sección */}
+        <DashboardHeader
+          rol={user?.rol}
+          userName={user?.nombre || user?.username || 'Usuario'}
+          nivel={nivel}
+          redNombre={metricas?.nombre_red}
+          supervisorNombre={metricas?.supervisor}
+          casasActivas={metricas?.casas_activas}
+          cdpNombre={metricas?.nombre_cdp}
+          cdpDireccion={metricas?.direccion}
+        />
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Admin Red Selector */}
-          {user?.rol === 'admin' && (
-            <select
-              value={selectedRedId}
-              onChange={(e) => setSelectedRedId(e.target.value)}
-              className="rounded-lg border border-border-subtle dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold py-2 px-3 text-text-main dark:text-neutral-200 outline-none focus:ring-2 focus:ring-vino/30 cursor-pointer"
+        {/* Estado vacío: Supervisor sin red ministerial asignada */}
+        {supervisorSinRed ? (
+          <DashboardEmptyState type="sin_red" />
+        ) : (
+          <>
+            {/* Barra de Filtros Jerárquicos y Búsqueda */}
+            <DashboardFilterBar
+              rol={user?.rol}
+              nivel={nivel}
+              onNivelChange={(newNivel) => {
+                setNivel(newNivel);
+                if (newNivel === 'general') {
+                  setRedId('');
+                  setCdpId('');
+                } else if (newNivel === 'red') {
+                  setCdpId('');
+                  if (!redId && redes.length > 0) {
+                    setRedId(redes[0].id);
+                  }
+                } else if (newNivel === 'cdp') {
+                  const activeRed = redId || (redes.length > 0 ? redes[0].id : '');
+                  if (!redId && activeRed) {
+                    setRedId(activeRed);
+                  }
+                  const candidateCasas = activeRed
+                    ? allCasas.filter((c) => c.red_id === Number(activeRed))
+                    : allCasas;
+                  if (candidateCasas.length > 0) {
+                    setCdpId(candidateCasas[0].id);
+                  } else if (allCasas.length > 0) {
+                    setCdpId(allCasas[0].id);
+                  }
+                }
+              }}
+              redId={redId}
+              onRedChange={(newRedId) => {
+                setRedId(newRedId);
+                if (nivel === 'cdp' && newRedId) {
+                  const candidateCasas = allCasas.filter((c) => c.red_id === Number(newRedId));
+                  if (candidateCasas.length > 0) {
+                    setCdpId(candidateCasas[0].id);
+                  } else {
+                    setCdpId('');
+                  }
+                } else {
+                  setCdpId('');
+                }
+              }}
+              redes={redes}
+              cdpId={cdpId}
+              onCdpChange={(newCdpId) => setCdpId(newCdpId)}
+              casas={filteredCasas}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onReset={handleReset}
+            />
+
+            {/* Barra de Accesos Rápidos y Selector de Período Dinámico */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                marginBottom: '1.25rem',
+              }}
             >
-              <option value="">Todas las Redes (General)</option>
-              {redes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.nombre}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* Dynamic Period Selector */}
-          <div className="flex items-center p-1 rounded-xl bg-surface-sidebar dark:bg-neutral-800 border border-border-subtle dark:border-neutral-700">
-            {(['semana', 'mes', 'anio'] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriodo(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
-                  periodo === p
-                    ? 'bg-vino text-white shadow-xs dark:bg-vino'
-                    : 'text-text-muted dark:text-neutral-400 hover:text-text-main dark:hover:text-neutral-200'
-                }`}
-              >
-                {p === 'anio' ? 'Año' : p}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-vino dark:text-vino-light animate-spin" />
-          <p className="text-sm font-medium text-text-muted dark:text-neutral-400">
-            Cargando indicadores ministeriales...
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <Card className="border-l-4 border-l-vino">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-400">
-                    Asistencia Total
-                  </p>
-                  <p className="font-serif text-3xl font-extrabold text-text-main dark:text-neutral-100 mt-1">
-                    {kpis.total_asistencia ?? 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-vino/10 text-vino dark:bg-vino/20 dark:text-vino-light">
-                  <Users className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-border-subtle/60 dark:border-neutral-700/60 flex items-center justify-between text-xs text-text-muted dark:text-neutral-400">
-                <span>Promedio por reunión:</span>
-                <span className="font-bold text-text-main dark:text-neutral-200">
-                  {kpis.promedio_asistencia ?? 0}
-                </span>
-              </div>
-            </Card>
-
-            <Card className="border-l-4 border-l-emerald-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-400">
-                    Ofrendas USD
-                  </p>
-                  <p className="font-serif text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">
-                    ${(kpis.total_ofrenda_usd ?? 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                  <DollarSign className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-border-subtle/60 dark:border-neutral-700/60 flex items-center justify-between text-xs text-text-muted dark:text-neutral-400">
-                <span>Total en Bolívares:</span>
-                <span className="font-bold text-text-main dark:text-neutral-200">
-                  Bs {(kpis.total_ofrenda_bs ?? 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </Card>
-
-            <Card className="border-l-4 border-l-blue-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-400">
-                    Nuevas Visitas
-                  </p>
-                  <p className="font-serif text-3xl font-extrabold text-text-main dark:text-neutral-100 mt-1">
-                    {kpis.total_amigos ?? 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                  <HeartHandshake className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-border-subtle/60 dark:border-neutral-700/60 flex items-center justify-between text-xs text-text-muted dark:text-neutral-400">
-                <span>Hermanos activos:</span>
-                <span className="font-bold text-text-main dark:text-neutral-200">
-                  {kpis.total_hermanos ?? 0}
-                </span>
-              </div>
-            </Card>
-
-            <Card className="border-l-4 border-l-amber-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-400">
-                    Niños Atendidos
-                  </p>
-                  <p className="font-serif text-3xl font-extrabold text-text-main dark:text-neutral-100 mt-1">
-                    {kpis.total_ninos ?? 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-border-subtle/60 dark:border-neutral-700/60 flex items-center justify-between text-xs text-text-muted dark:text-neutral-400">
-                <span>Período evaluado:</span>
-                <span className="font-bold capitalize text-text-main dark:text-neutral-200">
-                  {periodo}
-                </span>
-              </div>
-            </Card>
-          </div>
-
-          {/* Chart & Secondary Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Interactive Bar Chart Representation */}
-            <Card
-              className="lg:col-span-2"
-              title={`Tendencia de Asistencia (${periodo.toUpperCase()})`}
-              subtitle="Comportamiento histórico y registro de reuniones"
-              icon={<Calendar className="w-5 h-5" />}
-            >
-              {grafico?.asistencia && grafico.asistencia.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  <div className="h-64 flex items-end gap-3 sm:gap-6 pt-6 pb-2 px-2 overflow-x-auto scroll-containment">
-                    {grafico.asistencia.map((val, idx) => {
-                      const maxVal = Math.max(...grafico.asistencia!, 1);
-                      const heightPercent = Math.round((val / maxVal) * 100);
-                      const label = grafico.labels?.[idx] || `P${idx + 1}`;
-                      const rango = grafico.fechas_rango?.[idx] || '';
-
-                      return (
-                        <div
-                          key={idx}
-                          className="flex-1 min-w-[3rem] flex flex-col items-center gap-2 group relative cursor-pointer"
-                        >
-                          {/* Tooltip */}
-                          <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900 text-white text-[11px] font-semibold py-1 px-2 rounded shadow-md pointer-events-none whitespace-nowrap z-20">
-                            {val} asistentes {rango ? `(${rango})` : ''}
-                          </div>
-
-                          {/* Bar */}
-                          <div className="w-full bg-surface-container dark:bg-neutral-700 rounded-t-lg h-44 flex items-end justify-center overflow-hidden">
-                            <div
-                              style={{ height: `${Math.max(heightPercent, 4)}%` }}
-                              className="w-full bg-vino group-hover:bg-vino-hover transition-all rounded-t-lg"
-                            />
-                          </div>
-
-                          <span className="text-[11px] font-bold text-text-muted dark:text-neutral-400 truncate max-w-[4rem]">
-                            {label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-text-muted dark:text-neutral-400 text-sm">
-                  No hay reportes registrados para el período seleccionado.
-                </div>
-              )}
-            </Card>
-
-            {/* Network Ranking / Activity */}
-            <Card
-              title="Redes Ministeriales"
-              subtitle="Rendimiento consolidado"
-              icon={<Layers className="w-5 h-5" />}
-              footer={
-                <Link
-                  to="/estructura"
-                  className="text-xs font-bold text-vino dark:text-vino-light hover:underline flex items-center justify-between"
-                >
-                  <span>Explorar Estructura Ministerial</span>
-                  <ArrowRight className="w-4 h-4" />
+              {/* Botones de navegación directa institucional */}
+              <div className="quick-actions-bar fade-in-1" style={{ margin: 0 }}>
+                <Link to="/reportes" className="quick-action-btn">
+                  <span className="material-symbols-outlined">table_chart</span>
+                  <span>Ver Reportes</span>
                 </Link>
-              }
-            >
-              <div className="flex flex-col gap-3 max-h-64 overflow-y-auto scroll-containment pr-1">
-                {rankingRedes.length > 0 ? (
-                  rankingRedes.map((red, index) => (
-                    <div
-                      key={red.red_id || index}
-                      className="flex items-center justify-between p-3 rounded-xl bg-surface-low/60 dark:bg-neutral-800/60 border border-border-subtle/60 dark:border-neutral-700/60"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-vino/10 dark:bg-vino/30 text-vino dark:text-vino-light text-xs font-bold flex items-center justify-center">
-                          {index + 1}
-                        </span>
-                        <span className="text-xs font-bold text-text-main dark:text-neutral-200">
-                          {red.nombre}
-                        </span>
-                      </div>
-                      <span className="text-xs font-extrabold text-vino dark:text-vino-light">
-                        {red.asistencia} asistentes
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-text-muted dark:text-neutral-400 py-6 text-center">
-                    Cargando información ministerial...
-                  </p>
-                )}
+                <Link to="/estructura" className="quick-action-btn">
+                  <span className="material-symbols-outlined">account_tree</span>
+                  <span>Estructura y Redes</span>
+                </Link>
+                <Link to="/lideres" className="quick-action-btn">
+                  <span className="material-symbols-outlined">group</span>
+                  <span>Directorio de Líderes</span>
+                </Link>
               </div>
-            </Card>
-          </div>
-        </>
-      )}
+
+              {/* Selector táctil de período temporal */}
+              <DashboardPeriodToggle
+                periodo={periodo}
+                onChange={setPeriodo}
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Estado de Carga / Error */}
+            {isLoading && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4rem 1rem',
+                  gap: '0.75rem',
+                }}
+              >
+                <Loader2
+                  className="animate-spin text-vino"
+                  style={{ width: '2.5rem', height: '2.5rem' }}
+                />
+                <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.95rem', fontWeight: 600 }}>
+                  Actualizando métricas ministeriales...
+                </p>
+              </div>
+            )}
+
+            {isError && (
+              <div
+                className="warning-card"
+                style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  margin: '1.5rem 0',
+                }}
+              >
+                <span
+                  className="material-symbols-outlined text-danger"
+                  style={{ fontSize: '2.5rem', marginBottom: '0.5rem', display: 'block' }}
+                >
+                  error
+                </span>
+                <h3 style={{ color: 'var(--primary, #390002)', marginBottom: '0.5rem' }}>
+                  No se pudieron cargar los datos del dashboard
+                </h3>
+                <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  {(error as Error)?.message || 'Ocurrió un error consultando el servidor.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="quick-action-btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto' }}
+                >
+                  <RefreshCw style={{ width: '1rem', height: '1rem' }} />
+                  Reintentar
+                </button>
+              </div>
+            )}
+
+            {!isLoading && !isError && (
+              <>
+                {/* Grid Superior de Tarjetas KPI */}
+                <DashboardKpiCards
+                  metricas={metricas}
+                  nivel={nivel}
+                  periodo={periodo}
+                  hasData={Boolean(metricas && Object.keys(metricas).length > 0)}
+                />
+
+                {/* Grid Principal de 2 Columnas */}
+                <div className="dashboard-grid">
+                  {/* Columna Izquierda: Gráficas de Tendencia, Distribución y Detalle Zonal */}
+                  <div className="main-column">
+                    {/* Gráfico de barras de evolución temporal reactiva */}
+                    <DashboardTrendChart
+                      tendencia={metricas?.tendencia_semanas || metricas?.tendencia}
+                      promedioTendencia={metricas?.promedio_tendencia}
+                      periodo={periodo}
+                      periodoNombre={metricas?.periodo_nombre}
+                      nivel={nivel}
+                      redNombre={metricas?.nombre_red}
+                    />
+
+                    {/* Gráfico Donut de distribución por categoría */}
+                    <DashboardCategoryDonut
+                      distribucion={metricas?.distribucion}
+                      total={metricas?.total_asistencia ?? metricas?.asistencia_total}
+                      periodo={periodo}
+                      periodoNombre={metricas?.periodo_nombre}
+                      nivel={nivel}
+                      redNombre={metricas?.nombre_red}
+                    />
+
+                    {/* Vista de Detalle Zonal de Casas de Paz cuando el filtro es Red */}
+                    {nivel === 'red' && (
+                      <DashboardRedDetail
+                        redNombre={metricas?.nombre_red}
+                        casas={metricas?.casas}
+                        actividadReciente={metricas?.actividad_reciente}
+                        lideresRed={metricas?.lideres_red}
+                        topCrecimiento={metricas?.top_crecimiento}
+                        cumplimiento={metricas?.cumplimiento}
+                        casasConReporte={metricas?.casas_con_reporte}
+                        casasPendientes={metricas?.casas_pendientes}
+                        casasActivas={metricas?.casas_activas}
+                        periodo={periodo}
+                        periodoNombre={metricas?.periodo_nombre}
+                        onSelectCdp={(selectedId) => {
+                          setNivel('cdp');
+                          setCdpId(selectedId);
+                        }}
+                      />
+                    )}
+                    {/* Vista de Detalle de Casa de Paz cuando el filtro es CDP */}
+                    {nivel === 'cdp' && (
+                      <DashboardCdpDetail
+                        metricas={metricas}
+                        periodo={periodo}
+                        periodoNombre={metricas?.periodo_nombre}
+                      />
+                    )}
+                  </div>
+
+                  {/* Columna Derecha (Sidebar): Alertas, Ranking y Fruto */}
+                  <aside className="sidebar-column fade-in-6">
+                    {/* Alertas de Seguimiento (>2 semanas sin reporte con contacto directo) */}
+                    {nivel !== 'cdp' && (
+                      <DashboardAlertsCard
+                        alertas={nivel === 'red' ? metricas?.alertas_zonal || metricas?.alertas : metricas?.alertas}
+                        isZonal={nivel === 'red'}
+                        title={nivel === 'red' ? 'Alertas de la Red' : 'Alertas de Seguimiento'}
+                      />
+                    )}
+
+                    {/* Podio y Ranking de Redes (Visible en Vista General) */}
+                    {nivel === 'general' && (
+                      <DashboardRankingCard
+                        ranking={metricas?.ranking_redes}
+                        periodo={periodo}
+                        periodoNombre={metricas?.periodo_nombre}
+                      />
+                    )}
+
+                    {/* Fruto y Transformación Espiritual */}
+                    <DashboardFrutoCard
+                      conversiones={metricas?.conversiones}
+                      reconciliaciones={metricas?.reconciliaciones}
+                      cestasAmor={metricas?.cestas_amor}
+                      totalVisitas={metricas?.total_visitas}
+                    />
+                  </aside>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 };
-

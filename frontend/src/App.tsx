@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
-import { AdminLayout } from './components/layout/AdminLayout';
+import { AppLayout } from './components/layout/AppLayout';
 
 // Vistas
 import { LoginPage } from './pages/LoginPage';
@@ -39,7 +39,7 @@ function App() {
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout />
+                    <AppLayout />
                   </ProtectedRoute>
                 }
               >
