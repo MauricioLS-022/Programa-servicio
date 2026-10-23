@@ -31,7 +31,7 @@ export const DesktopHeader: React.FC = () => {
         { to: '/perfil', label: 'Perfil' },
       ];
     }
-    if (rol === 'lider_cdp' || rol === 'cdp') {
+    if (rol === 'lider_cdp') {
       return [
         { to: '/dashboard', label: 'Inicio' },
         { to: '/generar-reporte', label: 'Generar Reporte' },

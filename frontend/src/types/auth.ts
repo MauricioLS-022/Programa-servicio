@@ -2,7 +2,7 @@
  * Tipos de datos para el módulo de Autenticación y Usuarios
  */
 
-export type UserRole = 'admin' | 'supervisor' | 'lider_cdp' | 'cdp';
+export type UserRole = 'admin' | 'supervisor' | 'lider_cdp';
 
 export interface User {
   id: string;

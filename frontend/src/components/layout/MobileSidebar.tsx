@@ -46,7 +46,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
         { to: '/perfil', label: 'Perfil', icon: 'person' },
       ];
     }
-    if (rol === 'lider_cdp' || rol === 'cdp') {
+    if (rol === 'lider_cdp') {
       return [
         { to: '/dashboard', label: 'Inicio', icon: 'home' },
         { to: '/generar-reporte', label: 'Generar Reporte', icon: 'description' },

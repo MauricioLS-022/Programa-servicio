@@ -22,7 +22,6 @@ export const Header: React.FC = () => {
     admin: 'Administrador',
     supervisor: 'Supervisor de Red',
     lider_cdp: 'Líder Casa de Paz',
-    cdp: 'Líder Casa de Paz',
   }[user?.rol || 'admin'];
 
   return (

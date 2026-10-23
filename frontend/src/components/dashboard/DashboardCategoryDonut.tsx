@@ -19,6 +19,7 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
   redNombre = '',
 }) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [hoveredLegend, setHoveredLegend] = useState<string | null>(null);
 
   const regulares = distribucion?.regulares ?? 0;
   const ninos = distribucion?.ninos ?? 0;
@@ -64,8 +65,8 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
     },
   ];
 
-  // SVG Donut calculation
-  const C = 2 * Math.PI * 38; // ~238.761
+  // SVG Donut calculation con radio calibrado (r=36) para evitar clipping perimetral
+  const C = 2 * Math.PI * 36; // ~226.195
   let accumulatedPct = 0;
 
   const segments = categories.map((cat) => {
@@ -79,6 +80,13 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
       strokeLen,
       strokeOffset,
     };
+  });
+
+  // El segmento activo se dibuja al final para que su trazo hover superponga sin recortes
+  const sortedSegments = [...segments].sort((a, b) => {
+    if (a.key === activeCategory) return 1;
+    if (b.key === activeCategory) return -1;
+    return 0;
   });
 
   const activeData = activeCategory ? categories.find((c) => c.key === activeCategory) : null;
@@ -104,7 +112,7 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
   }
 
   return (
-    <section className="chart-card fade-in-6" style={{ marginTop: '1rem' }}>
+    <section className="chart-card fade-in-6">
       <div className="chart-header">
         <div>
           <h2 className="section-title">
@@ -126,21 +134,32 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
               data-count={cat.count}
               data-percent={cat.pct}
               aria-label={`${cat.label}: ${cat.count} personas (${cat.pct}%)`}
-              onMouseEnter={() => setActiveCategory(cat.key)}
-              onMouseLeave={() => setActiveCategory(null)}
-              onFocus={() => setActiveCategory(cat.key)}
-              onBlur={() => setActiveCategory(null)}
+              onMouseEnter={() => {
+                setActiveCategory(cat.key);
+                setHoveredLegend(cat.key);
+              }}
+              onMouseLeave={() => {
+                setActiveCategory(null);
+                setHoveredLegend(null);
+              }}
+              onFocus={() => {
+                setActiveCategory(cat.key);
+                setHoveredLegend(cat.key);
+              }}
+              onBlur={() => {
+                setActiveCategory(null);
+                setHoveredLegend(null);
+              }}
             >
               <span className={cat.dotClass} /> {cat.label} ({cat.count})
               <div
                 className="legend-tooltip"
                 role="tooltip"
-                aria-hidden={activeCategory !== cat.key}
-                style={{ display: activeCategory === cat.key ? 'block' : undefined }}
+                aria-hidden={hoveredLegend !== cat.key}
               >
                 <span className="tooltip-title">{cat.label}</span>
                 <span className="tooltip-val">
-                  <strong>{cat.count}</strong> personas
+                  <strong>{cat.count.toLocaleString()}</strong> personas
                 </span>
                 <span className="tooltip-pct">{cat.pct}% del total</span>
               </div>
@@ -193,7 +212,6 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                 left: 0,
                 width: '100%',
                 height: '100%',
-                borderRadius: '50%',
                 zIndex: 2,
                 overflow: 'visible',
                 pointerEvents: 'auto',
@@ -204,14 +222,14 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                 <circle
                   cx="50"
                   cy="50"
-                  r="38"
+                  r="36"
                   fill="none"
                   stroke="rgba(137, 114, 111, 0.2)"
-                  strokeWidth="16"
+                  strokeWidth="15"
                   pointerEvents="none"
                 />
               ) : (
-                segments.map((seg) => {
+                sortedSegments.map((seg) => {
                   if (seg.count <= 0) return null;
                   const isHovered = activeCategory === seg.key;
                   return (
@@ -219,11 +237,11 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                       key={seg.key}
                       cx="50"
                       cy="50"
-                      r="38"
+                      r="36"
                       fill="none"
                       className={`donut-segment segment-${seg.key} ${isHovered ? 'active' : ''}`}
                       stroke={seg.color}
-                      strokeWidth={isHovered ? 20 : 16}
+                      strokeWidth={isHovered ? 18 : 15}
                       strokeDasharray={`${seg.strokeLen} ${C - seg.strokeLen}`}
                       strokeDashoffset={`${seg.strokeOffset}`}
                       transform="rotate(-90 50 50)"
@@ -234,12 +252,28 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                       style={{
                         pointerEvents: 'stroke',
                         cursor: 'pointer',
-                        transition: 'stroke-width 0.2s ease',
+                        transition: 'stroke-width 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease',
                       }}
-                      onMouseEnter={() => setActiveCategory(seg.key)}
+                      onMouseEnter={() => {
+                        setActiveCategory(seg.key);
+                        setHoveredLegend(null);
+                      }}
                       onMouseLeave={() => setActiveCategory(null)}
-                      onFocus={() => setActiveCategory(seg.key)}
+                      onFocus={() => {
+                        setActiveCategory(seg.key);
+                        setHoveredLegend(null);
+                      }}
                       onBlur={() => setActiveCategory(null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveCategory((prev) => (prev === seg.key ? null : seg.key));
+                        setHoveredLegend(null);
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        setActiveCategory((prev) => (prev === seg.key ? null : seg.key));
+                        setHoveredLegend(null);
+                      }}
                     />
                   );
                 })
@@ -273,8 +307,8 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                 className="donut-label"
                 style={{
                   display: 'block',
-                  fontSize: '0.75rem',
-                  marginBottom: '0.2rem',
+                  fontSize: '0.72rem',
+                  marginBottom: '0.15rem',
                   lineHeight: 1.2,
                   letterSpacing: '0.05em',
                   fontWeight: 700,
@@ -287,7 +321,7 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
                 className="donut-number"
                 style={{
                   display: 'block',
-                  fontSize: '1.6rem',
+                  fontSize: '1.55rem',
                   fontWeight: 800,
                   lineHeight: 1,
                   color: 'var(--primary, #390002)',
@@ -295,27 +329,45 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
               >
                 {centerValue.toLocaleString()}
               </span>
+              {activeData ? (
+                <span
+                  className="donut-center-pct"
+                  style={{
+                    display: 'inline-block',
+                    marginTop: '0.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'var(--secondary, #735c00)',
+                  }}
+                >
+                  {activeData.pct}%
+                </span>
+              ) : (
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted, #64748b)',
+                    marginTop: '0.15rem',
+                  }}
+                >
+                  personas
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Tooltip flotante interactivo para los segmentos del Donut */}
-          {activeData && (
+          {/* Tooltip interactivo centrado y acotado para el Donut (paridad Jinja) */}
+          {activeData && !hoveredLegend && (
             <div
               className="donut-tooltip visible"
               role="tooltip"
               aria-live="polite"
-              style={{
-                position: 'absolute',
-                bottom: '-14px',
-                left: '50%',
-                transform: 'translateX(-50%) translateY(100%)',
-                zIndex: 40,
-                pointerEvents: 'none',
-              }}
             >
               <span className="tooltip-title">{activeData.label}</span>
               <span className="tooltip-val">
-                <strong>{activeData.count}</strong> personas
+                <strong>{activeData.count.toLocaleString()}</strong> personas
               </span>
               <span className="tooltip-pct">{activeData.pct}% del total</span>
             </div>
@@ -325,4 +377,3 @@ export const DashboardCategoryDonut: React.FC<DashboardCategoryDonutProps> = ({
     </section>
   );
 };
-

@@ -19,7 +19,7 @@ export const DashboardRankingCard: React.FC<DashboardRankingCardProps> = ({
       ? `Cumplimiento y asistencia de ${periodoNombre || 'el año'}`
       : 'Cumplimiento y asistencia de la semana';
 
-  const top3 = ranking.slice(0, 3);
+  const items = ranking.length > 0 ? ranking : [];
 
   return (
     <article className="participation-card">
@@ -29,8 +29,8 @@ export const DashboardRankingCard: React.FC<DashboardRankingCardProps> = ({
       </div>
 
       <div className="network-ranking-list">
-        {top3.length > 0 ? (
-          top3.map((redItem, idx) => {
+        {items.length > 0 ? (
+          items.map((redItem, idx) => {
             const pos = idx + 1;
             const cumpl = redItem.cumplimiento || 0;
             const asist = redItem.asistencia || redItem.asistencia_semana || 0;

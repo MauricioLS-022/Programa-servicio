@@ -30,7 +30,7 @@ export const Sidebar: React.FC = () => {
       to: '/generar-reporte',
       label: 'Cargar Reporte',
       icon: <PlusCircle className="w-5 h-5" />,
-      visible: rol === 'lider_cdp' || rol === 'cdp' || rol === 'admin',
+      visible: rol === 'lider_cdp' || rol === 'admin',
     },
     {
       to: '/estructura',

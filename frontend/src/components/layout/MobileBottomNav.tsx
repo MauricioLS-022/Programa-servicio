@@ -23,7 +23,7 @@ export const MobileBottomNav: React.FC = () => {
         { to: '/perfil', label: 'Mí', icon: 'person' },
       ];
     }
-    if (rol === 'lider_cdp' || rol === 'cdp') {
+    if (rol === 'lider_cdp') {
       return [
         { to: '/dashboard', label: 'Inicio', icon: 'home' },
         { to: '/generar-reporte', label: 'Reporte', icon: 'description' },

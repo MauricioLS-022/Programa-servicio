@@ -1,33 +1,41 @@
 /**
- * Tipos de datos para el módulo de Reportes de Casa de Paz
+ * Tipos de datos para el módulo de Reportes de Casa de Paz.
+ * Alineado estrictamente con el esquema relacional de MySQL y las vistas canónicas.
  */
 
 export interface Reporte {
-  id: number;
+  id: string; // UUID
   cdp_id: number;
-  fecha: string;
-  tema?: string;
-  asistencia: number;
-  hermanos?: number;
-  amigos?: number;
-  ninos?: number;
-  ofrenda_efectivo_usd?: number;
-  ofrenda_efectivo_bs?: number;
-  ofrenda_digital_usd?: number;
-  ofrenda_digital_bs?: number;
+  fecha: string; // YYYY-MM-DD
+  fecha_formateada?: string;
+  hr_inicio?: string; // HH:MM
+  hr_fin?: string; // HH:MM
+  tema: string;
+  nro_regulares: number;
+  nro_ninos?: number;
+  nro_niños?: number;
+  nro_visitas: number;
+  nro_comprometidos: number;
+  asistencia: number; // regulares + niños + visitas + comprometidos
+  reconciliaciones: number;
+  confesiones: number;
+  cesta_amor: boolean | number;
+  cesta_amor_desc?: string;
+  ofrendas_usd: number;
+  ofrendas_bs: number;
   total_usd?: number;
   total_bs?: number;
-  tasa_cambio?: number;
-  motivo_oracion?: string;
+  ofrenda_efectivo_usd?: number;
+  ofrenda_efectivo_bs?: number;
   observaciones?: string;
-  cesta_amor?: boolean | number;
   enviado_por_lider_id?: number;
-  cdp_codigo?: string;
-  cdp_anfitrion?: string;
-  red_nombre?: string;
-  red_id?: number;
   lider_nombre?: string;
-  lider_apellido?: string;
+  iniciales?: string;
+  cdp_codigo?: string;
+  cdp_nombre?: string;
+  cdp_anfitrion?: string;
+  red_id?: number;
+  red_nombre?: string;
 }
 
 export interface ReporteFiltros {
@@ -42,21 +50,21 @@ export interface ReporteFiltros {
 
 export interface ReporteFormPayload {
   cdp_id?: number;
+  lider_id?: number | string;
   fecha: string;
-  tema?: string;
-  asistencia: number;
-  hermanos?: number;
-  amigos?: number;
-  ninos?: number;
-  ofrenda_efectivo_usd?: number;
-  ofrenda_efectivo_bs?: number;
-  ofrenda_digital_usd?: number;
-  ofrenda_digital_bs?: number;
-  tasa_cambio?: number;
-  motivo_oracion?: string;
+  hr_inicio: string;
+  hr_fin: string;
+  tema: string;
+  nro_regulares: number;
+  nro_ninos: number;
+  nro_visitas: number;
+  nro_comprometidos: number;
+  reconciliaciones: number;
+  confesiones: number;
+  cesta_amor: boolean | number | string;
+  ofrendas_usd: number;
+  ofrendas_bs: number;
   observaciones?: string;
-  cesta_amor?: boolean | number | string;
-  lider_id?: number;
 }
 
 export interface ReportesResponse {
@@ -73,4 +81,3 @@ export interface ProcesarReporteResponse {
   error?: string;
   cdp_id?: number;
 }
-

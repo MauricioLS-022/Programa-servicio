@@ -44,7 +44,7 @@ export function useReportes(filtros: ReporteFiltros = {}) {
   const actualizarReporteMutation = useMutation<
     ProcesarReporteResponse,
     Error,
-    { id: number; data: Partial<ReporteFormPayload> }
+    { id: string | number; data: Partial<ReporteFormPayload> }
   >({
     mutationFn: ({ id, data }) => api.put<ProcesarReporteResponse>(`/reportes/${id}`, data),
     onSuccess: () => {
@@ -56,7 +56,7 @@ export function useReportes(filtros: ReporteFiltros = {}) {
   const eliminarReporteMutation = useMutation<
     ProcesarReporteResponse,
     Error,
-    { id: number; cdp_id?: number }
+    { id: string | number; cdp_id?: number }
   >({
     mutationFn: ({ id, cdp_id }) =>
       api.delete<ProcesarReporteResponse>(`/reportes/${id}`, {

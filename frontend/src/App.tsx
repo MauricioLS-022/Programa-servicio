@@ -49,7 +49,7 @@ function App() {
                 <Route
                   path="generar-reporte"
                   element={
-                    <ProtectedRoute allowedRoles={['lider_cdp', 'cdp', 'admin']}>
+                    <ProtectedRoute allowedRoles={['lider_cdp', 'admin']}>
                       <GenerarReportePage />
                     </ProtectedRoute>
                   }

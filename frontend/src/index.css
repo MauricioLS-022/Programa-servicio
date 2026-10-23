@@ -4,6 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 :root {
   --color1: #4A0203;
   --color2: #780204;
@@ -34,13 +47,19 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background-color: var(--bg-surface);
-  color: #2b1111;
+  background-image: linear-gradient(rgba(255, 248, 247, 0.985), rgba(255, 248, 247, 0.985)), url("/fondo.webp");
+  background-repeat: repeat;
+  background-size: 12.5%;
+  background-attachment: fixed;
+  color: var(--text-main, #2b1111);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 [data-theme="dark"] body {
-  color: #f5e8e7;
+  background-color: var(--bg-surface);
+  background-image: linear-gradient(rgba(18, 14, 15, 0.985), rgba(18, 14, 15, 0.985)), url("/fondo.webp");
+  color: var(--text-main, #f8f2f0);
 }
 
 /* Regla institucional de scrollbars sutiles (5px con scrollbar-gutter: stable) */

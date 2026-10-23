@@ -14,6 +14,7 @@ export interface Red {
 export interface CasaDePaz {
   id: number;
   codigo: string;
+  nombre?: string;
   red_id: number;
   anfitrion?: string;
   direccion?: string;
@@ -139,6 +140,24 @@ export interface ActividadRecienteItem {
   avatar_class?: string;
 }
 
+export interface HistorialReporte {
+  id?: number;
+  fecha?: string;
+  asistencia?: number;
+  nro_regulares?: number;
+  nro_niños?: number;
+  nro_ninos?: number;
+  nro_visitas?: number;
+  nro_comprometidos?: number;
+  ofrendas_usd?: number;
+  ofrendas_bs?: number;
+  confesiones?: number;
+  tema?: string;
+  observaciones?: string;
+  enviado_por_nombre?: string;
+  [key: string]: unknown;
+}
+
 export interface DashboardMetricas {
   total_asistencia?: number;
   asistencia_total?: number;
@@ -197,6 +216,7 @@ export interface DashboardMetricas {
   hr_inicio?: string;
   hr_fin?: string;
   cesta_amor?: boolean;
+  mini_historico?: Array<{ fecha?: string; asistencia?: number; altura?: number }>;
   potencial_multiplicacion?: boolean;
   historial?: Array<{
     id?: number;
