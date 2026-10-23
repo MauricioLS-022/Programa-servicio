@@ -19,6 +19,44 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True, mes=Non
     fecha_desde, fecha_hasta = _obtener_rango_periodo(periodo, mes=mes, anio=anio)
     periodo_meta = _obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
 
+    # Si estamos en vista semanal y no hay reportes en los últimos 7 días calendario,
+    # sincronizamos con la semana del último reporte recibido para no mostrar métricas vacías
+    if periodo == 'semana':
+        try:
+            cur.execute("""
+                SELECT COUNT(*) AS total_sem
+                FROM reporte rep
+                JOIN cdp c ON rep.cdp_id = c.id
+                WHERE c.is_active = 1 AND rep.fecha BETWEEN %s AND %s
+            """, (fecha_desde, fecha_hasta))
+            sem_row = cur.fetchone()
+            if not sem_row or sem_row.get('total_sem', 0) == 0:
+                cur.execute("""
+                    SELECT MAX(rep.fecha) AS max_fecha
+                    FROM reporte rep
+                    JOIN cdp c ON rep.cdp_id = c.id
+                    WHERE c.is_active = 1 AND rep.fecha IS NOT NULL
+                """)
+                max_row = cur.fetchone()
+                if max_row and max_row.get('max_fecha'):
+                    max_f = max_row['max_fecha']
+                    if hasattr(max_f, 'date'):
+                        max_f = max_f.date()
+                    elif isinstance(max_f, str):
+                        try:
+                            from datetime import date as d_cls
+                            max_f = d_cls.fromisoformat(max_f[:10])
+                        except Exception:
+                            pass
+                    if isinstance(max_f, date):
+                        fecha_hasta = max_f
+                        fecha_desde = max_f - timedelta(days=6)
+                        periodo_meta = _obtener_metadatos_periodo(periodo, fecha_desde, fecha_hasta, mes=mes, anio=anio)
+                        if fecha_hasta < hoy - timedelta(days=7):
+                            periodo_meta['periodo_nombre'] = f"Semana {formatear_fecha_corta(fecha_desde)} - {formatear_fecha_corta(fecha_hasta)}"
+        except Exception as e:
+            print(f"[DB] Aviso comprobando última fecha de reportes: {e}")
+
     # --- KPIs principales (filtrados por el período analizado) ---
     try:
         cur.execute("""
@@ -246,9 +284,8 @@ def get_metricas_generales(conn, periodo='semana', include_alertas=True, mes=Non
             FROM cdp c
             LEFT JOIN reporte rep ON rep.cdp_id = c.id
             LEFT JOIN red r ON c.red_id = r.id
-            LEFT JOIN usuario u ON c.usuario_id = u.id
             WHERE c.is_active = 1
-            GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, r.nombre, u.nombre, u.apellido
+            GROUP BY c.id, c.codigo, c.anfitrion, c.telefono, r.nombre
             HAVING dias_sin_reporte > 14 OR dias_sin_reporte IS NULL
             ORDER BY dias_sin_reporte DESC
         """)

@@ -7,6 +7,7 @@ from . import auth_api
 from . import reportes_api
 from . import estructura_api
 from . import dashboard_api
+from . import usuarios_api
 
 __all__ = [
     'api_bp',
@@ -15,5 +16,6 @@ __all__ = [
     'auth_api',
     'reportes_api',
     'estructura_api',
-    'dashboard_api'
+    'dashboard_api',
+    'usuarios_api'
 ]

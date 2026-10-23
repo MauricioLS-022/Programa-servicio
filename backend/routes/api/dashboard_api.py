@@ -74,7 +74,7 @@ def api_dashboard_datos():
     else:
         metricas = get_metricas(nivel, red_id, cdp_id)
     
-    if metricas:
+    if metricas and not (metricas.get('total_casas', 0) == 0 and metricas.get('total_asistencia', 0) == 0 and metricas.get('casas_activas', 0) == 0):
         set_cached_value(cache_key, metricas)
 
     return jsonify(_serialize_item(metricas))

@@ -132,7 +132,7 @@ def api_crear_reporte():
     return jsonify({"success": False, "error": mensaje}), 400
 
 
-@api_bp.route('/reportes/<int:reporte_id>', methods=['PUT', 'POST'])
+@api_bp.route('/reportes/<string:reporte_id>', methods=['PUT', 'POST'])
 def api_actualizar_reporte(reporte_id):
     """Actualización de un reporte existente perteneciente a la Casa de Paz."""
     usuario_id = session.get("usuario_id")
@@ -163,7 +163,7 @@ def api_actualizar_reporte(reporte_id):
     return jsonify({"success": False, "error": mensaje}), 400
 
 
-@api_bp.route('/reportes/<int:reporte_id>', methods=['DELETE'])
+@api_bp.route('/reportes/<string:reporte_id>', methods=['DELETE'])
 def api_eliminar_reporte(reporte_id):
     """Eliminación segura de reporte con control de permisos."""
     usuario_id = session.get("usuario_id")

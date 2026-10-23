@@ -1301,6 +1301,46 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
         self.assertIn('Mayo 2025', data.get('periodo_nombre', ''))
 
 
+
+    def test_get_metricas_generales_week_fallback_to_latest_report(self):
+        """Si en la semana actual no hay reportes, get_metricas_generales debe sincronizar con la semana del último reporte recibido."""
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+
+        mock_cur.fetchone.side_effect = [
+            {'total_sem': 0},        # conteo semana actual: 0 reportes
+            {'max_fecha': date(2026, 9, 20)},  # último reporte recibido
+            {                        # KPIs de esa semana activa
+                'total_asistencia': 45,
+                'regulares': 30,
+                'ninos': 5,
+                'visitas': 6,
+                'comprometidos': 4,
+                'ofrendas_usd': 50.0,
+                'ofrendas_bs': 750.0,
+                'conversiones': 3,
+                'reconciliaciones': 1,
+                'cestas_amor': 2,
+                'total_visitas': 6,
+                'reportes_enviados': 2,
+            },
+            {'total': 5},            # total casas activas
+        ]
+        mock_cur.fetchall.side_effect = [
+            [],                      # casas sin reporte
+            [{'id': 1, 'nombre_red': 'Red Central', 'asistencia': 45}],  # tendencia
+            [{'nombre': 'Red Central', 'total_casas': 5, 'casas_reportadas': 2, 'asistencia_semana': 45, 'asistencia_total': 180, 'cumplimiento': 40, 'supervisor': 'Carlos'}], # ranking
+            [],                      # alertas
+        ]
+
+        with patch('db_queries._ensure_currency_columns'):
+            res = db_queries.get_metricas_generales(mock_conn, periodo='semana')
+            self.assertEqual(res['total_asistencia'], 45)
+            self.assertEqual(res['distribucion']['regulares'], 30)
+            self.assertEqual(res['cumplimiento'], 40)
+            self.assertIn("Semana", res['periodo_nombre'])
+
 if __name__ == '__main__':
     unittest.main()
 

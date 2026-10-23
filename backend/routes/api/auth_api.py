@@ -5,7 +5,9 @@ from flask import request, jsonify, session, current_app
 from werkzeug.security import generate_password_hash
 from database import get_db_connection
 from routes.auth_routes import _check_password
-from .base import api_bp
+from services.cdp_service import get_perfil_data, cambiar_username, cambiar_password
+from utils.validators import validate_password_strength, validate_username
+from .base import api_bp, _serialize_item
 
 
 @api_bp.route('/auth/login', methods=['POST'])
@@ -187,3 +189,70 @@ def api_auth_me():
             "apellido": session.get("apellido", "")
         }
     }), 200
+
+
+@api_bp.route('/perfil', methods=['GET'])
+def api_get_perfil():
+    """Retorna los datos de perfil del usuario autenticado con sus asignaciones."""
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"error": "No autenticado"}), 401
+
+    perfil = get_perfil_data(str(usuario_id))
+    return jsonify({
+        "perfil": _serialize_item(perfil),
+        "usuario": session.get("usuario"),
+        "rol": session.get("rol")
+    }), 200
+
+
+@api_bp.route('/perfil/username', methods=['POST'])
+def api_cambiar_perfil_username():
+    """Actualiza el nombre de usuario verificando formato y unicidad."""
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"error": "No autenticado"}), 401
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    nuevo_username = (data.get('nuevo_username') or data.get('username') or '').strip()
+
+    ok_user, res_user = validate_username(nuevo_username)
+    if not ok_user:
+        return jsonify({"success": False, "error": res_user}), 400
+
+    exito, mensaje = cambiar_username(usuario_id, res_user)
+    if exito:
+        session['usuario'] = res_user
+        return jsonify({"success": True, "message": mensaje, "username": res_user}), 200
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@api_bp.route('/perfil/password', methods=['POST'])
+def api_cambiar_perfil_password():
+    """Cambia la contraseña validando la contraseña actual y políticas de complejidad."""
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"error": "No autenticado"}), 401
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    password_actual = data.get('password_actual', '')
+    password_nueva = data.get('password_nueva', '')
+    password_confirmar = data.get('password_confirmar', '')
+
+    if not password_actual:
+        return jsonify({"success": False, "error": "Debe ingresar su contraseña actual"}), 400
+
+    if not password_nueva:
+        return jsonify({"success": False, "error": "Debe ingresar una nueva contraseña"}), 400
+
+    if password_confirmar and password_nueva != password_confirmar:
+        return jsonify({"success": False, "error": "Las contraseñas nuevas no coinciden"}), 400
+
+    ok_pass, msg_pass = validate_password_strength(password_nueva)
+    if not ok_pass:
+        return jsonify({"success": False, "error": msg_pass}), 400
+
+    exito, mensaje = cambiar_password(usuario_id, password_actual, password_nueva)
+    if exito:
+        return jsonify({"success": True, "message": mensaje}), 200
+    return jsonify({"success": False, "error": mensaje}), 400

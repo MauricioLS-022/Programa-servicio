@@ -590,6 +590,8 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
                 else:
                     metricas = get_empty_cdp(cid)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"[Service] Error obteniendo métricas: {e}")
         if nivel == 'red':
             metricas = get_empty_red(red_id or supervisor_red_id)
@@ -606,7 +608,9 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
     metricas['periodo'] = periodo
     
     result = {**metricas, 'mock_used': mock_used}
-    set_cached_value(cache_key, result)
+    # Evitar cachear respuestas vacías debidas a desconexión o error transitorio
+    if not (result.get('total_casas', 0) == 0 and result.get('total_asistencia', 0) == 0 and result.get('casas_activas', 0) == 0):
+        set_cached_value(cache_key, result)
     return result
 
 
