@@ -52,7 +52,7 @@ export const DesktopHeader: React.FC = () => {
   const navLinks = getNavLinks();
 
   return (
-    <header id="admin-desktop-header" className="header-nav" aria-label="Navegación principal de escritorio">
+    <header id="admin-desktop-header" className="header-nav sticky top-0 z-[100]" aria-label="Navegación principal de escritorio">
       {/* Logotipo oficial */}
       <div className="logo-container">
         <Link to="/dashboard" className="logo-link" aria-label="Ir al inicio del ministerio">

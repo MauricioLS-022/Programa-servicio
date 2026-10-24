@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import { useDashboard, useRedes, useCasasDePaz } from '../hooks/useDashboard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardEmptyState } from '../components/dashboard/DashboardEmptyState';
@@ -21,15 +23,38 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import '../styles/dashboard.css';
 
 export const DashboardPage: React.FC = () => {
+  useDocumentTitle('Dashboard');
+
   const { user } = useAuth();
   const isSupervisor = user?.rol === 'supervisor';
 
-  // Estados de control jerárquico
-  const [periodo, setPeriodo] = useState<PeriodoTipo>('semana');
-  const [nivel, setNivel] = useState<'general' | 'red' | 'cdp'>(isSupervisor ? 'red' : 'general');
-  const [redId, setRedId] = useState<number | string>('');
-  const [cdpId, setCdpId] = useState<number | string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  // Configuración de valores por defecto (Rutas limpias sin filtros redundantes en la URL)
+  const defaultNivel: 'general' | 'red' | 'cdp' = isSupervisor ? 'red' : 'general';
+  interface DashboardFilters extends Record<string, string | number | boolean | null | undefined> {
+    nivel: 'general' | 'red' | 'cdp';
+    periodo: PeriodoTipo;
+    red_id: string;
+    cdp_id: string;
+    q: string;
+  }
+  const defaults = useMemo<DashboardFilters>(
+    () => ({
+      nivel: defaultNivel,
+      periodo: 'semana',
+      red_id: '',
+      cdp_id: '',
+      q: '',
+    }),
+    [defaultNivel]
+  );
+
+  // Estados de control jerárquico sincronizados con la URL como Fuente Única de la Verdad (SSOT)
+  const { filters, setFilter, setFilters, resetFilters } = useUrlFilters(defaults);
+  const nivel: 'general' | 'red' | 'cdp' = (filters.nivel as 'general' | 'red' | 'cdp') || defaultNivel;
+  const periodo: PeriodoTipo = (filters.periodo as PeriodoTipo) || 'semana';
+  const redId: string = String(filters.red_id || '');
+  const cdpId: string = String(filters.cdp_id || '');
+  const searchQuery: string = String(filters.q || '');
 
   // Carga de selectores y métricas del dashboard
   const { redes } = useRedes();
@@ -56,39 +81,37 @@ export const DashboardPage: React.FC = () => {
   // Auto-selección y aislamiento estricto de Red y Casa de Paz al conmutar niveles
   useEffect(() => {
     if (nivel === 'red') {
-      setCdpId('');
+      if (cdpId) {
+        setFilter('cdp_id', '');
+      }
       if (!redId && redes.length > 0) {
-        setRedId(redes[0].id);
+        setFilter('red_id', String(redes[0].id));
       }
     } else if (nivel === 'cdp') {
-      const activeRed = redId || (redes.length > 0 ? redes[0].id : '');
+      const activeRed = redId || (redes.length > 0 ? String(redes[0].id) : '');
       if (!redId && activeRed) {
-        setRedId(activeRed);
+        setFilter('red_id', activeRed);
       }
       const candidateCasas = activeRed
-        ? allCasas.filter((c) => c.red_id === Number(activeRed))
+        ? allCasas.filter((c) => String(c.red_id) === String(activeRed))
         : allCasas;
 
       // Verificar si cdpId actual pertenece a las casas de esta red
       const currentValid = candidateCasas.some((c) => String(c.id) === String(cdpId));
       if (!currentValid) {
         if (candidateCasas.length > 0) {
-          setCdpId(candidateCasas[0].id);
+          setFilter('cdp_id', String(candidateCasas[0].id));
         } else {
-          setCdpId(''); // Si la red no tiene casas, dejar cdpId vacío para activar estado vacío
+          setFilter('cdp_id', '');
         }
       }
     }
-  }, [nivel, redId, cdpId, redes, allCasas]);
+  }, [nivel, redId, cdpId, redes, allCasas, setFilter]);
 
-  // Manejo de reinicio de filtros
-  const handleReset = () => {
-    setSearchQuery('');
-    setPeriodo('semana');
-    setNivel(isSupervisor ? 'red' : 'general');
-    setRedId('');
-    setCdpId('');
-  };
+  // Manejo de reinicio de filtros (limpia la URL dejándola canónica: /dashboard)
+  const handleReset = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
 
   // Validación de estado de supervisor sin red asignada
   const supervisorSinRed = isSupervisor && (metricas?.sin_red_asignada || (metricas && Object.keys(metricas).length === 0 && !isLoading));
@@ -126,54 +149,41 @@ export const DashboardPage: React.FC = () => {
               rol={user?.rol}
               nivel={nivel}
               onNivelChange={(newNivel) => {
-                setNivel(newNivel);
                 if (newNivel === 'general') {
-                  setRedId('');
-                  setCdpId('');
+                  setFilters({ nivel: 'general', red_id: '', cdp_id: '' });
                 } else if (newNivel === 'red') {
-                  setCdpId('');
-                  if (!redId && redes.length > 0) {
-                    setRedId(redes[0].id);
-                  }
+                  const targetRedId = redId || (redes.length > 0 ? String(redes[0].id) : '');
+                  setFilters({ nivel: 'red', red_id: targetRedId, cdp_id: '' });
                 } else if (newNivel === 'cdp') {
-                  const activeRed = redId || (redes.length > 0 ? redes[0].id : '');
-                  if (!redId && activeRed) {
-                    setRedId(activeRed);
-                  }
+                  const activeRed = redId || (redes.length > 0 ? String(redes[0].id) : '');
                   const candidateCasas = activeRed
-                    ? allCasas.filter((c) => c.red_id === Number(activeRed))
+                    ? allCasas.filter((c) => String(c.red_id) === String(activeRed))
                     : allCasas;
-                  if (candidateCasas.length > 0) {
-                    setCdpId(candidateCasas[0].id);
-                  } else {
-                    setCdpId('');
-                  }
+                  const firstCdpId = candidateCasas.length > 0 ? String(candidateCasas[0].id) : '';
+                  setFilters({ nivel: 'cdp', red_id: activeRed, cdp_id: firstCdpId });
                 }
               }}
               redId={redId}
               onRedChange={(newRedId) => {
-                setRedId(newRedId);
+                const redStr = String(newRedId || '');
                 if (nivel === 'cdp') {
-                  if (newRedId) {
-                    const candidateCasas = allCasas.filter((c) => c.red_id === Number(newRedId));
-                    if (candidateCasas.length > 0) {
-                      setCdpId(candidateCasas[0].id);
-                    } else {
-                      setCdpId('');
-                    }
+                  if (redStr) {
+                    const candidateCasas = allCasas.filter((c) => String(c.red_id) === redStr);
+                    const firstCdpId = candidateCasas.length > 0 ? String(candidateCasas[0].id) : '';
+                    setFilters({ red_id: redStr, cdp_id: firstCdpId });
                   } else {
-                    setCdpId('');
+                    setFilters({ red_id: '', cdp_id: '' });
                   }
                 } else {
-                  setCdpId('');
+                  setFilters({ red_id: redStr, cdp_id: '' });
                 }
               }}
               redes={redes}
               cdpId={cdpId}
-              onCdpChange={(newCdpId) => setCdpId(newCdpId)}
+              onCdpChange={(newCdpId) => setFilter('cdp_id', String(newCdpId || ''))}
               casas={filteredCasas}
               searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              onSearchChange={(q) => setFilter('q', q)}
               onReset={handleReset}
             />
 
@@ -207,7 +217,7 @@ export const DashboardPage: React.FC = () => {
               {/* Selector táctil de período temporal */}
               <DashboardPeriodToggle
                 periodo={periodo}
-                onChange={setPeriodo}
+                onChange={(newPeriodo) => setFilter('periodo', newPeriodo)}
                 disabled={isLoading}
               />
             </div>
@@ -433,7 +443,7 @@ export const DashboardPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                           <button
                             type="button"
-                            onClick={() => setNivel('red')}
+                            onClick={() => setFilters({ nivel: 'red', cdp_id: '' })}
                             className="btn-full-outline"
                             style={{
                               display: 'inline-flex',

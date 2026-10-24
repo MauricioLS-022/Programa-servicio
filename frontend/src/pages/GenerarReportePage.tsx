@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useReportes } from '../hooks/useReportes';
 import { useAuth } from '../hooks/useAuth';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { usePerfil } from '../hooks/usePerfil';
 import { useCasasDePaz, useLideres } from '../hooks/useDashboard';
 import { useToast } from '../context/ToastContext';
@@ -9,6 +10,8 @@ import { Icon } from '../components/ui/Icon';
 import '../styles/generar_reporte.css';
 
 export const GenerarReportePage: React.FC = () => {
+  useDocumentTitle('Generar Reporte');
+
   const { user } = useAuth();
   const { perfil, isLoading: isPerfilLoading } = usePerfil();
   const { crearReporte, isCreando } = useReportes();

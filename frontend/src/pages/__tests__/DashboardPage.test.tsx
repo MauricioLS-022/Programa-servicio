@@ -31,15 +31,19 @@ let mockCasasData: any[] = [
 let mockMetricasData: any = {};
 let mockIsLoading = false;
 let mockIsError = false;
+let lastDashboardArgs: any = null;
 
 vi.mock('../../hooks/useDashboard', () => ({
-  useDashboard: () => ({
-    metricas: mockMetricasData,
-    isLoading: mockIsLoading,
-    isError: mockIsError,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useDashboard: (args: any) => {
+    lastDashboardArgs = args;
+    return {
+      metricas: mockMetricasData,
+      isLoading: mockIsLoading,
+      isError: mockIsError,
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
   useRedes: () => ({
     redes: mockRedes,
     isLoading: false,
@@ -157,5 +161,20 @@ describe('DashboardPage Component (Paridad Estructural Jinja)', () => {
     expect(screen.getByText('Sin Casas de Paz Asignadas')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Ver Vista Zonal/i })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /Estructura y Redes/i }).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('inicializa los controles a partir de los query params en la URL (Deep Linking)', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard?nivel=red&red_id=2&periodo=mes']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    expect(lastDashboardArgs).toMatchObject({
+      nivel: 'red',
+      red_id: '2',
+      periodo: 'mes',
+    });
+    expect(document.title).toBe('Vino Nuevo - Panel Administrativo - Dashboard');
   });
 });

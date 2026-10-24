@@ -11,6 +11,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ReportesPage } from './pages/ReportesPage';
 import { GenerarReportePage } from './pages/GenerarReportePage';
 import { EstructuraPage } from './pages/EstructuraPage';
+import { DetallesCdpPage } from './pages/DetallesCdpPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={['admin', 'supervisor']}>
                       <EstructuraPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="casa-de-paz/:id"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'supervisor']}>
+                      <DetallesCdpPage />
                     </ProtectedRoute>
                   }
                 />

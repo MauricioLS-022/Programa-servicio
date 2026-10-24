@@ -2,7 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'danger-outline' | 'danger-ghost' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   icon?: React.ReactNode;
@@ -33,7 +33,11 @@ export const Button: React.FC<ButtonProps> = ({
     secondary:
       'bg-white dark:bg-neutral-800 text-text-main dark:text-neutral-100 border border-border-subtle dark:border-neutral-700 hover:bg-surface-low dark:hover:bg-neutral-700/60 focus:ring-vino',
     danger:
-      'bg-red-700 hover:bg-red-800 text-white shadow-sm focus:ring-red-600',
+      'bg-red-700 hover:bg-red-800 text-white shadow-sm focus:ring-red-600 dark:bg-red-700 dark:hover:bg-red-800',
+    'danger-outline':
+      'border border-red-500/40 text-red-600 hover:bg-red-50 hover:border-red-600 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-950/40 focus:ring-red-500',
+    'danger-ghost':
+      'bg-transparent text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 focus:ring-red-500',
     ghost:
       'bg-transparent text-text-muted hover:text-text-main hover:bg-surface-low dark:hover:bg-neutral-800 focus:ring-vino',
     outline:
@@ -55,4 +59,3 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
-
