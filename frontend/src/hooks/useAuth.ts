@@ -4,7 +4,18 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { AuthMeResponse, AuthResponse, LoginCredentials, User } from '../types/auth';
+import type { AuthConfigResponse, AuthMeResponse, AuthResponse, LoginCredentials, User } from '../types/auth';
+
+export const AUTH_CONFIG_QUERY_KEY = ['auth', 'config'];
+
+export function useAuthConfig() {
+  return useQuery<AuthConfigResponse>({
+    queryKey: AUTH_CONFIG_QUERY_KEY,
+    queryFn: () => api.get<AuthConfigResponse>('/auth/config'),
+    staleTime: 1000 * 60 * 60,
+    retry: 1,
+  });
+}
 
 export const AUTH_QUERY_KEY = ['auth', 'me'];
 

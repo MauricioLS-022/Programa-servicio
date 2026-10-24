@@ -1,24 +1,141 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth, useAuthConfig } from '../hooks/useAuth';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { Icon } from '../components/ui/Icon';
+import { ApiError } from '../api/client';
 import '../styles/login.css';
 
+interface GrecaptchaClient {
+  ready: (cb: () => void) => void;
+  execute: (siteKey: string, options: { action: string }) => Promise<string>;
+  enterprise?: {
+    ready: (cb: () => void) => void;
+    execute: (siteKey: string, options: { action: string }) => Promise<string>;
+  };
+}
+
 export const LoginPage: React.FC = () => {
+  useDocumentTitle('Iniciar Sesión — Vino Nuevo', { override: true });
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isCaptchaExecuting, setIsCaptchaExecuting] = useState(false);
 
   const { login, isLoggingIn } = useAuth();
+  const { data: authConfig } = useAuthConfig();
   const { theme, toggleTheme } = useTheme();
   const { success } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard';
+
+  const siteKey = authConfig?.siteKey || (import.meta.env?.VITE_RECAPTCHA_SITE_KEY as string | undefined) || '';
+  const isDev = Boolean(authConfig?.isDev);
+
+  // Inyección dinámica de Google reCAPTCHA v3 y control de visibilidad del badge (solo activo en login)
+  useEffect(() => {
+    const setBadgeVisibility = (visible: boolean) => {
+      const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null;
+      if (badge) {
+        badge.style.visibility = visible ? 'visible' : 'hidden';
+        badge.style.opacity = visible ? '1' : '0';
+        badge.style.pointerEvents = visible ? 'auto' : 'none';
+      }
+    };
+
+    if (siteKey) {
+      const scriptId = 'google-recaptcha-v3-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(siteKey)}`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+
+      // Google inyecta el badge asíncronamente; nos aseguramos de hacerlo visible en login
+      setBadgeVisibility(true);
+      const interval = setInterval(() => setBadgeVisibility(true), 300);
+      const timeout = setTimeout(() => clearInterval(interval), 4000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+        setBadgeVisibility(false);
+      };
+    }
+
+    return () => {
+      setBadgeVisibility(false);
+    };
+  }, [siteKey]);
+
+  // Captura de token con temporizador defensivo (4s) y detección de adblockers
+  const getRecaptchaToken = async (key: string): Promise<string> => {
+    if (!key) return '';
+
+    const grecaptcha = (window as unknown as { grecaptcha?: GrecaptchaClient }).grecaptcha;
+
+    if (!grecaptcha) {
+      throw new Error(
+        'No se pudo cargar la verificación de seguridad (reCAPTCHA). Si tienes activo un bloqueador de anuncios o extensiones de privacidad, desactívalo temporalmente e inténtalo de nuevo.'
+      );
+    }
+
+    const client = grecaptcha.enterprise && typeof grecaptcha.enterprise.execute === 'function'
+      ? grecaptcha.enterprise
+      : grecaptcha;
+
+    return new Promise((resolve, reject) => {
+      let hasCompleted = false;
+
+      const timeoutId = setTimeout(() => {
+        if (!hasCompleted) {
+          hasCompleted = true;
+          reject(
+            new Error(
+              'La verificación de seguridad tardó demasiado. Por favor, verifica tu conexión a internet e inténtalo de nuevo.'
+            )
+          );
+        }
+      }, 4000);
+
+      client.ready(() => {
+        try {
+          client
+            .execute(key, { action: 'login' })
+            .then((token) => {
+              if (hasCompleted) return;
+              hasCompleted = true;
+              clearTimeout(timeoutId);
+              resolve(token);
+            })
+            .catch((err: unknown) => {
+              if (hasCompleted) return;
+              hasCompleted = true;
+              clearTimeout(timeoutId);
+              reject(err instanceof Error ? err : new Error('Error en la verificación de seguridad.'));
+            });
+        } catch (syncErr: unknown) {
+          if (hasCompleted) return;
+          hasCompleted = true;
+          clearTimeout(timeoutId);
+          reject(
+            syncErr instanceof Error
+              ? syncErr
+              : new Error('No fue posible completar la verificación de seguridad.')
+          );
+        }
+      });
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +146,31 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    let recaptchaToken = '';
+    if (siteKey) {
+      setIsCaptchaExecuting(true);
+      try {
+        recaptchaToken = await getRecaptchaToken(siteKey);
+      } catch (captchaErr) {
+        setIsCaptchaExecuting(false);
+        if (captchaErr instanceof Error) {
+          setErrorMsg(captchaErr.message);
+        } else {
+          setErrorMsg('Error de verificación de seguridad');
+        }
+        return;
+      }
+      setIsCaptchaExecuting(false);
+    }
+
     try {
-      const res = await login({ username: username.trim(), password: password.trim() });
+      const res = await login({
+        username: username.trim(),
+        password: password.trim(),
+        recaptcha_token: recaptchaToken,
+        'g-recaptcha-response': recaptchaToken,
+      });
+
       if (res.success && res.user) {
         success(`Bienvenido, ${res.user.nombre || res.user.username}`);
         navigate(from, { replace: true });
@@ -38,13 +178,21 @@ export const LoginPage: React.FC = () => {
         setErrorMsg(res.error || 'Credenciales incorrectas');
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
+      if (err instanceof ApiError) {
+        if (err.status === 429) {
+          setErrorMsg('Demasiados intentos. Por favor espera un minuto antes de reintentar.');
+        } else {
+          setErrorMsg(err.message || 'Error al iniciar sesión');
+        }
+      } else if (err instanceof Error) {
         setErrorMsg(err.message || 'Error al iniciar sesión');
       } else {
         setErrorMsg('Error de conexión con el servidor');
       }
     }
   };
+
+  const isPending = isLoggingIn || isCaptchaExecuting;
 
   return (
     <div className="login-page-wrapper">
@@ -81,14 +229,14 @@ export const LoginPage: React.FC = () => {
 
         {/* Mensaje de Alerta / Error */}
         {errorMsg && (
-          <div className="login-alert" role="alert">
+          <div className="login-alert" role="alert" data-testid="login-alert">
             <Icon name="error" size={20} className="shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Formulario de Acceso */}
-        <form onSubmit={handleSubmit} className="login-form" noValidate={false}>
+        <form onSubmit={handleSubmit} className="login-form" noValidate>
           <div className="form-group">
             <label htmlFor="usuario" className="form-label">
               Usuario
@@ -106,7 +254,7 @@ export const LoginPage: React.FC = () => {
                 autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                disabled={isLoggingIn}
+                disabled={isPending}
               />
             </div>
           </div>
@@ -127,7 +275,7 @@ export const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoggingIn}
+                disabled={isPending}
               />
               <button
                 type="button"
@@ -149,16 +297,26 @@ export const LoginPage: React.FC = () => {
             type="submit"
             className="btn-login"
             id="btnSubmit"
-            disabled={isLoggingIn}
+            disabled={isPending}
           >
-            <span>{isLoggingIn ? 'Accediendo...' : 'Ingresar al Sistema'}</span>
+            <span>{isPending ? 'Accediendo...' : 'Ingresar al Sistema'}</span>
             <Icon
-              name={isLoggingIn ? 'progress_activity' : 'arrow_forward'}
+              name={isPending ? 'progress_activity' : 'arrow_forward'}
               size={20}
-              className={`btn-icon ${isLoggingIn ? 'animate-spin' : ''}`}
+              className={`btn-icon ${isPending ? 'animate-spin' : ''}`}
             />
           </button>
         </form>
+
+        {/* Indicador de Entorno (ESTRICTAMENTE visible SOLO en desarrollo) */}
+        {isDev && (
+          <div className="dev-banner" role="note" data-testid="dev-banner">
+            <div className="dev-banner-title">
+              <Icon name="code" size={16} /> Entorno de Desarrollo
+            </div>
+            <span>Usuarios de prueba: <code>admin</code> / <code>supervisor</code> / <code>lider</code></span>
+          </div>
+        )}
 
         <footer className="login-footer">
           <p>© {new Date().getFullYear()} Vino Nuevo · Sistema de Casas de Paz</p>

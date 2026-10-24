@@ -18,6 +18,13 @@ export interface LoginCredentials {
   usuario?: string;
   password?: string;
   contrasena?: string;
+  recaptcha_token?: string;
+  'g-recaptcha-response'?: string;
+}
+
+export interface AuthConfigResponse {
+  siteKey: string;
+  isDev: boolean;
 }
 
 export interface AuthResponse {

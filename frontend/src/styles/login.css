@@ -39,6 +39,22 @@
 }
 
 /* ==========================================================================
+   AISLAMIENTO DE INSIGNIA reCAPTCHA (SOLO VISIBLE EN LOGIN)
+   ========================================================================== */
+.grecaptcha-badge {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+body:has(.login-page-wrapper) .grecaptcha-badge {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ==========================================================================
    CONTENEDOR RAÍZ DE LOGIN (REEMPLAZA BODY.LOGIN-BODY)
    ========================================================================== */
 .login-page-wrapper {
@@ -342,6 +358,44 @@
 /* ==========================================================================
    PIE DE PÁGINA
    ========================================================================== */
+/* ==========================================================================
+   INDICADOR MODO DESARROLLO (SOLO EN DEV)
+   ========================================================================== */
+.dev-banner {
+    margin-top: 1.5rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba(243, 208, 122, 0.12);
+    border: 1px dashed rgba(243, 208, 122, 0.4);
+    border-radius: 0.65rem;
+    font-size: 0.78rem;
+    color: var(--login-text-muted);
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dev-banner-title {
+    font-weight: 700;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-bottom: 0.25rem;
+}
+
+[data-theme="dark"] .dev-banner-title {
+    color: #fde047;
+}
+
+.dev-banner code {
+    font-size: 0.75rem;
+    background: rgba(137, 114, 111, 0.15);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
 .login-footer {
     margin-top: 1.75rem;
     text-align: center;
