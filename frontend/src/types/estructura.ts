@@ -9,6 +9,9 @@ export interface Red {
   supervisor_id?: string | null;
   supervisor_nombre?: string;
   supervisor_username?: string;
+  supervisor?: string;
+  total_casas?: number;
+  slug?: string;
 }
 
 export interface CasaDePaz {
@@ -25,6 +28,12 @@ export interface CasaDePaz {
   red_nombre?: string;
   total_lideres?: number;
   sin_reporte_7d?: boolean;
+  zona?: string;
+  lider?: string;
+  asistencia?: number;
+  usuario_username?: string;
+  usuario_nombre?: string;
+  horario?: string;
 }
 
 export interface Lider {
@@ -260,3 +269,123 @@ export interface DashboardMetricas {
   [key: string]: unknown;
 }
 
+
+
+export interface CdpMiembroEquipo {
+  id: number;
+  nombre_completo: string;
+  rol: string;
+  telefono?: string;
+  telefono_wa?: string;
+  iniciales: string;
+}
+
+export interface CdpReporteHistorial {
+  id?: string | number;
+  fecha?: string;
+  fecha_formateada?: string;
+  tema?: string;
+  observaciones?: string;
+  asistencia?: number;
+  nro_regulares?: number;
+  nro_niños?: number;
+  nro_ninos?: number;
+  nro_visitas?: number;
+  ofrendas_usd?: number;
+  ofrendas_bs?: number;
+  cesta_amor?: number | boolean;
+}
+
+export interface CdpDetalle {
+  id: number;
+  codigo: string;
+  nombre?: string;
+  red_id: number;
+  red_nombre: string;
+  supervisor_id?: number | null;
+  supervisor_nombre: string;
+  direccion?: string;
+  maps_url?: string;
+  anfitrion?: string;
+  usuario_id?: number | null;
+  usuario_username?: string;
+  usuario_nombre?: string;
+  usuario_apellido?: string;
+  lider_id?: number | null;
+  lider_nombre?: string;
+  telefono?: string;
+  telefono_wa?: string;
+  horario?: string;
+  is_active: number | boolean;
+  asistencia_promedio: number;
+  total_reportes: number;
+  ofrendas_usd_totales: number;
+  ofrendas_bs_totales: number;
+  visitas_totales: number;
+  conversiones_totales: number;
+  reconciliaciones_totales?: number;
+  total_voluntarios?: number;
+  ultimo_reporte_fecha?: string | null;
+  reporte_reciente_7d?: boolean;
+  estado_reporte_7d?: string;
+  dias_desde_ultimo_reporte?: number | null;
+  lideres?: CdpMiembroEquipo[];
+  reportes?: CdpReporteHistorial[];
+}
+
+export interface CdpDetalleResponse {
+  cdp: CdpDetalle;
+}
+
+export interface EstructuraSelectoresResponse {
+  supervisores: Array<{
+    id: number;
+    nombre: string;
+    apellido: string;
+    username: string;
+  }>;
+  lideres_cdp: Array<{
+    id: number;
+    nombre: string;
+    apellido: string;
+    username?: string;
+  }>;
+  casas_de_paz: Array<{
+    id: number;
+    codigo: string;
+    anfitrion?: string;
+  }>;
+  redes: Array<{
+    id: number;
+    nombre: string;
+  }>;
+}
+
+export interface RedInput {
+  nombre: string;
+  supervisor_id?: number | string | null;
+}
+
+export interface CdpInput {
+  codigo: string;
+  red_id: number | string;
+  anfitrion: string;
+  direccion: string;
+  telefono: string;
+  is_active?: number | boolean | string;
+  lider_id?: number | string | null;
+  modo_usuario?: 'existente' | 'nuevo';
+  nuevo_usuario_nombre?: string;
+  nuevo_usuario_apellido?: string;
+  nuevo_usuario_username?: string;
+  nuevo_usuario_password?: string;
+}
+
+export interface LiderInput {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  rol: 'Lider' | 'Sublider' | string;
+  cdp_id: number | string;
+  is_active?: number | boolean;
+}
