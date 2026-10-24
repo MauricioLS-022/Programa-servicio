@@ -82,6 +82,29 @@ class TestApiEstructuraEndpoints(unittest.TestCase):
         self.assertEqual(data.get('page'), 1)
 
 
+    def test_get_estructura_selectores_mock_mode(self):
+        """Selectores de estructura responden HTTP 200 en modo mock sin errores 500."""
+        with self.client.session_transaction() as sess:
+            sess['usuario_id'] = 'admin-uuid-1'
+            sess['usuario'] = 'admin'
+            sess['rol'] = 'admin'
+
+        response = self.client.get('/api/estructura/selectores')
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertIn('supervisores', data)
+        self.assertIn('lideres_cdp', data)
+        self.assertIn('casas_de_paz', data)
+        self.assertIn('redes', data)
+        self.assertIsInstance(data['casas_de_paz'], list)
+        self.assertIsInstance(data['redes'], list)
+
+    def test_get_estructura_selectores_unauthenticated(self):
+        """Consulta de selectores sin sesión retorna 401."""
+        response = self.client.get('/api/estructura/selectores')
+        self.assertEqual(response.status_code, 401)
+
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -120,6 +120,91 @@ class TestApiAuthEndpoints(unittest.TestCase):
             self.assertEqual(data['user']['rol'], 'supervisor')
             self.assertEqual(data['user']['nombre'], 'Carlos')
 
+    def test_api_auth_config(self):
+        """Verifica que /api/auth/config retorne 200 con siteKey e isDev."""
+        response = self.client.get('/api/auth/config')
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertIn('siteKey', data)
+        self.assertIn('isDev', data)
+
+    def test_api_auth_login_recaptcha_failure(self):
+        """Verifica que un token de reCAPTCHA inválido o con bajo puntaje sea rechazado."""
+        app.config['FLASK_ENV'] = 'production'
+        app.config['DEBUG'] = False
+        app.config['TESTING'] = False
+
+        recaptcha_mock = unittest.mock.MagicMock()
+        recaptcha_mock.json.return_value = {"success": False, "score": 0.3, "action": "login"}
+
+        with patch('requests.post', return_value=recaptcha_mock):
+            response = self.client.post('/api/auth/login', json={
+                'username': 'admin',
+                'password': 'Password123!',
+                'recaptcha_token': 'fake-invalid-token'
+            })
+            self.assertEqual(response.status_code, 400)
+            data = response.get_json()
+            self.assertFalse(data.get('success'))
+            self.assertIn("verificación de seguridad fallida", data.get('error', ''))
+
+        app.config['TESTING'] = True
+        app.config['FLASK_ENV'] = 'development'
+
+    def test_api_auth_login_recaptcha_success_production(self):
+        """Verifica que reCAPTCHA válido en producción permita autenticar."""
+        app.config['FLASK_ENV'] = 'production'
+        app.config['DEBUG'] = False
+        app.config['TESTING'] = False
+
+        fake_user = {
+            'id': 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+            'username': 'prod_admin',
+            'password': 'pbkdf2:sha256:260000$dummy$hash',
+            'tipo_usuario': 'admin',
+            'is_active': 1,
+            'nombre': 'Admin',
+            'apellido': 'Prod'
+        }
+
+        mock_cur = unittest.mock.MagicMock()
+        mock_cur.fetchone.return_value = fake_user
+        mock_conn = unittest.mock.MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+
+        recaptcha_mock = unittest.mock.MagicMock()
+        recaptcha_mock.json.return_value = {"success": True, "score": 0.9, "action": "login"}
+
+        with patch('requests.post', return_value=recaptcha_mock), \
+             patch('routes.api.auth_api.get_db_connection', return_value=mock_conn), \
+             patch('routes.api.auth_api._check_password', return_value=True):
+            response = self.client.post('/api/auth/login', json={
+                'username': 'prod_admin',
+                'password': 'PasswordValido123!',
+                'g-recaptcha-response': 'fake-valid-token'
+            })
+            self.assertEqual(response.status_code, 200)
+            data = response.get_json()
+            self.assertTrue(data.get('success'))
+            self.assertEqual(data['user']['username'], 'prod_admin')
+
+        app.config['TESTING'] = True
+        app.config['FLASK_ENV'] = 'development'
+
+    def test_api_auth_login_rate_limiting(self):
+        """Verifica que el decorador limiter responda con 429 al exceder 5 intentos por minuto."""
+        from extensions import limiter
+        limiter.enabled = True
+        try:
+            for _ in range(5):
+                self.client.post('/api/auth/login', json={'username': 'test_rate', 'password': 'wrong'})
+            
+            response = self.client.post('/api/auth/login', json={'username': 'test_rate', 'password': 'wrong'})
+            self.assertEqual(response.status_code, 429)
+        finally:
+            limiter.enabled = False
+            limiter.reset()
+
 
 if __name__ == '__main__':
     unittest.main()

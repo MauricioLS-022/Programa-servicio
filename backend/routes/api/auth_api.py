@@ -1,21 +1,45 @@
 """
 routes/api/auth_api.py - Endpoints REST de autenticación y verificación de sesión HttpOnly.
 """
+import requests
 from flask import request, jsonify, session, current_app
 from werkzeug.security import generate_password_hash
 from database import get_db_connection
+from extensions import limiter
 from routes.auth_routes import _check_password
 from services.cdp_service import get_perfil_data, cambiar_username, cambiar_password
 from utils.validators import validate_password_strength, validate_username
 from .base import api_bp, _serialize_item
 
 
+@api_bp.route('/auth/config', methods=['GET'])
+def api_auth_config():
+    """Retorna la configuración pública necesaria para la autenticación en el frontend."""
+    is_production = bool(
+        current_app.config.get('FLASK_ENV') == 'production'
+        or (not current_app.config.get('DEBUG', False) and not current_app.config.get('TESTING', False) and current_app.config.get('FLASK_ENV') != 'development')
+    )
+    is_dev = not is_production and bool(
+        current_app.config.get('DEBUG', False)
+        or current_app.config.get('FLASK_ENV') == 'development'
+        or current_app.config.get('MOCK_MODE', False)
+        or current_app.config.get('TESTING', False)
+    )
+    site_key = current_app.config.get("RECAPTCHA_SITE_KEY", "")
+    return jsonify({
+        "siteKey": site_key,
+        "isDev": is_dev
+    }), 200
+
+
 @api_bp.route('/auth/login', methods=['POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def api_auth_login():
-    """Autenticación REST para clientes desacoplados con sesión HttpOnly."""
+    """Autenticación REST para clientes desacoplados con sesión HttpOnly y protección anti-bot reCAPTCHA."""
     data = request.get_json(silent=True) or request.form.to_dict() or {}
     usuario = (data.get('usuario') or data.get('username') or '').strip()
     contrasena = (data.get('contrasena') or data.get('password') or '').strip()
+    recaptcha_token = (data.get('recaptcha_token') or data.get('g-recaptcha-response') or '').strip()
 
     if not usuario or not contrasena:
         return jsonify({
@@ -33,6 +57,41 @@ def api_auth_login():
         or current_app.config.get('MOCK_MODE', False)
         or current_app.config.get('TESTING', False)
     )
+
+    # Verificación de reCAPTCHA
+    secret = current_app.config.get("RECAPTCHA_SECRET_KEY", "")
+    captcha_valido = False
+    puntaje = 0.0
+    accion = ""
+
+    if is_dev and not recaptcha_token:
+        captcha_valido = True
+        puntaje = 1.0
+        accion = "login"
+    else:
+        try:
+            respuesta = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret, "response": recaptcha_token},
+                timeout=5
+            )
+            resultado = respuesta.json()
+            captcha_valido = resultado.get("success", False)
+            puntaje = resultado.get("score", 0.0)
+            accion = resultado.get("action", "")
+            error_codes = resultado.get("error-codes", [])
+            current_app.logger.info(
+                f"[API reCAPTCHA] Éxito: {captcha_valido} | Puntuación: {puntaje} | Acción: {accion} | Errores: {error_codes}"
+            )
+        except Exception as e:
+            current_app.logger.error(f"[API reCAPTCHA] Error de conexión: {e}")
+            captcha_valido = False
+
+    if not captcha_valido or puntaje < 0.7 or (accion != "login" and not is_dev):
+        return jsonify({
+            "success": False,
+            "error": "Tráfico sospechoso o verificación de seguridad fallida. Inténtalo de nuevo."
+        }), 400
 
     conn = get_db_connection()
     if conn:

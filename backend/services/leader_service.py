@@ -292,16 +292,10 @@ def toggle_lider_servicio(lider_id: int) -> tuple[bool, str, str]:
     try:
         lider_id = int(lider_id)
     except (ValueError, TypeError):
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return True, 'reactivado', f"Líder {lider_id} actualizado (modo demo)."
         return False, 'error', "Identificador de líder no válido."
 
     conn = get_db_connection()
     if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return True, 'reactivado', f"Líder {lider_id} actualizado (modo demo)."
         return False, 'error', "Error de conexión a la base de datos."
 
     try:
@@ -521,6 +515,21 @@ def get_supervisores_disponibles_servicio():
     """
     conn = get_db_connection()
     if not conn:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_mock_usuarios, get_redes_demo
+            usuarios = get_mock_usuarios()
+            redes = get_redes_demo()
+            asignados_ids = {str(r.get('supervisor_id')) for r in redes if r.get('supervisor_id')}
+            return [
+                {
+                    'id': u['id'],
+                    'nombre': f"{u.get('nombre', '')} {u.get('apellido', '')}".strip() or u.get('username'),
+                    'username': u.get('username')
+                }
+                for u in usuarios
+                if u.get('rol') == 'supervisor' and str(u['id']) not in asignados_ids
+            ]
         return []
     try:
         with conn.cursor() as cursor:

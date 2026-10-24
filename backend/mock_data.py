@@ -1276,3 +1276,6 @@ def get_empty_cdp(cdp_id):
         'mini_historico': [],
     }
 
+
+# Alias de compatibilidad defensiva
+get_mock_casas = get_casas_demo

@@ -215,10 +215,18 @@ def api_get_casas_de_paz():
         casas = get_casas_demo()
         if target_red_id:
             casas = [c for c in casas if str(c.get('red_id', '')) == str(target_red_id)]
+        
+        sin_rep_ids = [c['id'] for c in casas if not c.get('tiene_reporte_7d', True)]
+        for c in casas:
+            c['sin_reporte_7d'] = c['id'] in sin_rep_ids
+
+        if filtro == 'pendientes_7d':
+            casas = [c for c in casas if c['id'] in sin_rep_ids]
+
         return jsonify({
             "casas": _serialize_item(casas),
             "total": len(casas),
-            "sin_reporte_7d_ids": []
+            "sin_reporte_7d_ids": sin_rep_ids
         }), 200
 
 
@@ -454,6 +462,11 @@ def api_get_estructura_selectores():
                 redes = db_queries.get_todas_las_redes(cur)
         finally:
             conn.close()
+    else:
+        from services.dashboard_service import mock_mode_enabled
+        if mock_mode_enabled():
+            from mock_data import get_redes_demo
+            redes = get_redes_demo()
 
     return jsonify({
         "supervisores": _serialize_item(supervisores or []),

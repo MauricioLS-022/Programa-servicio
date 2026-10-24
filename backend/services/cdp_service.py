@@ -558,9 +558,6 @@ def actualizar_reporte(reporte_id, cdp_id, form_data):
 
     conn = get_db_connection()
     if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return True, "Reporte actualizado exitosamente."
         return False, "No se pudo conectar a la base de datos."
 
     from utils.validators import validate_report_form
@@ -1174,16 +1171,10 @@ def toggle_cdp_servicio(cdp_id: int) -> tuple[bool, str, str]:
     try:
         cdp_id = int(cdp_id)
     except (ValueError, TypeError):
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return True, 'reactivada', f"Casa de Paz {cdp_id} actualizada (modo demo)."
         return False, 'error', "Identificador de Casa de Paz no válido."
 
     conn = get_db_connection()
     if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return True, 'reactivada', f"Casa de Paz {cdp_id} actualizada (modo demo)."
         return False, 'error', "Error de conexión a la base de datos."
 
     try:
@@ -1321,8 +1312,8 @@ def obtener_cdps_para_select():
     if not conn:
         from services.dashboard_service import mock_mode_enabled
         if mock_mode_enabled():
-            from mock_data import get_mock_casas
-            return [c for c in get_mock_casas() if c.get('is_active', 1) == 1]
+            from mock_data import get_casas_demo
+            return [c for c in get_casas_demo() if c.get('is_active', 1) == 1]
         return []
 
     try:
