@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "Raíz del Proyecto",
+      "path": "."
+    },
+    {
+      "name": "Backend (Flask)",
+      "path": "backend"
+    },
+    {
+      "name": "Frontend (React + Vite)",
+      "path": "frontend"
+    }
+  ],
+  "settings": {
+    "python.terminal.activateEnvironment": false,
+    "files.watcherExclude": {
+      "**/.git/**": true,
+      "**/node_modules/*/**": true,
+      "**/venv/**": true,
+      "**/__pycache__/**": true,
+      "**/dist/**": true
+    }
+  }
+}
+

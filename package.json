@@ -1,0 +1,18 @@
+{
+  "name": "vino-nuevo-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workspace de desarrollo para Casas de Paz - Vino Nuevo (Backend Flask + Frontend React/Vite)",
+  "scripts": {
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"blue.bold,cyan.bold\" \"pnpm run dev:back\" \"pnpm run dev:front\"",
+    "dev:back": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& { if (Test-Path .\\venv\\Scripts\\python.exe) { .\\venv\\Scripts\\python.exe backend/app.py } else { python backend/app.py } }\"",
+    "dev:front": "pnpm --dir frontend run dev",
+    "build": "pnpm --dir frontend run build",
+    "test": "pnpm --dir frontend run test",
+    "test:back": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& { if (Test-Path .\\venv\\Scripts\\pytest.exe) { .\\venv\\Scripts\\pytest.exe backend/tests } else { pytest backend/tests } }\""
+  },
+  "devDependencies": {
+    "concurrently": "9.1.2"
+  }
+}
+
