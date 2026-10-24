@@ -1,0 +1,510 @@
+/* ==========================================================================
+   VINO NUEVO — ESTILOS OFICIALES PARA LA VISTA DE REPORTES (Paridad 1 a 1)
+   Sincronizado fielmente con:
+   - backend/static/styles/admin/reportes.css
+   - backend/static/styles/admin/dark_theme.css
+   ========================================================================== */
+
+.reportes-page-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ==========================================================================
+   1. HERO SECTION
+   ========================================================================== */
+.reportes-page-container .hero-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.25rem;
+    border: 1px solid rgba(221, 192, 189, 0.35);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.reportes-page-container .hero-title {
+    font-family: var(--font-serif, 'Noto Serif', serif);
+    font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+    font-weight: 700;
+    color: var(--primary, #390002);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.reportes-page-container .hero-subtitle {
+    color: var(--on-surface-variant, #564240);
+    font-weight: 500;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ==========================================================================
+   2. FILTROS
+   ========================================================================== */
+.reportes-page-container .filter-section {
+    background-color: #ffffff;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(221, 192, 189, 0.35);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
+}
+
+.reportes-page-container .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .reportes-page-container .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .reportes-page-container .filter-grid {
+        grid-template-columns: 2fr 1.2fr 1.2fr 1.8fr auto;
+        align-items: flex-end;
+    }
+}
+
+/* ==========================================================================
+   3. TABLA DE REPORTES (Estructura canónica table-wrapper)
+   ========================================================================== */
+.reportes-page-container .table-wrapper {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid rgba(221, 192, 189, 0.35);
+    box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
+    overflow: hidden;
+    width: 100%;
+}
+
+.reportes-page-container .table-header {
+    background: linear-gradient(135deg, #700204 0%, #390002 100%);
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+}
+
+.reportes-page-container .table-header h2 {
+    font-family: var(--font-serif, 'Noto Serif', serif);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+}
+
+.reportes-page-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.reportes-page-container th {
+    background-color: var(--surface-container-high, #f8e4e3);
+    padding: 1.15rem 1.5rem;
+    color: var(--primary, #390002);
+    font-family: var(--font-serif, 'Noto Serif', serif);
+    font-weight: 700;
+    font-size: 0.92rem;
+    border-bottom: 1px solid rgba(137, 114, 111, 0.25);
+    text-align: left;
+}
+
+.reportes-page-container td {
+    padding: 1.15rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-main, #231919);
+    border-bottom: 1px solid rgba(137, 114, 111, 0.15);
+    text-align: left;
+}
+
+/* Alineaciones explícitas de columnas */
+.reportes-page-container th.text-center,
+.reportes-page-container td.text-center {
+    text-align: center !important;
+}
+
+.reportes-page-container th.text-right,
+.reportes-page-container td.text-right {
+    text-align: right !important;
+}
+
+.reportes-page-container tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.reportes-page-container tbody tr:hover {
+    background-color: #fcfaf9;
+}
+
+.reportes-page-container .leader-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reportes-page-container .avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    background-color: #ffdad6;
+    color: var(--primary, #390002);
+}
+
+.reportes-page-container .badge {
+    background-color: var(--surface-container-high, #f8e4e3);
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: var(--primary, #390002);
+    font-weight: 700;
+    display: inline-block;
+}
+
+.reportes-page-container .btn-icon {
+    background: none;
+    border: none;
+    padding: 0.45rem;
+    border-radius: 0.5rem;
+    color: var(--on-surface-variant, #564240);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reportes-page-container .btn-icon.btn-view:hover {
+    background-color: rgba(112, 2, 4, 0.09);
+    color: #4a0002;
+}
+
+.reportes-page-container .btn-icon.btn-edit:hover {
+    background-color: rgba(107, 114, 58, 0.12);
+    color: #3b401c;
+}
+
+.reportes-page-container .btn-icon.btn-delete:hover {
+    background-color: rgba(255, 218, 214, 0.45);
+    color: #ba1a1a;
+}
+
+/* ==========================================================================
+   4. MODALES (CABECERA, SECCIONES Y PÍLDORAS - JINJA2 PARITY)
+   ========================================================================== */
+.modal-header {
+    background: linear-gradient(135deg, #700204 0%, #390002 100%);
+    padding: 1.15rem 1.75rem;
+    min-height: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-icon {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-title {
+    color: #ffffff !important;
+    font-family: var(--font-serif, 'Noto Serif', serif);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+    color: #ffffff;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .modal-header {
+    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+    border-bottom: 1px solid var(--border-color, rgba(221, 192, 189, 0.2));
+}
+
+.modal-section-card {
+    background-color: rgba(254, 233, 233, 0.25);
+    border: 1px solid rgba(137, 114, 111, 0.18);
+    border-radius: 0.85rem;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.85rem;
+}
+
+.modal-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-serif, 'Noto Serif', serif);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary, #700204);
+    margin: 0 0 0.85rem 0;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(137, 114, 111, 0.18);
+}
+
+.modal-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+    .modal-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.modal-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+    .modal-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.asistencia-total-pill {
+    background: #fbf2f2;
+    border: 1px dashed var(--primary, #700204);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    color: var(--primary, #700204);
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.asistencia-total-pill .total-number {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary, #700204);
+}
+
+/* ==========================================================================
+   5. TEMA OSCURO ([data-theme="dark"])
+   Sincronizado fielmente con: backend/static/styles/admin/dark_theme.css
+   ========================================================================== */
+[data-theme="dark"] .reportes-page-container .hero-card,
+[data-theme="dark"] .reportes-page-container .filter-section,
+[data-theme="dark"] .reportes-page-container .table-wrapper {
+    background-color: #1b1416;
+    background: #1b1416;
+    border: 1.5px solid rgba(221, 192, 189, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+    color: #f8f2f0;
+}
+
+[data-theme="dark"] .reportes-page-container .hero-title {
+    color: #f8deda;
+}
+
+[data-theme="dark"] .reportes-page-container .hero-subtitle {
+    color: #d4c2bf;
+}
+
+[data-theme="dark"] .reportes-page-container .table-header {
+    background: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+    border-bottom: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+[data-theme="dark"] .reportes-page-container .table-header h2 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .reportes-page-container th {
+    background-color: #1f1618;
+    color: #f8deda;
+    border-bottom: 1.5px solid rgba(221, 192, 189, 0.2);
+}
+
+[data-theme="dark"] .reportes-page-container td {
+    background-color: #1b1416;
+    border-bottom: 1px solid rgba(221, 192, 189, 0.2);
+    color: #f8f2f0;
+}
+
+[data-theme="dark"] .reportes-page-container tbody tr:hover {
+    background-color: #2f2225;
+}
+
+[data-theme="dark"] .reportes-page-container .avatar {
+    background-color: rgba(248, 222, 218, 0.16);
+    color: #f8deda;
+}
+
+[data-theme="dark"] .reportes-page-container .badge {
+    background-color: #2f2225;
+    color: #ffb4ab;
+}
+
+[data-theme="dark"] .reportes-page-container .btn-icon {
+    color: #d4c2bf;
+}
+
+[data-theme="dark"] .reportes-page-container .btn-icon.btn-view:hover {
+    background-color: rgba(248, 222, 218, 0.15);
+    color: #f8deda;
+}
+
+[data-theme="dark"] .reportes-page-container .btn-icon.btn-edit:hover {
+    background-color: rgba(192, 202, 116, 0.18);
+    color: #dbe786;
+}
+
+[data-theme="dark"] .reportes-page-container .btn-icon.btn-delete:hover {
+    background-color: rgba(255, 180, 171, 0.18);
+    color: #ffb4ab;
+}
+
+[data-theme="dark"] .modal-section-card {
+    background-color: #1f1618;
+    border: 1px solid rgba(221, 192, 189, 0.18);
+}
+
+[data-theme="dark"] .modal-section-title {
+    color: #f8deda;
+    border-bottom: 1px solid rgba(221, 192, 189, 0.18);
+}
+
+[data-theme="dark"] .asistencia-total-pill {
+    background-color: rgba(112, 2, 4, 0.25);
+    border: 1px dashed rgba(248, 222, 218, 0.4);
+    color: #f8deda;
+}
+
+[data-theme="dark"] .asistencia-total-pill .total-number {
+    color: #f8deda;
+}
+
+/* ==========================================================================
+   6. BOTONES DE MODAL (Píldoras Redondeadas de Alto Contraste - Jinja2 Parity)
+   ========================================================================== */
+.btn-modal {
+    padding: 0.55rem 1.35rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: inherit;
+    text-decoration: none;
+    user-select: none;
+}
+
+.btn-modal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-modal-cancel {
+    background-color: var(--surface-container-high, #f8e4e3);
+    color: var(--on-surface-variant, #564240);
+    border: 1px solid rgba(137, 114, 111, 0.25);
+}
+
+.btn-modal-cancel:hover:not(:disabled) {
+    background-color: rgba(137, 114, 111, 0.25);
+    color: var(--primary, #390002);
+    transform: translateY(-1px);
+}
+
+.btn-modal-save {
+    background: linear-gradient(135deg, #700204 0%, #390002 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(57, 0, 2, 0.15);
+}
+
+.btn-modal-save:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8b0306 0%, #4a0002 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(57, 0, 2, 0.25);
+    color: #ffffff;
+}
+
+/* Modo oscuro para botones del modal */
+[data-theme="dark"] .btn-modal-cancel {
+    background: var(--surface-container-high, #2f2225);
+    color: var(--text-muted, #d4c2bf);
+    border: 1px solid var(--border-color, rgba(221, 192, 189, 0.25));
+}
+
+[data-theme="dark"] .btn-modal-cancel:hover:not(:disabled) {
+    background: #3d2c30;
+    color: #f8f2f0;
+    border-color: rgba(221, 192, 189, 0.35);
+}
+
+[data-theme="dark"] .btn-modal-save {
+    background: #8b1518;
+    background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .btn-modal-save:hover:not(:disabled) {
+    background: #a31c20;
+    background-image: linear-gradient(135deg, #be2227 0%, #8b0306 100%);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
