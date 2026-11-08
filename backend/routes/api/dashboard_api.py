@@ -3,6 +3,7 @@ routes/api/dashboard_api.py - Endpoints REST protegidos para métricas temporale
 """
 from flask import request, jsonify, session
 from services.dashboard_service import get_metricas, mock_mode_enabled, get_supervisor_red_id
+from services.cdp_service import get_lider_dashboard_data
 from utils.cache import get_cached_value, set_cached_value
 from utils.auth import login_required, role_required
 from .base import api_bp, _serialize_item
@@ -78,3 +79,26 @@ def api_dashboard_datos():
         set_cached_value(cache_key, metricas)
 
     return jsonify(_serialize_item(metricas))
+
+
+@api_bp.route('/lider/dashboard')
+def api_dashboard_lider():
+    """Endpoint REST que retorna el resumen, métricas e historial de la Casa de Paz para el líder autenticado."""
+    usuario_id = session.get("usuario_id")
+    rol = session.get("rol")
+    if not usuario_id:
+        return jsonify({"error": "No autenticado"}), 401
+    if rol not in ("lider_cdp", "cdp", "admin"):
+        return jsonify({"error": "No autorizado"}), 403
+
+    page = max(request.args.get('page', 1, type=int), 1)
+    per_page = min(max(request.args.get('per_page', 5, type=int), 1), 50)
+
+    if rol == 'admin' and request.args.get('usuario_id'):
+        target_uid = request.args.get('usuario_id')
+    else:
+        target_uid = str(usuario_id) if usuario_id else None
+
+    contexto = get_lider_dashboard_data(target_uid, page=page, per_page=per_page)
+    return jsonify(_serialize_item(contexto)), 200
+

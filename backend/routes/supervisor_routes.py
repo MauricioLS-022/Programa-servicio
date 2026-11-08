@@ -34,6 +34,14 @@ def estructura():
     cdp_id = (request.args.get('cdp_id', '').strip() or request.args.get('casa_id', '').strip())
     filtro = request.args.get('filtro', '').strip().lower()
     search = request.args.get('q', '').strip()
+    # Si no viene red_id para supervisor, prefiltrar por su red asignada
+    if not red_id:
+        sup_red_id = get_supervisor_red_id(usuario_id)
+        if sup_red_id:
+            red_id = str(sup_red_id)
+        elif context.get('redes_estructura'):
+            red_id = str(context['redes_estructura'][0]['id'])
+
     # Si se pasa cdp_id, garantizar que red_id coincida con la red real de esa Casa de Paz
     if cdp_id:
         try:
