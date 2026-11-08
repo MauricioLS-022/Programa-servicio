@@ -158,7 +158,7 @@ export const ReporteModal: React.FC<ReporteModalProps> = ({
       onClose={onClose}
       headerIcon={<Icon name={isEdit ? 'edit_document' : 'visibility'} size={22} />}
       title={isEdit ? 'Editar Reporte Semanal' : 'Detalle del Reporte'}
-      maxWidth="2xl"
+      maxWidth="lg"
       footer={
         isEdit ? (
           <div className="flex items-center justify-end gap-3 w-full">
@@ -204,45 +204,61 @@ export const ReporteModal: React.FC<ReporteModalProps> = ({
         )
       }
     >
-      <form id="form-reporte-modal" onSubmit={handleSubmit} className="flex flex-col gap-3 py-1">
+      <form id="form-reporte-modal" onSubmit={handleSubmit} className="flex flex-col gap-2.5 py-0.5">
         {formError && (
-          <div className="p-3 bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-900/60 text-red-700 dark:text-red-300 rounded-lg text-xs font-semibold">
+          <div className="p-2.5 bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-900/60 text-red-700 dark:text-red-300 rounded-lg text-xs font-semibold">
             {formError}
           </div>
         )}
 
-        {/* Sección 1: Fecha y Encargado */}
-        <div className="modal-section-card">
-          <h4 className="modal-section-title">
-            <Icon name="calendar_today" size={16} />
-            <span>Fecha y Encargado</span>
-          </h4>
+        {isEdit ? (
+          <>
+            {/* Sección 1: Datos de la Reunión (Edición) */}
+            <div className="modal-section-card">
+              <h4 className="modal-section-title">
+                <Icon name="calendar_today" size={16} />
+                <span>Fecha y Encargado</span>
+              </h4>
 
-          {isEdit ? (
-            <div className="flex flex-col gap-3">
-              <div className="modal-grid-2">
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Líder</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.lider_nombre}
-                  </p>
+              <div className="flex flex-col gap-2.5">
+                {/* Referencia informativa no editable */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/40 dark:border-[rgba(221,192,189,0.1)]">
+                  <div>
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Líder</span>
+                    <span className="font-semibold text-text-main dark:text-[#f8f2f0]">{reporte.lider_nombre}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Casa de Paz</span>
+                    <span className="font-semibold text-text-main dark:text-[#f8f2f0]">{reporte.cdp_codigo} · {reporte.cdp_nombre}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Casa de Paz</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.cdp_codigo} · {reporte.cdp_nombre}
-                  </p>
-                </div>
-              </div>
 
-              <div className="modal-grid-2">
-                <Input
-                  label="Fecha de Reunión"
-                  type="date"
-                  value={formData.fecha}
-                  onChange={(e) => handleInputChange('fecha', e.target.value)}
-                  required
-                />
+                {/* Fecha, Hora Inicio y Hora Fin en una fila */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <Input
+                    label="Fecha de Reunión"
+                    type="date"
+                    value={formData.fecha}
+                    onChange={(e) => handleInputChange('fecha', e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Hora de Inicio"
+                    type="time"
+                    value={formData.hr_inicio}
+                    onChange={(e) => handleInputChange('hr_inicio', e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Hora de Fin"
+                    type="time"
+                    value={formData.hr_fin}
+                    onChange={(e) => handleInputChange('hr_fin', e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Tema desarrollado */}
                 <Input
                   label="Tema de la Clase"
                   value={formData.tema}
@@ -251,258 +267,266 @@ export const ReporteModal: React.FC<ReporteModalProps> = ({
                   required
                 />
               </div>
+            </div>
 
-              <div className="modal-grid-2">
-                <Input
-                  label="Hora de Inicio"
-                  type="time"
-                  value={formData.hr_inicio}
-                  onChange={(e) => handleInputChange('hr_inicio', e.target.value)}
-                  required
-                />
-                <Input
-                  label="Hora de Fin"
-                  type="time"
-                  value={formData.hr_fin}
-                  onChange={(e) => handleInputChange('hr_fin', e.target.value)}
-                  required
+            {/* Fila en 2 Columnas para Asistencia y Recursos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {/* Columna Izquierda: Asistencia y Desglose */}
+              <div className="modal-section-card flex flex-col justify-between">
+                <div>
+                  <h4 className="modal-section-title">
+                    <Icon name="groups" size={16} />
+                    <span>Asistencia y Desglose</span>
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      label="Regulares"
+                      type="number"
+                      min="0"
+                      value={formData.nro_regulares}
+                      onChange={(e) => handleInputChange('nro_regulares', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Niños"
+                      type="number"
+                      min="0"
+                      value={formData.nro_ninos}
+                      onChange={(e) => handleInputChange('nro_ninos', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Visitas"
+                      type="number"
+                      min="0"
+                      value={formData.nro_visitas}
+                      onChange={(e) => handleInputChange('nro_visitas', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Comprometidos"
+                      type="number"
+                      min="0"
+                      value={formData.nro_comprometidos}
+                      onChange={(e) => handleInputChange('nro_comprometidos', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+
+                <div className="asistencia-total-pill">
+                  <span>Asistencia Total Calculada:</span>
+                  <span className="total-number">{totalAsistenciaCalculada}</span>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Frutos Espirituales y Ofrendas */}
+              <div className="modal-section-card flex flex-col justify-between">
+                <div>
+                  <h4 className="modal-section-title">
+                    <Icon name="attach_money" size={16} />
+                    <span>Ministerio y Recursos</span>
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Input
+                      label="Reconciliaciones"
+                      type="number"
+                      min="0"
+                      value={formData.reconciliaciones}
+                      onChange={(e) => handleInputChange('reconciliaciones', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Confesiones de Fe"
+                      type="number"
+                      min="0"
+                      value={formData.confesiones}
+                      onChange={(e) => handleInputChange('confesiones', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Ofrendas en Dólares ($)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.ofrendas_usd}
+                      onChange={(e) => handleInputChange('ofrendas_usd', Number(e.target.value))}
+                    />
+                    <Input
+                      label="Ofrendas en Bolívares (Bs.)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.ofrendas_bs}
+                      onChange={(e) => handleInputChange('ofrendas_bs', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+
+                <Select
+                  label="¿Hubo Cesta de Amor?"
+                  value={String(formData.cesta_amor)}
+                  onChange={(e) => handleInputChange('cesta_amor', Number(e.target.value))}
+                  options={[
+                    { value: '0', label: 'No' },
+                    { value: '1', label: 'Sí' },
+                  ]}
                 />
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              <div className="modal-grid-2">
+
+            {/* Observaciones (Ancho completo compacto) */}
+            <div className="modal-section-card">
+              <label className="text-[11px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                Observaciones
+              </label>
+              <textarea
+                className="w-full px-3 py-1.5 text-sm rounded-lg border border-border-subtle dark:border-[rgba(221,192,189,0.25)] bg-white dark:bg-[#150f10] text-text-main dark:text-[#f8f2f0] focus:ring-2 focus:ring-[#700204] dark:focus:ring-[#f8deda] outline-none min-h-[48px] max-h-[100px]"
+                value={formData.observaciones}
+                onChange={(e) => handleInputChange('observaciones', e.target.value)}
+                placeholder="Sin observaciones adicionales."
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* MODO VISTA: DETALLE DEL REPORTE */}
+            {/* Sección 1: Datos de la Reunión */}
+            <div className="modal-section-card">
+              <h4 className="modal-section-title">
+                <Icon name="calendar_today" size={16} />
+                <span>Fecha y Encargado</span>
+              </h4>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Líder Encargado</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Líder Encargado</span>
+                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5 truncate">
                     {reporte.lider_nombre}
                   </p>
                 </div>
                 <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Casa de Paz</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Casa de Paz</span>
+                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5 truncate">
                     {reporte.cdp_codigo} · {reporte.cdp_nombre}
                   </p>
                 </div>
                 <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Fecha de Reunión</span>
+                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Fecha de Reunión</span>
                   <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
                     {reporte.fecha_formateada || reporte.fecha}
                   </p>
                 </div>
                 <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Horario</span>
+                  <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Horario</span>
                   <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
                     {formatTime12h(reporte.hr_inicio)} – {formatTime12h(reporte.hr_fin)}
                   </p>
                 </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-border-subtle/50 dark:border-[rgba(221,192,189,0.15)]">
-                <span className="block text-[11px] font-bold text-text-muted uppercase">Tema Desarrollado</span>
-                <p className="text-sm font-medium text-text-main dark:text-[#f8f2f0] mt-0.5">
+
+              <div className="mt-2 pt-2 border-t border-border-subtle/50 dark:border-[rgba(221,192,189,0.15)] flex items-baseline gap-2">
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider shrink-0">Tema Desarrollado:</span>
+                <p className="text-sm font-medium text-text-main dark:text-[#f8f2f0]">
                   {reporte.tema || 'Sin tema registrado'}
                 </p>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Sección 2: Asistencia y Desglose */}
-        <div className="modal-section-card">
-          <h4 className="modal-section-title">
-            <Icon name="groups" size={16} />
-            <span>Asistencia y Desglose</span>
-          </h4>
+            {/* Fila en 2 Columnas para Asistencia y Frutos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Columna Izquierda: Asistencia y Desglose */}
+              <div className="modal-section-card flex flex-col justify-between">
+                <div>
+                  <h4 className="modal-section-title">
+                    <Icon name="groups" size={16} />
+                    <span>Asistencia y Desglose</span>
+                  </h4>
 
-          {isEdit ? (
-            <div>
-              <div className="modal-grid-4">
-                <Input
-                  label="Regulares"
-                  type="number"
-                  min="0"
-                  value={formData.nro_regulares}
-                  onChange={(e) => handleInputChange('nro_regulares', Number(e.target.value))}
-                />
-                <Input
-                  label="Niños"
-                  type="number"
-                  min="0"
-                  value={formData.nro_ninos}
-                  onChange={(e) => handleInputChange('nro_ninos', Number(e.target.value))}
-                />
-                <Input
-                  label="Visitas"
-                  type="number"
-                  min="0"
-                  value={formData.nro_visitas}
-                  onChange={(e) => handleInputChange('nro_visitas', Number(e.target.value))}
-                />
-                <Input
-                  label="Comprometidos"
-                  type="number"
-                  min="0"
-                  value={formData.nro_comprometidos}
-                  onChange={(e) => handleInputChange('nro_comprometidos', Number(e.target.value))}
-                />
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Regulares</span>
+                      <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.nro_regulares || 0}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Niños</span>
+                      <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.nro_ninos || 0}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Visitas</span>
+                      <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.nro_visitas || 0}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Comprometidos</span>
+                      <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.nro_comprometidos || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="asistencia-total-pill">
+                  <span>Total Calculado:</span>
+                  <span className="total-number">{reporte.asistencia || 0}</span>
+                </div>
               </div>
 
-              <div className="asistencia-total-pill">
-                <span>Asistencia Total Calculada:</span>
-                <span className="total-number">{totalAsistenciaCalculada}</span>
+              {/* Columna Derecha: Frutos Espirituales y Ofrendas */}
+              <div className="modal-section-card flex flex-col justify-between">
+                <div>
+                  <h4 className="modal-section-title">
+                    <Icon name="attach_money" size={16} />
+                    <span>Ministerio y Recursos</span>
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Reconciliaciones</span>
+                      <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.reconciliaciones || 0}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Confesiones de Fe</span>
+                      <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
+                        {reporte.confesiones || 0}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Ofrendas en Dólares ($)</span>
+                      <p className="text-sm font-bold text-primary dark:text-[#f3d07a] mt-0.5">
+                        ${Number(reporte.ofrendas_usd || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-lg border border-border-subtle/30 dark:border-[rgba(221,192,189,0.1)]">
+                      <span className="block text-[10px] font-bold text-text-muted uppercase">Ofrendas en Bolívares (Bs.)</span>
+                      <p className="text-sm font-bold text-primary dark:text-[#f3d07a] mt-0.5 truncate">
+                        Bs. {Number(reporte.ofrendas_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-border-subtle/50 dark:border-[rgba(221,192,189,0.15)] flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-text-muted uppercase">Cesta de Amor</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${reporte.cesta_amor ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300' : 'bg-[#f5e6e8] text-[#5a4240] dark:bg-[#241a1c] dark:text-[#d4c2bf]'}`}>
+                    {reporte.cesta_amor ? 'Sí' : 'No'}
+                  </span>
+                </div>
               </div>
             </div>
-          ) : (
-            <div>
-              <div className="modal-grid-4">
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Regulares</span>
-                  <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.nro_regulares || 0}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Niños</span>
-                  <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.nro_ninos || 0}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Visitas</span>
-                  <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.nro_visitas || 0}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Comprometidos</span>
-                  <p className="text-base font-bold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.nro_comprometidos || 0}
-                  </p>
-                </div>
-              </div>
 
-              <div className="asistencia-total-pill">
-                <span>Total Calculado:</span>
-                <span className="total-number">{reporte.asistencia || 0}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sección 3: Ministerio y Recursos */}
-        <div className="modal-section-card">
-          <h4 className="modal-section-title">
-            <Icon name="attach_money" size={16} />
-            <span>Ministerio y Recursos</span>
-          </h4>
-
-          {isEdit ? (
-            <div className="flex flex-col gap-3">
-              <div className="modal-grid-2">
-                <Input
-                  label="Reconciliaciones"
-                  type="number"
-                  min="0"
-                  value={formData.reconciliaciones}
-                  onChange={(e) => handleInputChange('reconciliaciones', Number(e.target.value))}
-                />
-                <Input
-                  label="Confesiones de Fe"
-                  type="number"
-                  min="0"
-                  value={formData.confesiones}
-                  onChange={(e) => handleInputChange('confesiones', Number(e.target.value))}
-                />
-              </div>
-
-              <div className="modal-grid-2">
-                <Input
-                  label="Ofrendas en Dólares ($)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.ofrendas_usd}
-                  onChange={(e) => handleInputChange('ofrendas_usd', Number(e.target.value))}
-                />
-                <Input
-                  label="Ofrendas en Bolívares (Bs.)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.ofrendas_bs}
-                  onChange={(e) => handleInputChange('ofrendas_bs', Number(e.target.value))}
-                />
-              </div>
-
-              <Select
-                label="¿Hubo Cesta de Amor?"
-                value={String(formData.cesta_amor)}
-                onChange={(e) => handleInputChange('cesta_amor', Number(e.target.value))}
-                options={[
-                  { value: '0', label: 'No' },
-                  { value: '1', label: 'Sí' },
-                ]}
-              />
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-text-main dark:text-[#f8deda]">
-                  Observaciones
-                </label>
-                <textarea
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-border-subtle dark:border-[rgba(221,192,189,0.25)] bg-white dark:bg-[#150f10] text-text-main dark:text-[#f8f2f0] focus:ring-2 focus:ring-[#700204] dark:focus:ring-[#f8deda] outline-none min-h-[65px]"
-                  value={formData.observaciones}
-                  onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                  placeholder="Sin observaciones adicionales."
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              <div className="modal-grid-2">
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Reconciliaciones</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.reconciliaciones || 0}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Confesiones de Fe</span>
-                  <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0] mt-0.5">
-                    {reporte.confesiones || 0}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Ofrendas en Dólares ($)</span>
-                  <p className="text-sm font-bold text-primary dark:text-[#f3d07a] mt-0.5">
-                    ${Number(reporte.ofrendas_usd || 0).toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Ofrendas en Bolívares (Bs.)</span>
-                  <p className="text-sm font-bold text-primary dark:text-[#f3d07a] mt-0.5">
-                    Bs. {Number(reporte.ofrendas_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-2 pt-2 border-t border-border-subtle/50 dark:border-[rgba(221,192,189,0.15)]">
-                <span className="block text-[11px] font-bold text-text-muted uppercase">Cesta de Amor</span>
-                <p className="text-sm font-medium text-text-main dark:text-[#f8f2f0] mt-0.5">
-                  {reporte.cesta_amor ? 'Sí' : 'No'}
+            {/* Observaciones (si existen) */}
+            {reporte.observaciones && (
+              <div className="modal-section-card">
+                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Observaciones</span>
+                <p className="text-xs font-medium text-text-main dark:text-[#f8f2f0] mt-0.5 italic">
+                  "{reporte.observaciones}"
                 </p>
               </div>
-
-              {reporte.observaciones && (
-                <div className="mt-2 pt-2 border-t border-border-subtle/50 dark:border-[rgba(221,192,189,0.15)]">
-                  <span className="block text-[11px] font-bold text-text-muted uppercase">Observaciones</span>
-                  <p className="text-sm font-medium text-text-main dark:text-[#f8f2f0] mt-0.5 italic">
-                    "{reporte.observaciones}"
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </form>
     </Modal>
   );

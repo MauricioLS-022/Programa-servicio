@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Icon } from './Icon';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'danger-outline' | 'danger-ghost' | 'ghost' | 'outline';
@@ -29,9 +29,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary:
-      'bg-vino hover:bg-vino-hover text-white shadow-sm focus:ring-vino-hover dark:bg-vino-light dark:hover:bg-vino',
+      'bg-vino hover:bg-vino-hover text-white shadow-sm focus:ring-vino-hover dark:bg-[#8b1518] dark:hover:bg-[#a82e2e]',
     secondary:
-      'bg-white dark:bg-neutral-800 text-text-main dark:text-neutral-100 border border-border-subtle dark:border-neutral-700 hover:bg-surface-low dark:hover:bg-neutral-700/60 focus:ring-vino',
+      'bg-white dark:bg-[#1b1416] text-text-main dark:text-[#f8f2f0] border border-border-subtle dark:border-[#382628] hover:bg-surface-low dark:hover:bg-[#2f2225] focus:ring-vino',
     danger:
       'bg-red-700 hover:bg-red-800 text-white shadow-sm focus:ring-red-600 dark:bg-red-700 dark:hover:bg-red-800',
     'danger-outline':
@@ -39,9 +39,9 @@ export const Button: React.FC<ButtonProps> = ({
     'danger-ghost':
       'bg-transparent text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 focus:ring-red-500',
     ghost:
-      'bg-transparent text-text-muted hover:text-text-main hover:bg-surface-low dark:hover:bg-neutral-800 focus:ring-vino',
+      'bg-transparent text-text-muted hover:text-text-main hover:bg-surface-low dark:hover:bg-[#1f1618] focus:ring-vino',
     outline:
-      'border-2 border-vino text-vino hover:bg-vino hover:text-white dark:border-vino-light dark:text-vino-light dark:hover:bg-vino-light dark:hover:text-neutral-900',
+      'border-2 border-vino text-vino hover:bg-vino hover:text-white dark:border-[#ffdad6] dark:text-[#ffdad6] dark:hover:bg-[#8b1518] dark:hover:text-white',
   };
 
   return (
@@ -51,7 +51,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+        <Icon name="progress_activity" size={16} className="icon-spin shrink-0" />
       ) : icon ? (
         <span className="shrink-0">{icon}</span>
       ) : null}

@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Home, Trash2, AlertTriangle, UserCheck, UserPlus } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import type { CasaDePaz, CdpInput } from '../../types/estructura';
 
 interface CasaDePazModalProps {
@@ -144,7 +144,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
         isOpen={isOpen && !showDeleteConfirm}
         onClose={onClose}
         title={isEdit ? `Editar Casa: ${casa?.codigo}` : 'Registrar Nueva Casa de Paz'}
-        headerIcon={<Home className="w-5 h-5 text-vino dark:text-vino-light" />}
+        headerIcon={<Icon name="home" size={20} className="text-vino dark:text-vino-light" />}
         maxWidth="xl"
         footer={
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
@@ -154,7 +154,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                   type="button"
                   variant="danger-outline"
                   onClick={() => setShowDeleteConfirm(true)}
-                  icon={<Trash2 className="w-4 h-4" />}
+                  icon={<Icon name="delete" size={16} />}
                 >
                   Baja Defensiva
                 </Button>
@@ -190,7 +190,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                   Código de la Casa <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -203,7 +203,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                   Red Ministerial <span className="text-red-500">*</span>
                 </label>
                 <Select
@@ -222,7 +222,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                   Anfitrión de la Casa <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -235,7 +235,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                   Teléfono de Contacto <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -248,7 +248,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                   Dirección Física <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -262,7 +262,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
 
               {isEdit && (
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                     Estado Operativo
                   </label>
                   <Select
@@ -293,11 +293,11 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                   className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     modoUsuario === 'existente'
                       ? 'bg-surface-container dark:bg-vino/20 border-vino dark:border-vino-light text-vino dark:text-vino-light shadow-sm'
-                      : 'border-border-subtle dark:border-neutral-700 text-text-muted hover:bg-surface-low dark:hover:bg-neutral-800'
+                      : 'border-border-subtle dark:border-[#382628] text-text-muted hover:bg-surface-low dark:hover:bg-[#241a1c]'
                   }`}
                   onClick={() => setModoUsuario('existente')}
                 >
-                  <UserCheck className="w-4 h-4" />
+                  <Icon name="how_to_reg" size={16} />
                   <span>Asignar Líder Existente</span>
                 </button>
                 <button
@@ -305,18 +305,18 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                   className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     modoUsuario === 'nuevo'
                       ? 'bg-surface-container dark:bg-vino/20 border-vino dark:border-vino-light text-vino dark:text-vino-light shadow-sm'
-                      : 'border-border-subtle dark:border-neutral-700 text-text-muted hover:bg-surface-low dark:hover:bg-neutral-800'
+                      : 'border-border-subtle dark:border-[#382628] text-text-muted hover:bg-surface-low dark:hover:bg-[#241a1c]'
                   }`}
                   onClick={() => setModoUsuario('nuevo')}
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <Icon name="person_add" size={16} />
                   <span>Crear Nuevo Usuario Líder</span>
                 </button>
               </div>
 
               {modoUsuario === 'existente' ? (
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                     Seleccionar Usuario
                   </label>
                   <Select
@@ -336,9 +336,9 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-surface-low dark:bg-neutral-900 border border-border-subtle dark:border-neutral-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-surface-low dark:bg-[#150f10] border border-border-subtle dark:border-[#382628]">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                       Nombre <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -349,7 +349,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                       Apellido
                     </label>
                     <Input
@@ -360,7 +360,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                       Nombre de Usuario <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -371,7 +371,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-muted dark:text-[#d4c2bf] mb-1.5">
                       Contraseña Temporal <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -395,7 +395,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           title="Baja Defensiva de Casa de Paz"
-          headerIcon={<AlertTriangle className="w-5 h-5 text-red-500" />}
+          headerIcon={<Icon name="warning" size={20} className="text-red-500" />}
           maxWidth="md"
           footer={
             <div className="flex items-center justify-end gap-2.5 w-full">
@@ -412,7 +412,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
                 isLoading={isDeleting}
-                icon={<Trash2 className="w-4 h-4" />}
+                icon={<Icon name="delete" size={16} />}
               >
                 Confirmar Baja
               </Button>

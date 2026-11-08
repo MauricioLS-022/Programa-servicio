@@ -85,38 +85,43 @@ export function useUrlFilters<T extends FilterRecord>(
     return true;
   }, [filters, defaults]);
 
-  // 3. Mutación de múltiples filtros con limpieza estricta de defaults y vacíos
+  // 3. Mutación de múltiples filtros con limpieza estricta de defaults y vacíos (forma funcional atómica)
   const setFilters = useCallback(
     (updates: Partial<T>, keysToRemove?: string[]) => {
-      const newParams = new URLSearchParams(searchParams);
+      setSearchParams(
+        (prevParams) => {
+          const newParams = new URLSearchParams(prevParams);
 
-      // Eliminar claves adicionales solicitadas
-      if (keysToRemove && keysToRemove.length > 0) {
-        for (const k of keysToRemove) {
-          newParams.delete(k);
-        }
-      }
+          // Eliminar claves adicionales solicitadas
+          if (keysToRemove && keysToRemove.length > 0) {
+            for (const k of keysToRemove) {
+              newParams.delete(k);
+            }
+          }
 
-      // Aplicar actualizaciones
-      for (const [key, value] of Object.entries(updates)) {
-        const defaultValue = defaults[key as keyof T];
+          // Aplicar actualizaciones
+          for (const [key, value] of Object.entries(updates)) {
+            const defaultValue = defaults[key as keyof T];
 
-        const isEmpty = value === undefined || value === null || value === '';
-        const isDefaultVal =
-          defaultValue !== undefined &&
-          String(value ?? '').trim() === String(defaultValue ?? '').trim();
+            const isEmpty = value === undefined || value === null || value === '';
+            const isDefaultVal =
+              defaultValue !== undefined &&
+              String(value ?? '').trim() === String(defaultValue ?? '').trim();
 
-        // REGLA CANÓNICA: Si es vacío o coincide con el valor por defecto, se elimina de la URL
-        if (isEmpty || isDefaultVal) {
-          newParams.delete(key);
-        } else {
-          newParams.set(key, String(value).trim());
-        }
-      }
+            // REGLA CANÓNICA: Si es vacío o coincide con el valor por defecto, se elimina de la URL
+            if (isEmpty || isDefaultVal) {
+              newParams.delete(key);
+            } else {
+              newParams.set(key, String(value).trim());
+            }
+          }
 
-      setSearchParams(newParams, { replace: !options?.pushHistory });
+          return newParams;
+        },
+        { replace: !options?.pushHistory }
+      );
     },
-    [searchParams, setSearchParams, defaults, options?.pushHistory]
+    [setSearchParams, defaults, options?.pushHistory]
   );
 
   // 4. Mutación de un filtro individual
@@ -129,20 +134,25 @@ export function useUrlFilters<T extends FilterRecord>(
 
   // 5. Restablecimiento completo de filtros a valores por defecto (limpieza de URL)
   const resetFilters = useCallback(() => {
-    const newParams = new URLSearchParams(searchParams);
+    setSearchParams(
+      (prevParams) => {
+        const newParams = new URLSearchParams(prevParams);
 
-    for (const key of Object.keys(defaults)) {
-      newParams.delete(key);
-    }
+        for (const key of Object.keys(defaults)) {
+          newParams.delete(key);
+        }
 
-    if (options?.cleanupKeys) {
-      for (const k of options.cleanupKeys) {
-        newParams.delete(k);
-      }
-    }
+        if (options?.cleanupKeys) {
+          for (const k of options.cleanupKeys) {
+            newParams.delete(k);
+          }
+        }
 
-    setSearchParams(newParams, { replace: !options?.pushHistory });
-  }, [searchParams, setSearchParams, defaults, options?.cleanupKeys, options?.pushHistory]);
+        return newParams;
+      },
+      { replace: !options?.pushHistory }
+    );
+  }, [setSearchParams, defaults, options?.cleanupKeys, options?.pushHistory]);
 
   return {
     filters,

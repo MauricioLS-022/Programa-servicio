@@ -109,5 +109,34 @@ describe('DashboardFilterBar Component', () => {
     fireEvent.click(clearBtn);
     expect(handleSearchChange).toHaveBeenCalledWith('');
   });
+
+  it('llama a onRedChange al seleccionar una red en el desplegable de red sin sobreescribir', () => {
+    const handleRedChange = vi.fn();
+    const handleCdpChange = vi.fn();
+
+    render(
+      <DashboardFilterBar
+        rol="admin"
+        nivel="red"
+        onNivelChange={vi.fn()}
+        redId={1}
+        onRedChange={handleRedChange}
+        redes={redesMock}
+        cdpId=""
+        onCdpChange={handleCdpChange}
+        casas={casasMock}
+        searchQuery=""
+        onSearchChange={vi.fn()}
+        onReset={vi.fn()}
+      />
+    );
+
+    const selectRed = screen.getByLabelText('Seleccionar red ministerial');
+    expect(selectRed).toBeInTheDocument();
+    fireEvent.change(selectRed, { target: { value: '2' } });
+
+    expect(handleRedChange).toHaveBeenCalledWith('2');
+    expect(handleCdpChange).not.toHaveBeenCalled();
+  });
 });
 

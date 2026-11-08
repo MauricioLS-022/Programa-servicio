@@ -78,10 +78,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
             <select
               id="selectRed"
               value={redId}
-              onChange={(e) => {
-                onRedChange(e.target.value);
-                onCdpChange(''); // Reiniciar CDP al cambiar de red
-              }}
+              onChange={(e) => onRedChange(e.target.value)}
               className="filter-select"
               aria-label="Seleccionar red ministerial"
             >

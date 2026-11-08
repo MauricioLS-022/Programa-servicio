@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, PauseCircle, PlayCircle, Trash2, X, Network } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import type { Red } from '../../types/estructura';
 
 interface RedBottomSheetProps {
@@ -48,7 +48,7 @@ export const RedBottomSheet: React.FC<RedBottomSheetProps> = ({
         <div className="bottom-sheet-header">
           <div className="bottom-sheet-title-row">
             <div className="bottom-sheet-icon">
-              <Network className="w-5 h-5" />
+              <Icon name="hub" size={20} />
             </div>
             <div>
               <h3 className="bottom-sheet-title">Red {cleanName}</h3>
@@ -63,7 +63,7 @@ export const RedBottomSheet: React.FC<RedBottomSheetProps> = ({
             onClick={onClose}
             aria-label="Cerrar opciones"
           >
-            <X className="w-5 h-5" />
+            <Icon name="close" size={20} />
           </button>
         </div>
 
@@ -76,7 +76,7 @@ export const RedBottomSheet: React.FC<RedBottomSheetProps> = ({
               onEdit(red);
             }}
           >
-            <Edit className="w-5 h-5" />
+            <Icon name="edit" size={20} />
             <span>Editar red</span>
           </button>
 
@@ -90,12 +90,12 @@ export const RedBottomSheet: React.FC<RedBottomSheetProps> = ({
           >
             {red.is_active ? (
               <>
-                <PauseCircle className="w-5 h-5" />
+                <Icon name="pause_circle" size={20} />
                 <span>Poner en pausa</span>
               </>
             ) : (
               <>
-                <PlayCircle className="w-5 h-5" />
+                <Icon name="play_circle" size={20} />
                 <span>Reactivar red</span>
               </>
             )}
@@ -110,7 +110,7 @@ export const RedBottomSheet: React.FC<RedBottomSheetProps> = ({
                 onDelete(red.id);
               }}
             >
-              <Trash2 className="w-5 h-5" />
+              <Icon name="delete" size={20} />
               <span>Eliminar red</span>
             </button>
           )}

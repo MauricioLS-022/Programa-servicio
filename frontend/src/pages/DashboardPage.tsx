@@ -19,14 +19,29 @@ import { DashboardRedSidebar } from '../components/dashboard/DashboardRedSidebar
 import { DashboardCdpFicha } from '../components/dashboard/DashboardCdpFicha';
 import { DashboardCdpHistoryTable } from '../components/dashboard/DashboardCdpHistoryTable';
 import { DashboardCdpSidebar } from '../components/dashboard/DashboardCdpSidebar';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { LiderDashboardView } from '../components/dashboard/lider/LiderDashboardView';
+import { Icon } from '../components/ui/Icon';
 import '../styles/dashboard.css';
 
 export const DashboardPage: React.FC = () => {
-  useDocumentTitle('Dashboard');
-
   const { user } = useAuth();
+  const isLiderCdp = user?.rol === 'lider_cdp' || (user?.rol as unknown as string) === 'cdp';
+
+  useDocumentTitle(isLiderCdp ? 'Panel de Casa de Paz' : 'Dashboard');
+
+  if (isLiderCdp) {
+    return <LiderDashboardView />;
+  }
+
   const isSupervisor = user?.rol === 'supervisor';
+
+  // Carga de selectores antes de derivar defaults de supervisor
+  const { redes } = useRedes();
+  const { casas: allCasas } = useCasasDePaz();
+
+  const supervisorRedId = useMemo(() => {
+    return isSupervisor && redes.length > 0 ? String(redes[0].id) : '';
+  }, [isSupervisor, redes]);
 
   // Configuración de valores por defecto (Rutas limpias sin filtros redundantes en la URL)
   const defaultNivel: 'general' | 'red' | 'cdp' = isSupervisor ? 'red' : 'general';
@@ -41,30 +56,43 @@ export const DashboardPage: React.FC = () => {
     () => ({
       nivel: defaultNivel,
       periodo: 'semana',
-      red_id: '',
+      red_id: isSupervisor ? supervisorRedId : '',
       cdp_id: '',
       q: '',
     }),
-    [defaultNivel]
+    [defaultNivel, isSupervisor, supervisorRedId]
   );
 
   // Estados de control jerárquico sincronizados con la URL como Fuente Única de la Verdad (SSOT)
   const { filters, setFilter, setFilters, resetFilters } = useUrlFilters(defaults);
-  const nivel: 'general' | 'red' | 'cdp' = (filters.nivel as 'general' | 'red' | 'cdp') || defaultNivel;
+  
+  // Candado defensivo: Supervisor restringido estrictamente a 'red' o 'cdp'
+  const rawNivel = (filters.nivel as 'general' | 'red' | 'cdp') || defaultNivel;
+  const nivel: 'general' | 'red' | 'cdp' = isSupervisor && rawNivel === 'general' ? 'red' : rawNivel;
   const periodo: PeriodoTipo = (filters.periodo as PeriodoTipo) || 'semana';
-  const redId: string = String(filters.red_id || '');
+  const redId: string = String(filters.red_id || (isSupervisor ? supervisorRedId : ''));
   const cdpId: string = String(filters.cdp_id || '');
   const searchQuery: string = String(filters.q || '');
 
-  // Carga de selectores y métricas del dashboard
-  const { redes } = useRedes();
-  const { casas: allCasas } = useCasasDePaz();
+  // Métricas del dashboard
   const { metricas, isLoading, isError, error, refetch } = useDashboard({
     nivel,
     red_id: redId || undefined,
     cdp_id: cdpId || undefined,
     periodo,
   });
+
+  // Corrección reactiva defensiva: impedir que supervisor quede con nivel=general o sin su red asignada
+  useEffect(() => {
+    if (isSupervisor) {
+      if (filters.nivel === 'general') {
+        setFilter('nivel', 'red');
+      }
+      if (supervisorRedId && (!filters.red_id || (filters.red_id !== supervisorRedId && nivel === 'red'))) {
+        setFilter('red_id', supervisorRedId);
+      }
+    }
+  }, [isSupervisor, filters.nivel, filters.red_id, supervisorRedId, nivel, setFilter]);
 
   // Filtrado reactivo de Casas de Paz por búsqueda rápida
   const filteredCasas = useMemo(() => {
@@ -110,8 +138,18 @@ export const DashboardPage: React.FC = () => {
 
   // Manejo de reinicio de filtros (limpia la URL dejándola canónica: /dashboard)
   const handleReset = useCallback(() => {
-    resetFilters();
-  }, [resetFilters]);
+    if (isSupervisor) {
+      setFilters({
+        nivel: 'red',
+        periodo: 'semana',
+        red_id: supervisorRedId,
+        cdp_id: '',
+        q: '',
+      });
+    } else {
+      resetFilters();
+    }
+  }, [isSupervisor, supervisorRedId, resetFilters, setFilters]);
 
   // Validación de estado de supervisor sin red asignada
   const supervisorSinRed = isSupervisor && (metricas?.sin_red_asignada || (metricas && Object.keys(metricas).length === 0 && !isLoading));
@@ -149,6 +187,19 @@ export const DashboardPage: React.FC = () => {
               rol={user?.rol}
               nivel={nivel}
               onNivelChange={(newNivel) => {
+                if (isSupervisor) {
+                  const targetRed = supervisorRedId || redId || (redes.length > 0 ? String(redes[0].id) : '');
+                  if (newNivel === 'cdp') {
+                    const candidateCasas = targetRed
+                      ? allCasas.filter((c) => String(c.red_id) === String(targetRed))
+                      : allCasas;
+                    const firstCdpId = candidateCasas.length > 0 ? String(candidateCasas[0].id) : '';
+                    setFilters({ nivel: 'cdp', red_id: targetRed, cdp_id: firstCdpId });
+                  } else {
+                    setFilters({ nivel: 'red', red_id: targetRed, cdp_id: '' });
+                  }
+                  return;
+                }
                 if (newNivel === 'general') {
                   setFilters({ nivel: 'general', red_id: '', cdp_id: '' });
                 } else if (newNivel === 'red') {
@@ -165,6 +216,7 @@ export const DashboardPage: React.FC = () => {
               }}
               redId={redId}
               onRedChange={(newRedId) => {
+                if (isSupervisor) return;
                 const redStr = String(newRedId || '');
                 if (nivel === 'cdp') {
                   if (redStr) {
@@ -234,9 +286,10 @@ export const DashboardPage: React.FC = () => {
                   gap: '0.75rem',
                 }}
               >
-                <Loader2
-                  className="animate-spin text-vino"
-                  style={{ width: '2.5rem', height: '2.5rem' }}
+                <Icon
+                  name="progress_activity"
+                  size={40}
+                  className="icon-spin text-vino"
                 />
                 <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.95rem', fontWeight: 600 }}>
                   Actualizando métricas ministeriales...
@@ -272,7 +325,7 @@ export const DashboardPage: React.FC = () => {
                   className="quick-action-btn"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto' }}
                 >
-                  <RefreshCw style={{ width: '1rem', height: '1rem' }} />
+                  <Icon name="refresh" size={16} />
                   Reintentar
                 </button>
               </div>
@@ -328,6 +381,10 @@ export const DashboardPage: React.FC = () => {
                           ranking={metricas?.ranking_redes}
                           periodo={periodo}
                           periodoNombre={metricas?.periodo_nombre}
+                          redes={redes}
+                          onSelectRed={(selectedRedId) =>
+                            setFilters({ nivel: 'red', red_id: String(selectedRedId), cdp_id: '' })
+                          }
                         />
 
                         <DashboardFrutoCard

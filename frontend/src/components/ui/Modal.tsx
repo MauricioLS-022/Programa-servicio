@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Icon } from './Icon';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': 'max-w-3xl sm:max-w-4xl lg:max-w-5xl',
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-5 overflow-hidden">
       {/* Backdrop con desenfoque y animación de opacidad */}
       <div
@@ -108,7 +109,7 @@ export const Modal: React.FC<ModalProps> = ({
               className="modal-close w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 text-white flex items-center justify-center transition-all cursor-pointer border-none shrink-0"
               aria-label="Cerrar modal"
             >
-              <X className="w-5 h-5" />
+              <Icon name="close" size={20} />
             </button>
           </div>
         )}
@@ -130,4 +131,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

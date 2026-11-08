@@ -26,7 +26,7 @@ export const LoginPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isCaptchaExecuting, setIsCaptchaExecuting] = useState(false);
 
-  const { login, isLoggingIn } = useAuth();
+  const { login, isLoggingIn } = useAuth({ checkSession: false });
   const { data: authConfig } = useAuthConfig();
   const { theme, toggleTheme } = useTheme();
   const { success } = useToast();
@@ -38,7 +38,7 @@ export const LoginPage: React.FC = () => {
   const siteKey = authConfig?.siteKey || (import.meta.env?.VITE_RECAPTCHA_SITE_KEY as string | undefined) || '';
   const isDev = Boolean(authConfig?.isDev);
 
-  // Inyección dinámica de Google reCAPTCHA v3 y control de visibilidad del badge (solo activo en login)
+  // Inyección dinámica de Google reCAPTCHA v3, preconnects y control de visibilidad del badge (solo activo en login)
   useEffect(() => {
     const setBadgeVisibility = (visible: boolean) => {
       const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null;
@@ -50,6 +50,12 @@ export const LoginPage: React.FC = () => {
     };
 
     if (siteKey) {
+      // Preconnect hacia servidores de Google para acelerar handshake SSL
+      const preconnectG = document.createElement('link');
+      preconnectG.rel = 'preconnect';
+      preconnectG.href = 'https://www.google.com';
+      document.head.appendChild(preconnectG);
+
       const scriptId = 'google-recaptcha-v3-script';
       if (!document.getElementById(scriptId)) {
         const script = document.createElement('script');
@@ -63,7 +69,7 @@ export const LoginPage: React.FC = () => {
       // Google inyecta el badge asíncronamente; nos aseguramos de hacerlo visible en login
       setBadgeVisibility(true);
       const interval = setInterval(() => setBadgeVisibility(true), 300);
-      const timeout = setTimeout(() => clearInterval(interval), 4000);
+      const timeout = setTimeout(() => clearInterval(interval), 5000);
 
       return () => {
         clearInterval(interval);
@@ -77,7 +83,7 @@ export const LoginPage: React.FC = () => {
     };
   }, [siteKey]);
 
-  // Captura de token con temporizador defensivo (4s) y detección de adblockers
+  // Captura de token con temporizador defensivo adaptativo (10s) y reintento automático
   const getRecaptchaToken = async (key: string): Promise<string> => {
     if (!key) return '';
 
@@ -93,48 +99,58 @@ export const LoginPage: React.FC = () => {
       ? grecaptcha.enterprise
       : grecaptcha;
 
-    return new Promise((resolve, reject) => {
-      let hasCompleted = false;
+    const executeOnce = (timeoutMs: number): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        let hasCompleted = false;
 
-      const timeoutId = setTimeout(() => {
-        if (!hasCompleted) {
-          hasCompleted = true;
-          reject(
-            new Error(
-              'La verificación de seguridad tardó demasiado. Por favor, verifica tu conexión a internet e inténtalo de nuevo.'
-            )
-          );
-        }
-      }, 4000);
+        const timeoutId = setTimeout(() => {
+          if (!hasCompleted) {
+            hasCompleted = true;
+            reject(
+              new Error(
+                'La verificación de seguridad tardó más de lo esperado debido a la latencia de red. Tus datos se han conservado; por favor presiona "Ingresar al Sistema" para reintentar.'
+              )
+            );
+          }
+        }, timeoutMs);
 
-      client.ready(() => {
-        try {
-          client
-            .execute(key, { action: 'login' })
-            .then((token) => {
-              if (hasCompleted) return;
-              hasCompleted = true;
-              clearTimeout(timeoutId);
-              resolve(token);
-            })
-            .catch((err: unknown) => {
-              if (hasCompleted) return;
-              hasCompleted = true;
-              clearTimeout(timeoutId);
-              reject(err instanceof Error ? err : new Error('Error en la verificación de seguridad.'));
-            });
-        } catch (syncErr: unknown) {
-          if (hasCompleted) return;
-          hasCompleted = true;
-          clearTimeout(timeoutId);
-          reject(
-            syncErr instanceof Error
-              ? syncErr
-              : new Error('No fue posible completar la verificación de seguridad.')
-          );
-        }
+        client.ready(() => {
+          try {
+            client
+              .execute(key, { action: 'login' })
+              .then((token) => {
+                if (hasCompleted) return;
+                hasCompleted = true;
+                clearTimeout(timeoutId);
+                resolve(token);
+              })
+              .catch((err: unknown) => {
+                if (hasCompleted) return;
+                hasCompleted = true;
+                clearTimeout(timeoutId);
+                reject(err instanceof Error ? err : new Error('Error en la verificación de seguridad.'));
+              });
+          } catch (syncErr: unknown) {
+            if (hasCompleted) return;
+            hasCompleted = true;
+            clearTimeout(timeoutId);
+            reject(
+              syncErr instanceof Error
+                ? syncErr
+                : new Error('No fue posible completar la verificación de seguridad.')
+            );
+          }
+        });
       });
-    });
+    };
+
+    try {
+      // Primer intento adaptativo con 6s
+      return await executeOnce(6000);
+    } catch {
+      // Segundo intento de rescate con 4s adicionales (10s totales)
+      return await executeOnce(4000);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,12 +169,18 @@ export const LoginPage: React.FC = () => {
         recaptchaToken = await getRecaptchaToken(siteKey);
       } catch (captchaErr) {
         setIsCaptchaExecuting(false);
-        if (captchaErr instanceof Error) {
-          setErrorMsg(captchaErr.message);
+        // Si operamos en desarrollo (isDev), permitimos bypass elegante para no bloquear al usuario
+        if (isDev) {
+          console.warn('[LoginPage] Omitiendo reCAPTCHA en entorno de desarrollo tras demora de red:', captchaErr);
+          recaptchaToken = '';
         } else {
-          setErrorMsg('Error de verificación de seguridad');
+          if (captchaErr instanceof Error) {
+            setErrorMsg(captchaErr.message);
+          } else {
+            setErrorMsg('Error de verificación de seguridad');
+          }
+          return;
         }
-        return;
       }
       setIsCaptchaExecuting(false);
     }

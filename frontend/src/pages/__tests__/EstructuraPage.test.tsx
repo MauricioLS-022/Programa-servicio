@@ -312,4 +312,34 @@ describe('EstructuraPage Component (Paridad Jinja2 estructura_admin.html)', () =
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
+
+  it('prefiltra por defecto a su red asignada y muestra solo sus casas cuando el rol es supervisor', () => {
+    mockUser.rol = 'supervisor';
+    mockUser.nombre = 'Pedro Pérez';
+
+    render(
+      <MemoryRouter initialEntries={['/estructura']}>
+        <EstructuraPage />
+      </MemoryRouter>
+    );
+
+    // Debe mostrar encabezado específico de supervisor
+    expect(screen.getByText('Estructura de mi Red')).toBeInTheDocument();
+
+    // No debe mostrar botón de Nueva Red ni Nueva Casa de Paz
+    expect(screen.queryByText('Nueva Red')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nueva Casa de Paz')).not.toBeInTheDocument();
+
+    // Solo debe verse la casa de su red (Red Hebrón id:1 -> HEB-001) y no la de Red Sur (SUR-001)
+    expect(screen.getByText('Casa "HEB-001"')).toBeInTheDocument();
+    expect(screen.queryByText('Casa "SUR-001"')).not.toBeInTheDocument();
+
+    // La tarjeta de su red debe estar activa
+    const redBtn = screen.getByRole('button', { name: /Red Hebrón/i });
+    expect(redBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // Restaurar usuario
+    mockUser.rol = 'admin';
+    mockUser.nombre = 'Administrador';
+  });
 });

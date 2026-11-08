@@ -1,0 +1,465 @@
+/* ==========================================================================
+   VINO NUEVO — SISTEMA DE TABLAS, BOTONES Y PAGINACIÓN INSTITUCIONAL
+   Hoja de estilos compartida para unificar la estética de Reportes, Usuarios,
+   Líderes y futuras pantallas del sistema (Modo Claro y Modo Oscuro).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CONTENEDOR Y CABECERA DE TABLA (JINJA2 PARITY: DEGRADADO VINO CANÓNICO)
+   -------------------------------------------------------------------------- */
+.table-wrapper,
+.table-section {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid rgba(221, 192, 189, 0.35);
+  box-shadow: 0 4px 15px rgba(57, 0, 2, 0.04);
+  overflow: hidden;
+  width: 100%;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.table-header {
+  background: linear-gradient(135deg, #700204 0%, #390002 100%);
+  padding: 1.15rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #ffffff;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.table-header h2 {
+  font-family: var(--font-serif, 'Noto Serif', serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff !important;
+  letter-spacing: -0.015em;
+}
+
+.table-header .table-header-meta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   2. ESTRUCTURA Y CELDAS DE TABLA (COLORES CANÓNICOS DE REPORTES)
+   -------------------------------------------------------------------------- */
+.table-wrapper table,
+.table-wrapper .user-table,
+.table-wrapper .leader-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table-wrapper th,
+.table-wrapper .user-table th,
+.table-wrapper .leader-table th {
+  background-color: var(--surface-container-high, #f8e4e3);
+  padding: 1rem 1.25rem;
+  color: var(--primary, #390002);
+  font-family: var(--font-serif, 'Noto Serif', serif);
+  font-weight: 700;
+  font-size: 0.88rem;
+  border-bottom: 1px solid rgba(137, 114, 111, 0.25);
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+.table-wrapper td,
+.table-wrapper .user-table td,
+.table-wrapper .leader-table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-main, #231919);
+  border-bottom: 1px solid rgba(137, 114, 111, 0.15);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table-wrapper th.text-center,
+.table-wrapper td.text-center,
+.table-wrapper .user-table th.text-center,
+.table-wrapper .user-table td.text-center,
+.table-wrapper .leader-table th.text-center,
+.table-wrapper .leader-table td.text-center {
+  text-align: center !important;
+}
+
+.table-wrapper th.text-right,
+.table-wrapper td.text-right,
+.table-wrapper .user-table th.text-right,
+.table-wrapper .user-table td.text-right,
+.table-wrapper .leader-table th.text-right,
+.table-wrapper .leader-table td.text-right {
+  text-align: right !important;
+}
+
+.table-wrapper tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table-wrapper tbody tr:hover,
+.table-wrapper .user-table tbody tr:hover,
+.table-wrapper .leader-table tbody tr:hover {
+  background-color: #fdfaf9;
+}
+
+/* --------------------------------------------------------------------------
+   3. BOTONES DE ACCIÓN EN FILAS (.btn-icon)
+   -------------------------------------------------------------------------- */
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 0.45rem;
+  border-radius: 0.5rem;
+  color: var(--on-surface-variant, #564240);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon.btn-view:hover,
+.btn-icon.btn-toggle:hover {
+  background-color: rgba(112, 2, 4, 0.09);
+  color: #4a0002;
+}
+
+.btn-icon.btn-edit:hover {
+  background-color: rgba(107, 114, 58, 0.14);
+  color: #3b401c;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: rgba(255, 218, 214, 0.45);
+  color: #ba1a1a;
+}
+
+/* --------------------------------------------------------------------------
+   4. PAGINACIÓN MINIMALISTA INSTITUCIONAL (LIGHT & DARK)
+   -------------------------------------------------------------------------- */
+.pagination-footer {
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid rgba(137, 114, 111, 0.15);
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--on-surface-variant, #564240);
+}
+
+@media (min-width: 640px) {
+  .pagination-footer {
+    flex-direction: row;
+  }
+}
+
+.pagination-footer .pagination-info {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant, #564240);
+  font-weight: 500;
+}
+
+.pagination-footer .pagination-info strong {
+  color: var(--primary, #390002);
+  font-weight: 700;
+}
+
+.pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Botón individual minimalista */
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #f8e4e3;
+  color: #564240;
+  border: 1px solid rgba(137, 114, 111, 0.2);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+  background-color: rgba(112, 2, 4, 0.08);
+  color: #390002;
+  border-color: rgba(112, 2, 4, 0.3);
+}
+
+.pagination-btn.active {
+  background: linear-gradient(135deg, #700204 0%, #390002 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(57, 0, 2, 0.25);
+  font-weight: 700;
+  cursor: default;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: transparent;
+  background-color: transparent;
+  color: #927573;
+}
+
+/* --------------------------------------------------------------------------
+   5. BOTONES DE MODAL CANÓNICOS (.btn-modal)
+   -------------------------------------------------------------------------- */
+.btn-modal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.35rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  text-decoration: none;
+  user-select: none;
+  min-height: 38px;
+}
+
+.btn-modal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modal-cancel {
+  background-color: var(--surface-container-high, #f8e4e3);
+  color: var(--on-surface-variant, #564240);
+  border: 1px solid rgba(137, 114, 111, 0.25);
+}
+
+.btn-modal-cancel:hover:not(:disabled) {
+  background-color: rgba(137, 114, 111, 0.25);
+  color: var(--primary, #390002);
+  transform: translateY(-1px);
+}
+
+.btn-modal-save {
+  background: linear-gradient(135deg, #700204 0%, #390002 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(57, 0, 2, 0.15);
+}
+
+.btn-modal-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b0306 0%, #4a0002 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(57, 0, 2, 0.25);
+  color: #ffffff;
+}
+
+.btn-modal-delete {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.btn-modal-delete:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.35);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   6. MODO OSCURO ([data-theme="dark"] y .dark)
+   Sincronizado fielmente con: dark_theme.css
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] .table-wrapper,
+.dark .table-wrapper,
+[data-theme="dark"] .table-section,
+.dark .table-section {
+  background: #1b1416;
+  background-color: #1b1416;
+  border: 1.5px solid rgba(221, 192, 189, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+  color: #f8f2f0;
+}
+
+[data-theme="dark"] .table-header,
+.dark .table-header {
+  background: linear-gradient(135deg, #38070a 0%, #1c0305 100%);
+  border-bottom: 1px solid rgba(221, 192, 189, 0.2);
+}
+
+[data-theme="dark"] .table-header h2,
+.dark .table-header h2 {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .table-wrapper th,
+.dark .table-wrapper th,
+[data-theme="dark"] .table-wrapper .user-table th,
+.dark .table-wrapper .user-table th,
+[data-theme="dark"] .table-wrapper .leader-table th,
+.dark .table-wrapper .leader-table th {
+  background-color: #1f1618;
+  color: #f8deda;
+  border-bottom: 1.5px solid rgba(221, 192, 189, 0.2);
+}
+
+[data-theme="dark"] .table-wrapper td,
+.dark .table-wrapper td,
+[data-theme="dark"] .table-wrapper .user-table td,
+.dark .table-wrapper .user-table td,
+[data-theme="dark"] .table-wrapper .leader-table td,
+.dark .table-wrapper .leader-table td {
+  background-color: #1b1416;
+  border-bottom: 1px solid rgba(221, 192, 189, 0.2);
+  color: #f8f2f0;
+}
+
+[data-theme="dark"] .table-wrapper tbody tr:hover,
+.dark .table-wrapper tbody tr:hover,
+[data-theme="dark"] .table-wrapper .user-table tbody tr:hover,
+.dark .table-wrapper .user-table tbody tr:hover,
+[data-theme="dark"] .table-wrapper .leader-table tbody tr:hover,
+.dark .table-wrapper .leader-table tbody tr:hover {
+  background-color: #2f2225;
+}
+
+[data-theme="dark"] .table-wrapper tbody tr:hover td,
+.dark .table-wrapper tbody tr:hover td,
+[data-theme="dark"] .table-wrapper .user-table tbody tr:hover td,
+.dark .table-wrapper .user-table tbody tr:hover td,
+[data-theme="dark"] .table-wrapper .leader-table tbody tr:hover td,
+.dark .table-wrapper .leader-table tbody tr:hover td {
+  background-color: #2f2225;
+}
+
+/* Botones de acción en modo oscuro */
+[data-theme="dark"] .btn-icon,
+.dark .btn-icon {
+  color: #d4c2bf;
+}
+
+[data-theme="dark"] .btn-icon.btn-view:hover,
+[data-theme="dark"] .btn-icon.btn-toggle:hover,
+.dark .btn-icon.btn-view:hover,
+.dark .btn-icon.btn-toggle:hover {
+  background-color: rgba(248, 222, 218, 0.15);
+  color: #f8deda;
+}
+
+[data-theme="dark"] .btn-icon.btn-edit:hover,
+.dark .btn-icon.btn-edit:hover {
+  background-color: rgba(192, 202, 116, 0.18);
+  color: #dbe786;
+}
+
+[data-theme="dark"] .btn-icon.btn-delete:hover,
+.dark .btn-icon.btn-delete:hover {
+  background-color: rgba(255, 180, 171, 0.18);
+  color: #ffb4ab;
+}
+
+/* Paginación minimalista en modo oscuro (Screenshot feedback) */
+[data-theme="dark"] .pagination-footer,
+.dark .pagination-footer {
+  background-color: #1b1416;
+  border-top: 1px solid rgba(221, 192, 189, 0.2);
+  color: #d4c2bf;
+}
+
+[data-theme="dark"] .pagination-footer .pagination-info,
+.dark .pagination-footer .pagination-info {
+  color: #d4c2bf;
+}
+
+[data-theme="dark"] .pagination-footer .pagination-info strong,
+.dark .pagination-footer .pagination-info strong {
+  color: #f8deda;
+}
+
+[data-theme="dark"] .pagination-btn,
+.dark .pagination-btn {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #d4c2bf;
+  border: 1px solid rgba(221, 192, 189, 0.14);
+}
+
+[data-theme="dark"] .pagination-btn:hover:not(:disabled):not(.active),
+.dark .pagination-btn:hover:not(:disabled):not(.active) {
+  background-color: rgba(248, 222, 218, 0.1);
+  color: #f8deda;
+  border-color: rgba(221, 192, 189, 0.3);
+}
+
+[data-theme="dark"] .pagination-btn.active,
+.dark .pagination-btn.active {
+  background: #8b1518;
+  background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%);
+  color: #ffffff;
+  border: 1px solid rgba(248, 222, 218, 0.3);
+  box-shadow: 0 2px 10px rgba(112, 2, 4, 0.5);
+}
+
+[data-theme="dark"] .pagination-btn:disabled,
+.dark .pagination-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  background-color: transparent;
+  border-color: transparent;
+  color: #7b6865;
+}
+
+/* Modales en modo oscuro */
+[data-theme="dark"] .btn-modal-cancel,
+.dark .btn-modal-cancel {
+  background: #2f2225;
+  color: #d4c2bf;
+  border: 1px solid rgba(221, 192, 189, 0.25);
+}
+
+[data-theme="dark"] .btn-modal-cancel:hover:not(:disabled),
+.dark .btn-modal-cancel:hover:not(:disabled) {
+  background: #3d2c30;
+  color: #f8f2f0;
+  border-color: rgba(221, 192, 189, 0.35);
+}
+
+[data-theme="dark"] .btn-modal-save,
+.dark .btn-modal-save {
+  background: #8b1518;
+  background-image: linear-gradient(135deg, #9e1a1e 0%, #700204 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .btn-modal-save:hover:not(:disabled),
+.dark .btn-modal-save:hover:not(:disabled) {
+  background: #a31c20;
+  background-image: linear-gradient(135deg, #be2227 0%, #8b0306 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}

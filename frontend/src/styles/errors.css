@@ -1,0 +1,309 @@
+/* ==========================================================================
+   Error Pages Styles - Vino Nuevo Theme (React SPA)
+   Paridad exacta 1 a 1 con backend/static/styles/404.css
+   ========================================================================== */
+
+:root {
+  --color1: #4A0203;
+  --color2: #780204;
+  --color3: #290101;
+  --color4: #ffffff;
+  --color5: #96292b;
+}
+
+.error-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface, #fdfbf7);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+:root.dark .error-page-wrapper {
+  background: #121212;
+}
+
+/* Círculos decorativos animados */
+.error-decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color5, #96292b) 0%, var(--color2, #780204) 100%);
+  opacity: 0.08;
+  animation: errorFloat 20s infinite ease-in-out;
+}
+
+:root.dark .decoration-circle {
+  opacity: 0.12;
+}
+
+.decoration-circle:nth-child(1) {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.decoration-circle:nth-child(2) {
+  width: 200px;
+  height: 200px;
+  bottom: -50px;
+  left: -50px;
+  animation-delay: -7s;
+}
+
+.decoration-circle:nth-child(3) {
+  width: 150px;
+  height: 150px;
+  top: 50%;
+  left: 10%;
+  animation-delay: -14s;
+}
+
+@keyframes errorFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  75% {
+    transform: translate(20px, 30px) scale(1.03);
+  }
+}
+
+/* Tarjeta principal */
+.error-card-canon {
+  position: relative;
+  z-index: 1;
+  background: var(--color4, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(41, 1, 1, 0.15), 0 0 0 1px rgba(120, 2, 4, 0.08);
+  padding: 3.5rem 3rem;
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  box-sizing: border-box;
+  animation: errorFadeInUp 0.6s ease-out;
+}
+
+:root.dark .error-card-canon {
+  background: var(--surface-container-lowest, #1b1416);
+  border: 1px solid var(--border-color, rgba(221, 192, 189, 0.18));
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes errorFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Código de Error 8rem */
+.error-code-canon {
+  font-size: 8rem;
+  font-weight: 800;
+  font-family: var(--font-serif, 'Noto Serif', 'Times New Roman', serif);
+  background: linear-gradient(135deg, var(--color1, #4A0203) 0%, var(--color2, #780204) 50%, var(--color5, #96292b) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  animation: errorPulse 2s infinite ease-in-out;
+  user-select: none;
+}
+
+.error-code-canon.code-403 {
+  background: linear-gradient(135deg, #8B6914 0%, #B8860B 50%, #DAA520 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.error-code-canon.code-500 {
+  background: linear-gradient(135deg, #780204 0%, #b91c1c 50%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.error-content-canon {
+  position: relative;
+  z-index: 1;
+}
+
+.error-title-canon {
+  color: var(--color1, #4A0203);
+  font-family: var(--font-serif, 'Noto Serif', 'Times New Roman', serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.5px;
+}
+
+:root.dark .error-title-canon {
+  color: #f5f5f5;
+}
+
+.error-message-canon {
+  color: var(--color3, #290101);
+  font-family: var(--font-serif, 'Noto Serif', 'Times New Roman', serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+  opacity: 0.85;
+}
+
+:root.dark .error-message-canon {
+  color: #a3a3a3;
+  opacity: 1;
+}
+
+.error-actions-canon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Botones canónicos */
+.btn-error-canon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: 10px;
+  font-family: var(--font-serif, 'Noto Serif', 'Times New Roman', serif);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.btn-error-primary {
+  background: linear-gradient(135deg, var(--color1, #4A0203) 0%, var(--color2, #780204) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(74, 2, 3, 0.3);
+}
+
+.btn-error-primary:hover {
+  background: linear-gradient(135deg, var(--color2, #780204) 0%, var(--color1, #4A0203) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 2, 3, 0.4);
+}
+
+.btn-error-primary:active {
+  transform: translateY(0);
+}
+
+.btn-error-secondary {
+  background: #ffffff;
+  color: var(--color1, #4A0203);
+  border: 2px solid var(--color2, #780204);
+  box-shadow: 0 2px 8px rgba(41, 1, 1, 0.08);
+}
+
+:root.dark .btn-error-secondary {
+  background: var(--surface-container, #261c1e);
+  color: #fca5a5;
+  border-color: #780204;
+}
+
+.btn-error-secondary:hover {
+  background: var(--color1, #4A0203);
+  color: #ffffff;
+  border-color: var(--color1, #4A0203);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 2, 3, 0.3);
+}
+
+.btn-error-secondary:active {
+  transform: translateY(0);
+}
+
+.error-footer-canon {
+  color: var(--color3, #290101);
+  font-family: var(--font-serif, 'Noto Serif', 'Times New Roman', serif);
+  font-size: 0.9rem;
+  opacity: 0.6;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+:root.dark .error-footer-canon {
+  color: #737373;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .error-card-canon {
+    padding: 2.25rem 1.5rem;
+    border-radius: 16px;
+  }
+
+  .error-code-canon {
+    font-size: 5.5rem;
+  }
+
+  .error-title-canon {
+    font-size: 1.4rem;
+  }
+
+  .error-message-canon {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .error-code-canon,
+  .decoration-circle,
+  .error-card-canon {
+    animation: none;
+  }
+
+  .btn-error-canon {
+    transition: none;
+  }
+}

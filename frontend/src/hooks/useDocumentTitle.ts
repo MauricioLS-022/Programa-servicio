@@ -27,7 +27,8 @@ export function getRoleTitlePrefix(rol?: UserRole | string): string {
  * @param options Opciones adicionales (ej: override para títulos independientes como Login)
  */
 export function useDocumentTitle(title?: string, options?: UseDocumentTitleOptions): void {
-  const { user } = useAuth();
+  // Si override es true (e.g. pantalla pública de Login), evitamos disparar la consulta de sesión /api/auth/me
+  const { user } = useAuth({ checkSession: !options?.override });
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

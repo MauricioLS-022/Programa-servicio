@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Network, AlertTriangle, ShieldAlert, Trash2 } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import type { Red } from '../../types/estructura';
 
 interface RedModalProps {
@@ -93,7 +93,7 @@ export const RedModal: React.FC<RedModalProps> = ({
         isOpen={isOpen && !showDeleteConfirm}
         onClose={onClose}
         title={isEdit ? `Editar Red: ${red?.nombre}` : 'Nueva Red Ministerial'}
-        headerIcon={<Network className="w-5 h-5 text-vino dark:text-vino-light" />}
+        headerIcon={<Icon name="hub" size={20} className="text-vino dark:text-vino-light" />}
         maxWidth="md"
         footer={
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
@@ -103,7 +103,7 @@ export const RedModal: React.FC<RedModalProps> = ({
                   type="button"
                   variant="danger-outline"
                   onClick={() => setShowDeleteConfirm(true)}
-                  icon={<Trash2 className="w-4 h-4" />}
+                  icon={<Icon name="delete" size={16} />}
                 >
                   Eliminar Red
                 </Button>
@@ -178,9 +178,9 @@ export const RedModal: React.FC<RedModalProps> = ({
           title={isDeleteBlocked ? 'No es posible eliminar la red' : 'Confirmar Eliminación'}
           headerIcon={
             isDeleteBlocked ? (
-              <ShieldAlert className="w-5 h-5 text-amber-500" />
+              <Icon name="gpp_maybe" size={20} className="text-amber-500" />
             ) : (
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <Icon name="warning" size={20} className="text-red-500" />
             )
           }
           maxWidth="md"
@@ -200,7 +200,7 @@ export const RedModal: React.FC<RedModalProps> = ({
                   onClick={handleConfirmDelete}
                   disabled={deleteInputText !== 'ELIMINAR' || isDeleting}
                   isLoading={isDeleting}
-                  icon={<Trash2 className="w-4 h-4" />}
+                  icon={<Icon name="delete" size={16} />}
                 >
                   Eliminar Definitivamente
                 </Button>

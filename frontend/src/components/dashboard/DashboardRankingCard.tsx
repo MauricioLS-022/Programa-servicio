@@ -1,16 +1,20 @@
 import React from 'react';
-import type { RankingRedItem } from '../../types/estructura';
+import type { RankingRedItem, Red } from '../../types/estructura';
 
 export interface DashboardRankingCardProps {
   ranking?: RankingRedItem[];
   periodo?: string;
   periodoNombre?: string;
+  redes?: Red[];
+  onSelectRed?: (redId: number | string) => void;
 }
 
 export const DashboardRankingCard: React.FC<DashboardRankingCardProps> = ({
   ranking = [],
   periodo = 'semana',
   periodoNombre = '',
+  redes = [],
+  onSelectRed,
 }) => {
   const subtitle =
     periodo === 'mes'
@@ -36,8 +40,34 @@ export const DashboardRankingCard: React.FC<DashboardRankingCardProps> = ({
             const asist = redItem.asistencia || redItem.asistencia_semana || 0;
             const colorCls = redItem.color_class || 'default';
 
+            const matchedRed = redes.find(
+              (r) =>
+                r.id === redItem.id ||
+                r.nombre.toLowerCase() === redItem.nombre.toLowerCase() ||
+                r.nombre.toLowerCase().includes(redItem.nombre.toLowerCase()) ||
+                redItem.nombre.toLowerCase().includes(r.nombre.toLowerCase())
+            );
+            const targetRedId = redItem.id || matchedRed?.id;
+            const isClickable = Boolean(onSelectRed && targetRedId);
+
             return (
-              <div key={`${redItem.nombre}-${idx}`} className={`ranking-item podium-${pos}`}>
+              <div
+                key={`${redItem.nombre}-${idx}`}
+                className={`ranking-item podium-${pos} ${isClickable ? 'ranking-item-clickable' : ''}`}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onClick={() => {
+                  if (onSelectRed && targetRedId) onSelectRed(targetRedId);
+                }}
+                onKeyDown={(e) => {
+                  if (onSelectRed && targetRedId && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onSelectRed(targetRedId);
+                  }
+                }}
+                style={{ cursor: isClickable ? 'pointer' : undefined }}
+                title={isClickable ? `Ver métricas de ${redItem.nombre}` : undefined}
+              >
                 <div className="ranking-row">
                   <div className="ranking-name-box" title={`${redItem.nombre} (Supervisor: ${redItem.supervisor})`}>
                     <span className={`ranking-pos pos-${pos}`} title={`Puesto #${pos} del podio ministerial`}>

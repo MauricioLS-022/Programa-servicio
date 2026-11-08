@@ -177,4 +177,79 @@ describe('DashboardPage Component (Paridad Estructural Jinja)', () => {
     });
     expect(document.title).toBe('Vino Nuevo - Panel Administrativo - Dashboard');
   });
+
+  it('prefiltra por defecto a nivel red y a su red asignada cuando el rol es supervisor', () => {
+    mockUser.rol = 'supervisor';
+    mockUser.nombre = 'Supervisor Juan';
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    expect(lastDashboardArgs).toMatchObject({
+      nivel: 'red',
+      red_id: '1',
+    });
+    mockUser.rol = 'admin';
+    mockUser.nombre = 'Administrador';
+  });
+
+  it('fuerza nivel red e ignora general si el usuario es supervisor', () => {
+    mockUser.rol = 'supervisor';
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard?nivel=general']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    expect(lastDashboardArgs).toMatchObject({
+      nivel: 'red',
+      red_id: '1',
+    });
+    mockUser.rol = 'admin';
+  });
+
+  it('permite al admin cambiar de red en nivel red actualizando los parámetros', () => {
+    mockUser.rol = 'admin';
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard?nivel=red&red_id=1']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    const selectRed = screen.getByLabelText('Seleccionar red ministerial');
+    expect(selectRed).toBeInTheDocument();
+    expect(selectRed).toHaveValue('1');
+
+    fireEvent.change(selectRed, { target: { value: '2' } });
+
+    expect(lastDashboardArgs).toMatchObject({
+      nivel: 'red',
+      red_id: '2',
+    });
+  });
+
+  it('permite al admin seleccionar una red haciendo clic en el ranking de redes', () => {
+    mockUser.rol = 'admin';
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    const rankingBtn = screen.getByRole('button', { name: /Red Hebrón/i });
+    expect(rankingBtn).toBeInTheDocument();
+
+    fireEvent.click(rankingBtn);
+
+    expect(lastDashboardArgs).toMatchObject({
+      nivel: 'red',
+      red_id: '1',
+    });
+  });
 });

@@ -11,29 +11,6 @@ import { RedModal } from '../components/estructura/RedModal';
 import { CasaDePazModal } from '../components/estructura/CasaDePazModal';
 import { RedBottomSheet } from '../components/estructura/RedBottomSheet';
 import { Icon } from '../components/ui/Icon';
-import {
-  Search,
-  Plus,
-  Network,
-  Home,
-  ArrowRight,
-  MoreVertical,
-  PauseCircle,
-  PlayCircle,
-  Edit,
-  Trash2,
-  Users,
-  Shield,
-  User,
-  Calendar,
-  BadgeCheck,
-  Clock,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Loader2,
-} from 'lucide-react';
 import type { Red, CasaDePaz, RedInput, CdpInput } from '../types/estructura';
 import '../styles/estructura.css';
 
@@ -224,11 +201,18 @@ export const EstructuraPage: React.FC = () => {
     }
   }, [activeMenuRedId]);
 
+  // Red efectiva (si es supervisor y no hay red en la URL, prefiltra a su red asignada)
+  const effectiveRedId = useMemo(() => {
+    if (selectedRedId) return selectedRedId;
+    if (isSupervisor && redes.length > 0) return String(redes[0].id);
+    return '';
+  }, [selectedRedId, isSupervisor, redes]);
+
   // Nombre de la red actualmente seleccionada
   const selectedRedObj = useMemo(() => {
-    if (!selectedRedId || selectedRedId === 'all') return null;
-    return redes.find((r) => String(r.id) === String(selectedRedId));
-  }, [redes, selectedRedId]);
+    if (!effectiveRedId || effectiveRedId === 'all') return null;
+    return redes.find((r) => String(r.id) === String(effectiveRedId));
+  }, [redes, effectiveRedId]);
 
   const selectedRedName = useMemo(() => {
     if (selectedRedObj) return `Red ${cleanRedName(selectedRedObj.nombre)}`;
@@ -240,9 +224,9 @@ export const EstructuraPage: React.FC = () => {
   const filteredCasas = useMemo(() => {
     return casas.filter((c) => {
       const matchRed =
-        !selectedRedId ||
-        selectedRedId === 'all' ||
-        String(c.red_id) === String(selectedRedId);
+        !effectiveRedId ||
+        effectiveRedId === 'all' ||
+        String(c.red_id) === String(effectiveRedId);
 
       const matchSearch =
         search === '' ||
@@ -262,7 +246,7 @@ export const EstructuraPage: React.FC = () => {
 
       return matchRed && matchSearch && matchEstado;
     });
-  }, [casas, selectedRedId, search, filtroEstado]);
+  }, [casas, effectiveRedId, search, filtroEstado]);
 
   // Contadores para badges y banners
   const totalCasasCongregacion = casas.length;
@@ -272,11 +256,11 @@ export const EstructuraPage: React.FC = () => {
 
   // Pendientes dentro del alcance de la vista actual (por red o congregación)
   const pendingInScope = useMemo(() => {
-    if (selectedRedId && selectedRedId !== 'all') {
-      return casas.filter((c) => Number(c.red_id) === Number(selectedRedId) && c.sin_reporte_7d && c.is_active).length;
+    if (effectiveRedId && effectiveRedId !== 'all') {
+      return casas.filter((c) => Number(c.red_id) === Number(effectiveRedId) && c.sin_reporte_7d && c.is_active).length;
     }
     return totalPendientesCongregacion;
-  }, [casas, selectedRedId, totalPendientesCongregacion]);
+  }, [casas, effectiveRedId, totalPendientesCongregacion]);
 
   // Manejo de CRUD de Redes
   const handleGuardarRed = async (data: RedInput) => {
@@ -444,7 +428,7 @@ export const EstructuraPage: React.FC = () => {
                 onClick={() => handleScrollSidebar('left')}
                 aria-label="Desplazar a la izquierda"
               >
-                <ChevronLeft />
+                <Icon name="chevron_left" size={18} />
               </button>
               <button
                 type="button"
@@ -452,7 +436,7 @@ export const EstructuraPage: React.FC = () => {
                 onClick={() => handleScrollSidebar('right')}
                 aria-label="Desplazar a la derecha"
               >
-                <ChevronRight />
+                <Icon name="chevron_right" size={18} />
               </button>
             </>
           )}
@@ -498,7 +482,7 @@ export const EstructuraPage: React.FC = () => {
               )}
 
               {redes.map((r) => {
-                const isSelected = String(selectedRedId) === String(r.id);
+                const isSelected = String(effectiveRedId) === String(r.id);
                 const isPaused = !r.is_active;
                 const casasInRed = casas.filter((c) => Number(c.red_id) === Number(r.id)).length;
                 const pendientesInRed = casas.filter(
@@ -536,11 +520,11 @@ export const EstructuraPage: React.FC = () => {
                         {casasInRed > 0 && (
                           <div className="avatars">
                             <span className="avatar-circle avatar-maroon">
-                              <Home />
+                              <Icon name="home" size={14} />
                             </span>
                             {casasInRed > 1 && (
                               <span className="avatar-circle avatar-maroon">
-                                <Home />
+                                <Icon name="home" size={14} />
                               </span>
                             )}
                             {casasInRed > 2 && (
@@ -580,7 +564,7 @@ export const EstructuraPage: React.FC = () => {
                           }
                         }}
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <Icon name="more_vert" size={16} />
                       </button>
                     )}
                   </div>
@@ -589,7 +573,7 @@ export const EstructuraPage: React.FC = () => {
 
               {redes.length === 0 && (
                 <div className="empty-state empty-state-sidebar">
-                  <Network />
+                  <Icon name="hub" size={24} />
                   <strong>Sin redes registradas</strong>
                   <span>Crea una red para comenzar.</span>
                 </div>
@@ -609,7 +593,7 @@ export const EstructuraPage: React.FC = () => {
                 <p className="impact-note">Casas de Paz registradas</p>
               </div>
               <div className="watermark-icon">
-                <Users />
+                <Icon name="group" size={48} />
               </div>
             </div>
           </aside>
@@ -635,7 +619,7 @@ export const EstructuraPage: React.FC = () => {
                     aria-label={`Gestionar ${selectedRedObj.nombre}`}
                     title="Gestionar red"
                   >
-                    <MoreVertical className="w-3.5 h-3.5" />
+                    <Icon name="more_vert" size={14} />
                     <span>Opciones</span>
                   </button>
                 )}
@@ -643,7 +627,7 @@ export const EstructuraPage: React.FC = () => {
             </div>
             <div className="search-bar">
               <span className="icon-search">
-                <Search className="w-4 h-4" />
+                <Icon name="search" size={16} />
               </span>
               <input
                 type="text"
@@ -671,7 +655,7 @@ export const EstructuraPage: React.FC = () => {
                 />
                 <div className="alert-banner-info">
                   <strong className="alert-banner-title">
-                    {selectedRedId && selectedRedId !== 'all'
+                    {effectiveRedId && effectiveRedId !== 'all'
                       ? `Reportes Pendientes · ${selectedRedName}`
                       : 'Reportes de la Semana Pendientes'}
                   </strong>
@@ -680,7 +664,7 @@ export const EstructuraPage: React.FC = () => {
                       {pendingInScope} Casa{pendingInScope !== 1 ? 's' : ''} de Paz activa
                       {pendingInScope !== 1 ? 's' : ''}
                     </strong>{' '}
-                    {selectedRedId && selectedRedId !== 'all'
+                    {effectiveRedId && effectiveRedId !== 'all'
                       ? `en la ${selectedRedName}`
                       : 'en la congregación'}{' '}
                     no ha{pendingInScope !== 1 ? 'n' : ''} enviado reporte en los últimos 7 días.
@@ -715,11 +699,11 @@ export const EstructuraPage: React.FC = () => {
                 )}
               </div>
             </div>
-          ) : selectedRedId && selectedRedId !== 'all' && filteredCasas.length > 0 ? (
+          ) : effectiveRedId && effectiveRedId !== 'all' && filteredCasas.length > 0 ? (
             <div className="alert-banner-reportes is-all-good">
               <div className="alert-banner-main">
                 <div className="alert-banner-icon">
-                  <CheckCircle className="w-6 h-6" />
+                  <Icon name="check_circle" size={24} />
                 </div>
                 <div className="alert-banner-info">
                   <strong className="alert-banner-title">¡Red al día! · {selectedRedName}</strong>
@@ -735,7 +719,7 @@ export const EstructuraPage: React.FC = () => {
           {/* Cuadrícula de Casas de Paz */}
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-8 h-8 text-vino dark:text-vino-light animate-spin" />
+              <Icon name="progress_activity" size={32} className="text-vino dark:text-vino-light icon-spin" />
               <p className="text-sm font-medium text-text-muted dark:text-neutral-400">
                 Cargando estructura de Casas de Paz...
               </p>
@@ -756,7 +740,7 @@ export const EstructuraPage: React.FC = () => {
                     <div className="casa-header">
                       <div className="casa-info-top">
                         <div className="casa-icon">
-                          <Home />
+                          <Icon name="home" size={20} />
                         </div>
                         <div>
                           <h4 className="casa-name">Casa "{casa.codigo || casa.nombre}"</h4>
@@ -776,7 +760,7 @@ export const EstructuraPage: React.FC = () => {
                             className="status status-pendiente"
                             title="Sin reporte en los últimos 7 días"
                           >
-                            <Clock className="w-3 h-3" /> SIN REPORTE
+                            <Icon name="schedule" size={12} className="inline mr-1" /> SIN REPORTE
                           </span>
                         ) : (
                           <span className="status status-activa" title="Reportó en los últimos 7 días">
@@ -790,21 +774,21 @@ export const EstructuraPage: React.FC = () => {
                     <div className="casa-details">
                       {casa.lider && (
                         <div className="detail-row">
-                          <Shield className="w-4 h-4" />
+                          <Icon name="verified_user" size={16} />
                           <span>
                             Líder: <strong>{casa.lider}</strong>
                           </span>
                         </div>
                       )}
                       <div className="detail-row">
-                        <User className="w-4 h-4" />
+                        <Icon name="person" size={16} />
                         <span>
                           Anfitrión: <strong>{casa.anfitrion || 'Sin anfitrión'}</strong>
                         </span>
                       </div>
                       {casa.usuario_username ? (
                         <div className="detail-row">
-                          <BadgeCheck className="w-4 h-4" />
+                          <Icon name="verified" size={16} />
                           <span>
                             Usuario: <strong>@{casa.usuario_username}</strong>
                             {casa.usuario_nombre && (
@@ -814,14 +798,14 @@ export const EstructuraPage: React.FC = () => {
                         </div>
                       ) : casa.usuario_nombre ? (
                         <div className="detail-row">
-                          <BadgeCheck className="w-4 h-4" />
+                          <Icon name="verified" size={16} />
                           <span>
                             Usuario: <strong>{casa.usuario_nombre}</strong>
                           </span>
                         </div>
                       ) : null}
                       <div className="detail-row">
-                        <Calendar className="w-4 h-4" />
+                        <Icon name="calendar_today" size={16} />
                         <span>
                           {casa.horario || `${casa.dia_semana || 'Miércoles'} · ${casa.hora || '7:00 PM'}`}
                         </span>
@@ -831,12 +815,12 @@ export const EstructuraPage: React.FC = () => {
                     {/* Pie Canónico: Asistencia + Enlace Gestionar (Sin botones extras de llamada/whatsapp/pausa) */}
                     <div className="casa-footer">
                       <div className="attendance">
-                        <Users className="w-4 h-4" />
+                        <Icon name="group" size={16} />
                         <span>{casa.asistencia || 0} Asistentes promedio</span>
                       </div>
                       <Link to={`/casa-de-paz/${casa.id}`} className="btn-manage">
                         <span>Gestionar</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <Icon name="arrow_forward" size={14} />
                       </Link>
                     </div>
                   </article>
@@ -855,7 +839,7 @@ export const EstructuraPage: React.FC = () => {
                     onClick={() => setCdpModalData({ isOpen: true, casa: null })}
                   >
                     <div className="add-icon">
-                      <Plus />
+                      <Icon name="add" size={24} />
                     </div>
                     <h4>Registrar Nueva Casa</h4>
                     <p>Asigna un nuevo anfitrión y vincula la ubicación a esta red.</p>
@@ -867,7 +851,7 @@ export const EstructuraPage: React.FC = () => {
                 <div className="empty-state empty-state-casas">
                   {filtroEstado === 'pendientes_7d' ? (
                     <>
-                      <CheckCircle className="w-10 h-10 text-emerald-600 mb-2" />
+                      <Icon name="check_circle" size={40} className="text-emerald-600 mb-2" />
                       <strong className="text-emerald-700">¡Al día con los reportes!</strong>
                       <span>
                         No hay Casas de Paz activas pendientes de reporte en esta vista.
@@ -883,7 +867,7 @@ export const EstructuraPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Home className="w-10 h-10 text-neutral-400 mb-2" />
+                      <Icon name="home" size={40} className="text-neutral-400 mb-2" />
                       <strong>Sin Casas de Paz registradas</strong>
                       <span>Esta red todavía no tiene casas vinculadas.</span>
                     </>
@@ -930,7 +914,7 @@ export const EstructuraPage: React.FC = () => {
               aria-label="Cerrar notificación"
               onClick={dismissToast}
             >
-              <X className="w-4 h-4" />
+              <Icon name="close" size={16} />
             </button>
           </div>
         </div>
@@ -990,7 +974,7 @@ export const EstructuraPage: React.FC = () => {
               setRedModalData({ isOpen: true, red: target });
             }}
           >
-            <Edit className="w-3.5 h-3.5" />
+            <Icon name="edit" size={14} />
             <span>Editar red</span>
           </button>
           <button
@@ -1007,12 +991,12 @@ export const EstructuraPage: React.FC = () => {
           >
             {activeMenuRed.is_active ? (
               <>
-                <PauseCircle className="w-3.5 h-3.5" />
+                <Icon name="pause_circle" size={14} />
                 <span>Poner en pausa</span>
               </>
             ) : (
               <>
-                <PlayCircle className="w-3.5 h-3.5" />
+                <Icon name="play_circle" size={14} />
                 <span>Reactivar red</span>
               </>
             )}
@@ -1030,7 +1014,7 @@ export const EstructuraPage: React.FC = () => {
                 handleEliminarRed(targetId);
               }}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Icon name="delete" size={14} />
               <span>Eliminar red</span>
             </button>
           )}

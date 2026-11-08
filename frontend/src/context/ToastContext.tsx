@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { Icon } from '../components/ui/Icon';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -64,24 +64,24 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => {
           const typeConfig = {
             success: {
-              icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />,
+              icon: <Icon name="check_circle" size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />,
               border: 'border-emerald-200 dark:border-emerald-900',
-              bg: 'bg-white dark:bg-neutral-800',
+              bg: 'bg-white dark:bg-[#1b1416]',
             },
             error: {
-              icon: <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />,
+              icon: <Icon name="error" size={20} className="text-red-600 dark:text-red-400 shrink-0" />,
               border: 'border-red-200 dark:border-red-900',
-              bg: 'bg-white dark:bg-neutral-800',
+              bg: 'bg-white dark:bg-[#1b1416]',
             },
             warning: {
-              icon: <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />,
+              icon: <Icon name="warning" size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />,
               border: 'border-amber-200 dark:border-amber-900',
-              bg: 'bg-white dark:bg-neutral-800',
+              bg: 'bg-white dark:bg-[#1b1416]',
             },
             info: {
-              icon: <Info className="w-5 h-5 text-vino dark:text-vino-light shrink-0" />,
-              border: 'border-border-subtle dark:border-neutral-700',
-              bg: 'bg-white dark:bg-neutral-800',
+              icon: <Icon name="info" size={20} className="text-vino dark:text-vino-light shrink-0" />,
+              border: 'border-border-subtle dark:border-[#382628]',
+              bg: 'bg-white dark:bg-[#1b1416]',
             },
           }[toast.type];
 
@@ -92,20 +92,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             >
               {typeConfig.icon}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-main dark:text-neutral-100">
+                <p className="text-sm font-semibold text-text-main dark:text-[#f8f2f0]">
                   {toast.message}
                 </p>
                 {toast.description && (
-                  <p className="text-xs text-text-muted dark:text-neutral-400 mt-0.5">
+                  <p className="text-xs text-text-muted dark:text-[#d4c2bf] mt-0.5">
                     {toast.description}
                   </p>
                 )}
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="text-text-muted hover:text-text-main dark:text-neutral-400 dark:hover:text-neutral-200 p-0.5 rounded cursor-pointer"
+                className="text-text-muted hover:text-text-main dark:text-[#d4c2bf] dark:hover:text-[#f8f2f0] p-0.5 rounded cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <Icon name="close" size={16} />
               </button>
             </div>
           );

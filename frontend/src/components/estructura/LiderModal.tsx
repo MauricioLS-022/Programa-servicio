@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { UserPlus, UserCheck, AlertTriangle } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import type { LiderInput } from '../../types/estructura';
 
 export interface LiderModalProps {
@@ -115,9 +115,9 @@ export const LiderModal: React.FC<LiderModalProps> = ({
       description={cdpCodigo ? `Asignación a Casa de Paz ${cdpCodigo}` : undefined}
       headerIcon={
         isEdit ? (
-          <UserCheck className="w-5 h-5 text-vino dark:text-vino-light" />
+          <Icon name="how_to_reg" size={20} className="text-vino dark:text-vino-light" />
         ) : (
-          <UserPlus className="w-5 h-5 text-vino dark:text-vino-light" />
+          <Icon name="person_add" size={20} className="text-vino dark:text-vino-light" />
         )
       }
       maxWidth="md"
@@ -135,7 +135,7 @@ export const LiderModal: React.FC<LiderModalProps> = ({
       <form id="lider-modal-form" onSubmit={handleSubmit} className="space-y-4">
         {errorLocal && (
           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+            <Icon name="warning" size={16} className="shrink-0 text-red-600 dark:text-red-400" />
             <span>{errorLocal}</span>
           </div>
         )}

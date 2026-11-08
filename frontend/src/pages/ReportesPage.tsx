@@ -10,8 +10,10 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { Icon } from '../components/ui/Icon';
+import { Pagination } from '../components/ui/Pagination';
 import { ReporteModal } from '../components/reportes/ReporteModal';
 import type { Reporte } from '../types/reporte';
+import '../styles/shared-tables.css';
 import '../styles/reportes.css';
 
 export const ReportesPage: React.FC = () => {
@@ -76,7 +78,7 @@ export const ReportesPage: React.FC = () => {
     fecha_desde: fechaDesde,
     fecha_hasta: fechaHasta,
     page,
-    per_page: 10,
+    per_page: 5,
   });
 
   // Estado para el modal unificado de Reporte (ver detalle / editar)
@@ -136,16 +138,6 @@ export const ReportesPage: React.FC = () => {
   const handleResetFiltros = () => {
     resetFilters();
   };
-
-  // Ventana deslizante de paginación (Sliding Window ±2)
-  const paginationRange = useMemo(() => {
-    const delta = 2;
-    const range: number[] = [];
-    for (let i = Math.max(1, page - delta); i <= Math.min(pages, page + delta); i++) {
-      range.push(i);
-    }
-    return range;
-  }, [page, pages]);
 
   return (
     <div className="reportes-page-container">
@@ -414,76 +406,15 @@ export const ReportesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Paginación Deslizante */}
-        {pages > 1 && (
-          <div className="p-4 border-t border-border-subtle/80 dark:border-[rgba(221,192,189,0.2)] bg-surface-low/30 dark:bg-[#1f1618] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <span className="text-text-muted dark:text-[#d4c2bf]">
-              Mostrando página <strong>{page}</strong> de <strong>{pages}</strong> ({total} registros totales)
-            </span>
-
-            <div className="inline-flex items-center gap-1">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setFilter('page', Math.max(1, page - 1))}
-                disabled={page === 1}
-                aria-label="Página anterior"
-              >
-                <Icon name="chevron_left" size={16} />
-              </Button>
-
-              {paginationRange[0] > 1 && (
-                <>
-                  <Button
-                    variant={page === 1 ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilter('page', 1)}
-                  >
-                    1
-                  </Button>
-                  {paginationRange[0] > 2 && <span className="px-1 text-text-muted">...</span>}
-                </>
-              )}
-
-              {paginationRange.map((pNum) => (
-                <Button
-                  key={pNum}
-                  variant={page === pNum ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={() => setFilter('page', pNum)}
-                  aria-current={page === pNum ? 'page' : undefined}
-                >
-                  {pNum}
-                </Button>
-              ))}
-
-              {paginationRange[paginationRange.length - 1] < pages && (
-                <>
-                  {paginationRange[paginationRange.length - 1] < pages - 1 && (
-                    <span className="px-1 text-text-muted">...</span>
-                  )}
-                  <Button
-                    variant={page === pages ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilter('page', pages)}
-                  >
-                    {pages}
-                  </Button>
-                </>
-              )}
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setFilter('page', Math.min(pages, page + 1))}
-                disabled={page === pages}
-                aria-label="Página siguiente"
-              >
-                <Icon name="chevron_right" size={16} />
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Paginación Permanente Reutilizable (5 registros por página) */}
+        <Pagination
+          currentPage={page}
+          totalPages={pages}
+          totalItems={total}
+          itemsPerPage={5}
+          onPageChange={(newPage) => setFilter('page', newPage)}
+          itemLabel="reportes"
+        />
       </section>
 
       {/* ==================================================================

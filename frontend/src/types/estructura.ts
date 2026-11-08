@@ -84,6 +84,7 @@ export interface DistribucionAsistencia {
 }
 
 export interface RankingRedItem {
+  id?: number;
   nombre: string;
   supervisor: string;
   cumplimiento: number;
@@ -354,6 +355,9 @@ export interface EstructuraSelectoresResponse {
     id: number;
     codigo: string;
     anfitrion?: string;
+    red_id?: number;
+    red_nombre?: string;
+    direccion?: string;
   }>;
   redes: Array<{
     id: number;
@@ -389,3 +393,4 @@ export interface LiderInput {
   cdp_id: number | string;
   is_active?: number | boolean;
 }
+

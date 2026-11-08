@@ -7,28 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
 import { CasaDePazModal } from '../components/estructura/CasaDePazModal';
 import { LiderModal } from '../components/estructura/LiderModal';
-import {
-  Home,
-  FileDown,
-  PauseCircle,
-  PlayCircle,
-  Edit,
-  ArrowLeft,
-  Users,
-  ClipboardList,
-  DollarSign,
-  Heart,
-  Phone,
-  MessageCircle,
-  MapPin,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Calendar,
-  AlertTriangle,
-  UserPlus,
-  Sparkles,
-} from 'lucide-react';
+import { Icon } from '../components/ui/Icon';
 import type { CdpInput, LiderInput } from '../types/estructura';
 import '../styles/detalles_cdp.css';
 
@@ -357,7 +336,7 @@ export const DetallesCdpPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 text-vino dark:text-vino-light animate-spin" />
+        <Icon name="progress_activity" size={32} className="text-vino dark:text-vino-light icon-spin" />
         <p className="text-sm font-medium text-text-muted dark:text-neutral-400">
           Cargando Ficha Técnica de la Casa de Paz...
         </p>
@@ -368,7 +347,7 @@ export const DetallesCdpPage: React.FC = () => {
   if (isError || !cdp) {
     return (
       <div className="py-16 text-center max-w-md mx-auto flex flex-col items-center gap-4">
-        <AlertTriangle className="w-12 h-12 text-amber-600" />
+        <Icon name="warning" size={48} className="text-amber-600" />
         <h2 className="text-lg font-bold text-text-main dark:text-neutral-100">
           No se pudo cargar la Casa de Paz
         </h2>
@@ -396,7 +375,7 @@ export const DetallesCdpPage: React.FC = () => {
       <header className="detail-header">
         <div className="detail-title-group">
           <div className="detail-icon-badge" aria-hidden="true">
-            <Home className="w-6 h-6" />
+            <Icon name="home" size={24} />
           </div>
           <div>
             <p className="detail-eyebrow">Ficha Informativa · Casa de Paz</p>
@@ -415,7 +394,7 @@ export const DetallesCdpPage: React.FC = () => {
             className="btn-secondary"
             aria-label="Exportar Ficha Técnica de Casa de Paz en PDF"
           >
-            <FileDown className="w-4 h-4" />
+            <Icon name="download" size={16} />
             <span>Exportar PDF</span>
           </button>
 
@@ -429,12 +408,12 @@ export const DetallesCdpPage: React.FC = () => {
               >
                 {isActive ? (
                   <>
-                    <PauseCircle className="w-4 h-4" />
+                    <Icon name="pause_circle" size={16} />
                     <span>Pausar Casa</span>
                   </>
                 ) : (
                   <>
-                    <PlayCircle className="w-4 h-4" />
+                    <Icon name="play_circle" size={16} />
                     <span>Reactivar Casa</span>
                   </>
                 )}
@@ -445,14 +424,14 @@ export const DetallesCdpPage: React.FC = () => {
                 onClick={() => setIsEditModalOpen(true)}
                 className="btn-secondary"
               >
-                <Edit className="w-4 h-4" />
+                <Icon name="edit" size={16} />
                 <span>Editar</span>
               </button>
             </>
           )}
 
           <Link to="/estructura" className="btn-secondary">
-            <ArrowLeft className="w-4 h-4" />
+            <Icon name="arrow_back" size={16} />
             <span>Volver</span>
           </Link>
         </div>
@@ -462,7 +441,7 @@ export const DetallesCdpPage: React.FC = () => {
       <section className="metrics-grid" aria-label="Métricas clave de la Casa de Paz">
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
-            <Users className="w-5 h-5" />
+            <Icon name="group" size={20} />
           </div>
           <div className="metric-data">
             <span className="metric-label">Asistencia Prom.</span>
@@ -473,7 +452,7 @@ export const DetallesCdpPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
-            <ClipboardList className="w-5 h-5" />
+            <Icon name="assignment" size={20} />
           </div>
           <div className="metric-data">
             <span className="metric-label">Reportes</span>
@@ -484,7 +463,7 @@ export const DetallesCdpPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
-            <DollarSign className="w-5 h-5" />
+            <Icon name="attach_money" size={20} />
           </div>
           <div className="metric-data">
             <span className="metric-label">Ofrendas Totales</span>
@@ -499,7 +478,7 @@ export const DetallesCdpPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
-            <Heart className="w-5 h-5" />
+            <Icon name="favorite" size={20} />
           </div>
           <div className="metric-data">
             <span className="metric-label">Visitas</span>
@@ -510,7 +489,7 @@ export const DetallesCdpPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
-            <Sparkles className="w-5 h-5" />
+            <Icon name="auto_awesome" size={20} />
           </div>
           <div className="metric-data">
             <span className="metric-label">Fruto Espiritual</span>
@@ -526,11 +505,11 @@ export const DetallesCdpPage: React.FC = () => {
         <div className="metric-card">
           <div className="metric-icon-wrap" aria-hidden="true">
             {!isActive ? (
-              <PauseCircle className="w-5 h-5 text-neutral-500" />
+              <Icon name="pause_circle" size={20} className="text-neutral-500" />
             ) : cdp.reporte_reciente_7d || cdp.estado_reporte_7d === 'al_dia' ? (
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <Icon name="check_circle" size={20} className="text-emerald-600" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <Icon name="warning" size={20} className="text-amber-600" />
             )}
           </div>
           <div className="metric-data">
@@ -581,7 +560,7 @@ export const DetallesCdpPage: React.FC = () => {
                   className="btn-action-icon"
                   title="Abrir en Google Maps"
                 >
-                  <MapPin className="w-4 h-4 text-vino dark:text-vino-light" />
+                  <Icon name="location_on" size={16} className="text-vino dark:text-vino-light" />
                 </a>
               )}
             </div>
@@ -607,14 +586,14 @@ export const DetallesCdpPage: React.FC = () => {
                     className="btn-action-icon btn-wa"
                     title="WhatsApp"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <Icon name="chat" size={16} />
                   </a>
                   <a
                     href={`tel:${cleanPhone}`}
                     className="btn-action-icon"
                     title="Llamar"
                   >
-                    <Phone className="w-4 h-4" />
+                    <Icon name="call" size={16} />
                   </a>
                 </div>
               )}
@@ -668,7 +647,7 @@ export const DetallesCdpPage: React.FC = () => {
                   title="Añadir líder a la Casa de Paz"
                   aria-label="Añadir líder a la Casa de Paz"
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
+                  <Icon name="person_add" size={14} />
                   <span>Añadir</span>
                 </button>
               )}
@@ -699,14 +678,14 @@ export const DetallesCdpPage: React.FC = () => {
                             className="btn-action-icon btn-wa"
                             title={`WhatsApp a ${m.nombre_completo}`}
                           >
-                            <MessageCircle className="w-4 h-4" />
+                            <Icon name="chat" size={16} />
                           </a>
                           <a
                             href={`tel:${memberPhone}`}
                             className="btn-action-icon"
                             title={`Llamar a ${m.nombre_completo}`}
                           >
-                            <Phone className="w-4 h-4" />
+                            <Icon name="call" size={16} />
                           </a>
                         </>
                       )}
@@ -717,7 +696,7 @@ export const DetallesCdpPage: React.FC = () => {
                           className="btn-action-icon"
                           title={`Editar o reasignar a ${m.nombre_completo}`}
                         >
-                          <Edit className="w-3.5 h-3.5 text-text-muted hover:text-vino" />
+                          <Icon name="edit" size={14} className="text-text-muted hover:text-vino" />
                         </button>
                       )}
                     </div>
@@ -731,7 +710,7 @@ export const DetallesCdpPage: React.FC = () => {
                 </p>
                 {isAdmin && (
                   <Button variant="outline" size="sm" onClick={handleAbrirCrearLider}>
-                    <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                    <Icon name="person_add" size={14} className="mr-1.5" />
                     Añadir primer líder
                   </Button>
                 )}
@@ -767,7 +746,7 @@ export const DetallesCdpPage: React.FC = () => {
                     <tr key={rep.id || idx}>
                       <td>
                         <div className="flex items-center gap-1.5 font-bold">
-                          <Calendar className="w-3.5 h-3.5 text-vino dark:text-vino-light" />
+                          <Icon name="calendar_today" size={14} className="text-vino dark:text-vino-light" />
                           <span>{rep.fecha_formateada || rep.fecha}</span>
                         </div>
                       </td>
@@ -799,7 +778,7 @@ export const DetallesCdpPage: React.FC = () => {
                       <td>
                         {rep.cesta_amor ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                            <CheckCircle className="w-3.5 h-3.5" /> Sí
+                            <Icon name="check_circle" size={14} /> Sí
                           </span>
                         ) : (
                           <span className="text-[11px] text-text-muted">No</span>

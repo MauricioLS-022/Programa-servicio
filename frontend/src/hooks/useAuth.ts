@@ -19,12 +19,22 @@ export function useAuthConfig() {
 
 export const AUTH_QUERY_KEY = ['auth', 'me'];
 
-export function useAuth() {
+export interface UseAuthOptions {
+  /**
+   * Si es false, no ejecuta la consulta automática a /api/auth/me al montar el hook.
+   * Útil en rutas públicas como /login para evitar peticiones 401 innecesarias en la consola.
+   * @default true
+   */
+  checkSession?: boolean;
+}
+
+export function useAuth(options?: UseAuthOptions) {
   const queryClient = useQueryClient();
 
   const meQuery = useQuery<AuthMeResponse>({
     queryKey: AUTH_QUERY_KEY,
     queryFn: () => api.get<AuthMeResponse>('/auth/me'),
+    enabled: options?.checkSession ?? true,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutos de validez en caché de memoria
   });
@@ -37,6 +47,11 @@ export function useAuth() {
           authenticated: true,
           user: data.user,
         });
+        try {
+          localStorage.setItem('ultimo_acceso_login', new Date().toISOString());
+        } catch {
+          // Fallback seguro si localStorage está deshabilitado
+        }
         queryClient.invalidateQueries({ queryKey: ['reportes'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       }
