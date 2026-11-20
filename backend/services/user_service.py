@@ -1,16 +1,24 @@
-"""Obtención de usuarios para la administración."""
+"""Obtención y gestión de usuarios para la administración."""
+import logging
 from flask import current_app
+from werkzeug.security import generate_password_hash
 
 from database import get_db_connection
 from db_queries import (
     get_usuarios,
+    insertar_usuario,
     asignar_supervisor_a_red,
     asignar_usuario_a_cdp,
-    toggle_estado_usuario
+    toggle_estado_usuario,
+    get_redes_disponibles,
+    get_cdps_disponibles,
 )
 from mock_data import get_mock_usuarios, get_redes_demo, get_casas_demo
+from repositories import unit_of_work
 from services.dashboard_service import mock_mode_enabled
 from utils.cache import invalidate_dashboard_cache
+
+logger = logging.getLogger(__name__)
 
 
 def get_usuarios_context(search='', rol='', page=1, per_page=5):
@@ -114,11 +122,11 @@ def actualizar_usuario_admin(usuario_id, form_data):
     )
     from werkzeug.security import generate_password_hash
 
-    nombre_raw = form_data.get('nombre', '')
-    apellido_raw = form_data.get('apellido', '')
-    username_raw = form_data.get('username', '')
-    password_raw = form_data.get('password', '').strip()
-    tipo_usuario = form_data.get('tipo_usuario', '').strip()
+    nombre_raw = str(form_data.get('nombre') or '')
+    apellido_raw = str(form_data.get('apellido') or '')
+    username_raw = str(form_data.get('username') or '')
+    password_raw = str(form_data.get('password') or '').strip()
+    tipo_usuario = str(form_data.get('tipo_usuario') or form_data.get('rol') or '').strip()
 
     ok_nom, res_nom = validate_person_name(nombre_raw, "Nombre")
     if not ok_nom:
@@ -184,8 +192,8 @@ def actualizar_usuario_admin(usuario_id, form_data):
                     """, (res_nom, res_ape, res_user, tipo_usuario, str(usuario_id)))
 
             # Gestión de asignaciones ministeriales según el rol
-            red_id_raw = form_data.get('red_id', '').strip()
-            cdp_id_raw = form_data.get('cdp_id', '').strip()
+            red_id_raw = str(form_data.get('red_id') or '').strip()
+            cdp_id_raw = str(form_data.get('cdp_id') or '').strip()
 
             if tipo_usuario == 'supervisor':
                 # Si tenía CDP asignada, desvincular
@@ -231,14 +239,18 @@ def actualizar_usuario_admin(usuario_id, form_data):
         conn.close()
 
 
-def toggle_usuario_servicio(usuario_id: str) -> tuple[bool, str, str]:
+def toggle_usuario_servicio(usuario_id: str, usuario_session_id: str = None) -> tuple[bool, str, str]:
     """
     Alterna el estado is_active de una cuenta de usuario.
+    Bloquea la autodesactivación de la cuenta en sesión.
     Retorna: (ok: bool, status: str, message: str)
     status: 'reactivado' | 'desactivado' | 'error'
     """
     if not usuario_id:
         return False, 'error', "Identificador de usuario no proporcionado."
+
+    if usuario_session_id and str(usuario_id) == str(usuario_session_id):
+        return False, 'error', "No puedes desactivar tu propia cuenta de usuario en sesión."
 
     conn = get_db_connection()
     if not conn:
@@ -260,7 +272,7 @@ def toggle_usuario_servicio(usuario_id: str) -> tuple[bool, str, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al alternar estado de usuario %s: %s", usuario_id, e)
-        return False, 'error', f"Error interno al alternar el estado del usuario: {e}"
+        return False, 'error', "Error interno al alternar el estado del usuario."
     finally:
         conn.close()
 
@@ -319,6 +331,121 @@ def eliminar_usuario_servicio(usuario_id:str, usuario_session_id:str) -> tuple[b
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al eliminar usuario %s: %s", usuario_id, e)
-        return False, 'danger', f"Error interno al eliminar el usuario: {e}"
+        return False, 'danger', "Error interno al eliminar el usuario."
     finally:
         conn.close()
+
+
+def crear_nuevo_usuario(
+    form_data,
+    *,
+    _conn_provider=None,
+    _insertar_usuario_fn=None,
+    _asignar_sup_fn=None,
+    _asignar_cdp_fn=None,
+):
+    """Lógica de negocio para crear un usuario con validaciones de seguridad defensivas."""
+    from utils.validators import (
+        validate_username,
+        validate_password_strength,
+        validate_person_name,
+    )
+
+    username_raw = form_data.get('username', '')
+    password_raw = form_data.get('password', '')
+    nombre_raw = form_data.get('nombre', '')
+    apellido_raw = form_data.get('apellido', '')
+    tipo_usuario = (form_data.get('tipo_usuario') or form_data.get('rol') or '').strip()
+
+    ok_nom, res_nom = validate_person_name(nombre_raw, "Nombre")
+    if not ok_nom:
+        return False, res_nom
+
+    ok_ape, res_ape = validate_person_name(apellido_raw, "Apellido")
+    if not ok_ape:
+        return False, res_ape
+
+    ok_user, res_user = validate_username(username_raw)
+    if not ok_user:
+        return False, res_user
+
+    ok_pass, res_pass = validate_password_strength(password_raw)
+    if not ok_pass:
+        return False, res_pass
+
+    roles_permitidos = ('admin', 'supervisor', 'lider_cdp')
+    if tipo_usuario not in roles_permitidos:
+        return False, f"Rol no válido. Debe ser uno de: {', '.join(roles_permitidos)}."
+
+    conn_fn = _conn_provider or get_db_connection
+    ins_user = _insertar_usuario_fn or insertar_usuario
+    asig_sup = _asignar_sup_fn or asignar_supervisor_a_red
+    asig_cdp = _asignar_cdp_fn or asignar_usuario_a_cdp
+
+    try:
+        with unit_of_work(conn_provider=conn_fn, transactional=True) as uow:
+            if uow is None:
+                return False, "Error de conexión a la base de datos."
+            with uow.cursor() as cursor:
+                cursor.execute("SELECT id FROM usuario WHERE username = %s", (res_user,))
+                if cursor.fetchone():
+                    uow.rollback()
+                    return False, f"El nombre de usuario '{res_user}' ya está en uso."
+
+                password_hash = generate_password_hash(password_raw)
+                nuevo_id = ins_user(cursor, res_user, password_hash, res_nom, res_ape, tipo_usuario)
+
+                red_id_raw = str(form_data.get('red_id') or '').strip()
+                cdp_id_raw = str(form_data.get('cdp_id') or '').strip()
+
+                if tipo_usuario == 'supervisor' and red_id_raw:
+                    try:
+                        asig_sup(cursor, nuevo_id, int(red_id_raw))
+                    except (ValueError, TypeError):
+                        pass
+                elif tipo_usuario == 'lider_cdp' and cdp_id_raw:
+                    try:
+                        asig_cdp(cursor, nuevo_id, int(cdp_id_raw))
+                    except (ValueError, TypeError):
+                        pass
+
+        return True, "Usuario creado exitosamente."
+    except Exception as e:
+        logger.error("Error al crear usuario: %s", e)
+        return False, "Ocurrió un error interno al crear el usuario."
+
+
+def get_opciones_asignacion(usuario_id=None, *, _conn_provider=None):
+    """Obtiene redes y CDPs disponibles para los selectores de asignación de usuarios."""
+    conn_fn = _conn_provider or get_db_connection
+    try:
+        with unit_of_work(conn_provider=conn_fn, transactional=False) as uow:
+            if uow is not None:
+                with uow.cursor() as cursor:
+                    redes = get_redes_disponibles(cursor, usuario_id=usuario_id)
+                    cdps = get_cdps_disponibles(cursor, usuario_id=usuario_id)
+                return redes, cdps
+    except Exception as e:
+        logger.error("Error obteniendo opciones de asignación: %s", e)
+        return [], []
+
+    if mock_mode_enabled():
+        redes_demo = get_redes_demo()
+        redes = [
+            {'id': r['id'], 'nombre': r['nombre']}
+            for r in redes_demo
+            if not r.get('supervisor_id') or (usuario_id and str(r.get('supervisor_id')) == str(usuario_id))
+        ]
+        casas_demo = get_casas_demo()
+        cdps = [
+            {
+                'id': c['id'],
+                'codigo': c['codigo'],
+                'direccion': c.get('direccion', ''),
+                'red_nombre': c.get('red_nombre', ''),
+            }
+            for c in casas_demo
+            if not c.get('lider_id') or (usuario_id and str(c.get('lider_id')) == str(usuario_id))
+        ]
+        return redes, cdps
+    return [], []

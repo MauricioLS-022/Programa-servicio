@@ -580,6 +580,30 @@
         if (event.key === 'Escape') closeMenus();
     });
 
+    const btnExportCasas = document.getElementById('btnExportCasasXlsx');
+    if (btnExportCasas) {
+        btnExportCasas.addEventListener('click', function() {
+            const params = new URLSearchParams({ format: 'xlsx' });
+            const activeRedBtn = document.querySelector('.red-filter-trigger.active');
+            const activeFilter = activeRedBtn ? (activeRedBtn.dataset.redFilter || '') : '';
+            if (activeFilter && activeFilter !== 'all') {
+                const numericRed = activeFilter.replace(/^red-/, '');
+                if (/^\d+$/.test(numericRed)) {
+                    params.set('red_id', numericRed);
+                }
+            }
+            const searchEl = document.getElementById('casasSearchInput');
+            if (searchEl && searchEl.value.trim()) {
+                params.set('q', searchEl.value.trim());
+            }
+            const bannerBtn = document.getElementById('btnFiltrarPendientes');
+            if (bannerBtn && bannerBtn.classList.contains('is-active')) {
+                params.set('filtro', 'pendientes_7d');
+            }
+            window.location.href = `/api/export/casas_de_paz?${params.toString()}`;
+        });
+    }
+
     const sidebar = document.querySelector('.redes-sidebar');
     const arrowLeft = document.querySelector('.scroll-arrow-left');
     const arrowRight = document.querySelector('.scroll-arrow-right');

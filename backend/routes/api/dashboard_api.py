@@ -5,13 +5,14 @@ from flask import request, jsonify, session
 from services.dashboard_service import get_metricas, mock_mode_enabled, get_supervisor_red_id
 from services.cdp_service import get_lider_dashboard_data
 from utils.cache import get_cached_value, set_cached_value
-from utils.auth import login_required, role_required
+from utils.auth import api_auth_required, api_role_required
+from policies.access_policy import AccessPolicy, UserContext
 from .base import api_bp, _serialize_item
 
 
 @api_bp.route('/dashboard/datos')
-@login_required
-@role_required("admin", "supervisor")
+@api_auth_required(allow_legacy_redirect=True)
+@api_role_required("admin", "supervisor", allow_legacy_redirect=True)
 def api_dashboard_datos():
     """Endpoint AJAX protegido que retorna métricas en JSON para filtros dinámicos."""
     rol = session.get('rol')
@@ -82,14 +83,11 @@ def api_dashboard_datos():
 
 
 @api_bp.route('/lider/dashboard')
+@api_role_required("lider_cdp", "cdp", "admin")
 def api_dashboard_lider():
     """Endpoint REST que retorna el resumen, métricas e historial de la Casa de Paz para el líder autenticado."""
     usuario_id = session.get("usuario_id")
     rol = session.get("rol")
-    if not usuario_id:
-        return jsonify({"error": "No autenticado"}), 401
-    if rol not in ("lider_cdp", "cdp", "admin"):
-        return jsonify({"error": "No autorizado"}), 403
 
     page = max(request.args.get('page', 1, type=int), 1)
     per_page = min(max(request.args.get('per_page', 5, type=int), 1), 50)

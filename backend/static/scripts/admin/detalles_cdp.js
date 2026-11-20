@@ -633,4 +633,13 @@
             window.print();
         }
     };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnExportPdf = document.getElementById('btnExportCdpPdf') || document.querySelector('.btn-export-pdf');
+        if (btnExportPdf) {
+            btnExportPdf.addEventListener('click', function (event) {
+                window.exportCdpToPDF(event);
+            });
+        }
+    });
 })();

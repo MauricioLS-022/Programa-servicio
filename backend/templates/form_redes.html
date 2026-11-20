@@ -44,7 +44,7 @@
             <a href="{{ url_for('admin.estructura') }}" class="btn-cancel">Cancelar</a>
         </div>
         {% if is_edit %}
-        <button type="button" class="btn-delete-text" onclick="openDeleteModal()">
+        <button type="button" id="btnOpenDeleteModal" class="btn-delete-text">
             <span class="material-symbols-outlined">delete_outline</span>
             Eliminar Red
         </button>
@@ -74,7 +74,7 @@
             Para poder eliminarla, primero debes reasignar o desvincular sus Casas de Paz. Si deseas suspender sus actividades sin perder la información, puedes <strong>poner la red en pausa</strong> desde la vista de estructura.
         </p>
         <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Entendido</button>
+            <button type="button" class="btn-cancel" data-close-delete-modal>Entendido</button>
         </div>
     </div>
 </div>
@@ -92,8 +92,8 @@
         <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
         <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la eliminación de la red">
         <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-            <button type="button" class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="document.getElementById('formEliminarRed').submit();">
+            <button type="button" class="btn-cancel" data-close-delete-modal>Cancelar</button>
+            <button type="button" class="btn-confirm-delete" id="btnConfirmDelete" disabled>
                 <span class="material-symbols-outlined" aria-hidden="true">delete</span>
                 Eliminar Red
             </button>

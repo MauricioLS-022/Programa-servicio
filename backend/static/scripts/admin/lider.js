@@ -18,22 +18,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    if (searchInput && filterForm) {
-        searchInput.addEventListener('search', () => {
-            filterForm.submit();
-        });
+    // 1.5 Live Search client-side instantáneo en directorio de líderes
+    if (searchInput) {
+        const leaderTableBody = document.querySelector('.leader-table tbody');
+
+        function applyLiveSearchLeaders() {
+            if (!leaderTableBody) return;
+            const term = searchInput.value.trim().toLowerCase();
+            const dataRows = Array.from(leaderTableBody.querySelectorAll('tr')).filter(
+                (tr) => !tr.classList.contains('live-search-empty-row') && !tr.querySelector('.empty-state')
+            );
+            let visibleCount = 0;
+
+            dataRows.forEach((tr) => {
+                const text = (tr.textContent || '').toLowerCase();
+                const matches = !term || text.includes(term);
+                tr.style.display = matches ? '' : 'none';
+                if (matches) visibleCount += 1;
+            });
+
+            let emptyRow = leaderTableBody.querySelector('.live-search-empty-row');
+            if (term && dataRows.length > 0 && visibleCount === 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'live-search-empty-row';
+                    const colCount = document.querySelectorAll('.leader-table thead th').length || 6;
+                    emptyRow.innerHTML = `<td colspan="${colCount}" style="text-align:center;padding:1.5rem;color:var(--text-muted,#666);">No se encontraron líderes en esta página. Presiona Enter para buscar en todo el directorio.</td>`;
+                    leaderTableBody.appendChild(emptyRow);
+                }
+                emptyRow.style.display = '';
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', applyLiveSearchLeaders);
+        if (filterForm) {
+            searchInput.addEventListener('search', () => {
+                filterForm.submit();
+            });
+        }
     }
 
-    // 2. Botones de exportación
+    // 2. Botones de exportación real server-side con filtros activos
     const btnExportPdf = document.querySelector('.footer-actions button:first-child');
     const btnExportExcel = document.querySelector('.footer-actions button:last-child');
 
+    function buildLeaderExportUrl(format) {
+        const params = new URLSearchParams({ format });
+        if (searchInput && searchInput.value.trim()) params.set('q', searchInput.value.trim());
+        if (roleSelect && roleSelect.value.trim()) params.set('rol', roleSelect.value.trim());
+        if (cdpSelect && cdpSelect.value.trim()) params.set('cdp_id', cdpSelect.value.trim());
+        if (netSelect && netSelect.value.trim()) params.set('red_id', netSelect.value.trim());
+        return `/api/export/lideres?${params.toString()}`;
+    }
+
     if (btnExportExcel) {
-        btnExportExcel.addEventListener('click', exportLeadersToCSV);
+        btnExportExcel.addEventListener('click', () => {
+            window.location.href = buildLeaderExportUrl('xlsx');
+        });
     }
 
     if (btnExportPdf) {
-        btnExportPdf.addEventListener('click', exportLeadersToPDF);
+        btnExportPdf.addEventListener('click', () => {
+            window.location.href = buildLeaderExportUrl('csv');
+        });
     }
 
     function getTableData() {
@@ -285,6 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
             activeDeleteBtn = null;
         }
     };
+
+    document.querySelectorAll('[data-close-delete-modal]').forEach(btn => {
+        btn.addEventListener('click', () => window.closeDeleteModal());
+    });
 
     if (deleteModal) {
         deleteModal.addEventListener('click', (e) => {

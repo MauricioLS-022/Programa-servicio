@@ -36,11 +36,6 @@ class Config:
 
     RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "")
     RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "")
-    
-    @property
-    def SQLALCHEMY_DATABASE_URI(self):
-        ssl_param = "?ssl-mode=REQUIRED" if self.DB_SSL and self.DB_HOST not in ('localhost', '127.0.0.1') else ""
-        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}{ssl_param}"
 
 
 INSECURE_SECRET_KEYS = {

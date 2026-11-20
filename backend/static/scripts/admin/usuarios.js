@@ -16,11 +16,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Debounce en búsqueda para envío rápido al presionar Enter o limpiar
-    if (searchInput && filterForm) {
-        searchInput.addEventListener('search', () => {
-            filterForm.submit();
-        });
+    // 2. Live Search client-side instantáneo + envío server-side con Enter o limpiar
+    if (searchInput) {
+        const userTableBody = document.querySelector('.user-table tbody');
+
+        function applyLiveSearchUsers() {
+            if (!userTableBody) return;
+            const term = searchInput.value.trim().toLowerCase();
+            const dataRows = Array.from(userTableBody.querySelectorAll('tr')).filter(
+                (tr) => !tr.classList.contains('live-search-empty-row') && !tr.querySelector('.empty-state')
+            );
+            let visibleCount = 0;
+
+            dataRows.forEach((tr) => {
+                const text = (tr.textContent || '').toLowerCase();
+                const matches = !term || text.includes(term);
+                tr.style.display = matches ? '' : 'none';
+                if (matches) visibleCount += 1;
+            });
+
+            let emptyRow = userTableBody.querySelector('.live-search-empty-row');
+            if (term && dataRows.length > 0 && visibleCount === 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'live-search-empty-row';
+                    emptyRow.innerHTML = '<td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted,#666);">No se encontraron usuarios en esta página. Presiona Enter para buscar en todo el directorio.</td>';
+                    userTableBody.appendChild(emptyRow);
+                }
+                emptyRow.style.display = '';
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', applyLiveSearchUsers);
+        if (filterForm) {
+            searchInput.addEventListener('search', () => {
+                filterForm.submit();
+            });
+        }
     }
 
     // 3. Modales de Eliminación (Bloqueo por dependencias y Confirmación con 'ELIMINAR')
@@ -120,6 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeDeleteModal();
     };
 
+    document.querySelectorAll('[data-close-delete-modal]').forEach(btn => {
+        btn.addEventListener('click', () => window.closeDeleteModal());
+    });
+
+    if (btnConfirmDelete) {
+        btnConfirmDelete.addEventListener('click', () => {
+            if (!btnConfirmDelete.disabled) window.confirmDeleteUser();
+        });
+    }
+
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) window.closeDeleteModal();
@@ -133,50 +177,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 4. Exportación a CSV / Excel
+    // 4. Exportación real server-side a Excel (.xlsx) con filtros activos
     const btnExport = document.getElementById('btnExportUsers');
     if (btnExport) {
-        btnExport.addEventListener('click', exportUsersToCSV);
-    }
-
-    function exportUsersToCSV() {
-        const table = document.querySelector('.user-table');
-        if (!table) return;
-
-        const rows = table.querySelectorAll('tbody tr');
-        if (!rows.length || (rows.length === 1 && rows[0].querySelector('.empty-state'))) {
-            alert('No hay usuarios para exportar.');
-            return;
-        }
-
-        let csv = '\uFEFF'; // UTF-8 BOM para soporte de tildes y caracteres en Excel
-        csv += 'Usuario,Username,Rol,Estado\n';
-
-        rows.forEach(tr => {
-            if (tr.querySelector('.empty-state')) return;
-            const nameEl = tr.querySelector('.user-details strong');
-            const usernameEl = tr.querySelector('.text-muted');
-            const roleEl = tr.querySelector('.badge');
-            const statusEl = tr.querySelector('.status span:last-child');
-
-            const name = nameEl ? `"${nameEl.textContent.trim().replace(/"/g, '""')}"` : '""';
-            const username = usernameEl ? `"${usernameEl.textContent.trim().replace('@', '').replace(/"/g, '""')}"` : '""';
-            const role = roleEl ? `"${roleEl.textContent.trim().replace(/"/g, '""')}"` : '""';
-            const status = statusEl ? `"${statusEl.textContent.trim().replace(/"/g, '""')}"` : '""';
-
-            csv += `${name},${username},${role},${status}\n`;
+        btnExport.addEventListener('click', () => {
+            const params = new URLSearchParams({ format: 'xlsx' });
+            if (searchInput && searchInput.value.trim()) {
+                params.set('q', searchInput.value.trim());
+            }
+            if (roleSelect && roleSelect.value.trim()) {
+                params.set('rol', roleSelect.value.trim());
+            }
+            window.location.href = `/api/export/usuarios?${params.toString()}`;
         });
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const today = new Date().toISOString().split('T')[0];
-        a.href = url;
-        a.download = `directorio_usuarios_${today}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     }
 });
 

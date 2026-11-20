@@ -56,10 +56,13 @@
           name="telefono"
           type="tel"
           value="{{ lider.telefono if lider else '' }}"
-          placeholder="Ej. +58 412-0000000"
+          placeholder="+58 412-1234567"
+          maxlength="20"
+          title="Formato internacional E.164 (ej. +58 412-1234567 o 0412-1234567)"
           required
         />
       </div>
+      <span class="input-hint">Formato internacional E.164 (ej. +58 412-1234567). Se normaliza automáticamente para WhatsApp.</span>
     </div>
 
     <div class="form-group half-width">
@@ -121,7 +124,7 @@
     </div>
     
     {% if is_edit %}
-    <button type="button" class="btn-delete-text" id="btnOpenDeleteModal" onclick="openDeleteModal()">
+    <button type="button" class="btn-delete-text" id="btnOpenDeleteModal">
       <span class="material-symbols-outlined">delete_outline</span>
       Eliminar Líder
     </button>
@@ -143,7 +146,7 @@
     <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
     <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la baja del líder">
     <div class="modal-actions">
-      <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+      <button type="button" class="btn-cancel" data-close-delete-modal>Cancelar</button>
       <form id="formEliminarLider" method="POST" action="{{ url_for('admin.lider_eliminar', id=recurso_id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <button type="submit" class="btn-confirm-delete" id="btnConfirmDelete" disabled>

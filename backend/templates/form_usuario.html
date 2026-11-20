@@ -154,7 +154,7 @@
             Para eliminarlo, primero debes desvincular o reasignar sus responsabilidades ministeriales.
         </p>
         <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Entendido</button>
+            <button type="button" class="btn-cancel" data-close-delete-modal>Entendido</button>
         </div>
     </div>
 </div>
@@ -172,8 +172,8 @@
         <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
         <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la eliminación">
         <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-            <button type="button" class="btn-confirm-delete" id="btnConfirmDelete" disabled onclick="confirmDeleteUser()">
+            <button type="button" class="btn-cancel" data-close-delete-modal>Cancelar</button>
+            <button type="button" class="btn-confirm-delete" id="btnConfirmDelete" disabled>
                 <span class="material-symbols-outlined" aria-hidden="true">delete</span>
                 Eliminar
             </button>

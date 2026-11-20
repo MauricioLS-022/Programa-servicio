@@ -24,8 +24,10 @@ def get_usuarios(conn, search='', rol='', page=1, per_page=5):
     total = int(cur.fetchone()['total'])
 
     cur.execute(f"""
-        SELECT u.id, u.username, u.nombre, u.apellido, u.tipo_usuario AS rol, u.is_active,
+        SELECT u.id, u.username, u.nombre, u.apellido, u.tipo_usuario AS rol, u.tipo_usuario, u.is_active,
+               (SELECT r.id FROM red r WHERE r.supervisor_id = u.id LIMIT 1) AS red_id,
                (SELECT r.nombre FROM red r WHERE r.supervisor_id = u.id LIMIT 1) AS red_nombre,
+               (SELECT c.id FROM cdp c WHERE c.usuario_id = u.id LIMIT 1) AS cdp_id,
                (SELECT c.codigo FROM cdp c WHERE c.usuario_id = u.id LIMIT 1) AS cdp_codigo
         FROM usuario u
         {where_clause}
@@ -92,5 +94,23 @@ def get_supervisores_disponibles(cursor):
         ORDER BY u.nombre, u.apellido
     """)
     return cursor.fetchall() or []
+
+
+def obtener_usuario_por_username(cursor, username: str):
+    """Obtiene los datos de autenticación de un usuario por su username."""
+    cursor.execute(
+        "SELECT id, username, password, tipo_usuario, is_active, nombre, apellido FROM usuario WHERE username = %s",
+        (username,),
+    )
+    return cursor.fetchone()
+
+
+def actualizar_password_usuario(cursor, usuario_id: str, password_hash: str):
+    """Actualiza el hash de contraseña de un usuario."""
+    cursor.execute(
+        "UPDATE usuario SET password = %s WHERE id = %s",
+        (password_hash, usuario_id),
+    )
+
 
 

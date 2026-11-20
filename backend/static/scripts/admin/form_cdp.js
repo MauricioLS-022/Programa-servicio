@@ -39,5 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (radioExistente) radioExistente.addEventListener('change', toggleModoUsuario);
     if (radioNuevo) radioNuevo.addEventListener('change', toggleModoUsuario);
 
+    const btnEliminarCdp = document.getElementById('btnEliminarCdp');
+    const formEliminarCdp = document.getElementById('formEliminarCdp');
+    if (btnEliminarCdp && formEliminarCdp) {
+        btnEliminarCdp.addEventListener('click', () => {
+            if (window.confirm('¿Deseas dar de baja esta Casa de Paz? Si tiene reportes históricos será pausada para proteger las estadísticas.')) {
+                formEliminarCdp.submit();
+            }
+        });
+    }
+
     toggleModoUsuario();
 });

@@ -63,8 +63,9 @@
       <label for="telefono">Teléfono de Contacto</label>
       <div class="input-wrapper icon-left">
         <span class="material-symbols-outlined input-icon">call</span>
-        <input id="telefono" name="telefono" type="tel" value="{{ cdp.telefono if cdp else '' }}" placeholder="+58 412 1234567" required/>
+        <input id="telefono" name="telefono" type="tel" value="{{ cdp.telefono if cdp else '' }}" placeholder="+58 412-1234567" maxlength="20" title="Formato internacional E.164 (ej. +58 412-1234567 o 0412-1234567)" required/>
       </div>
+      <span class="input-hint">Formato internacional E.164 (ej. +58 412-1234567). Los números locales 04XX se normalizan automáticamente.</span>
     </div>
 
     {% if is_edit or cdp %}
@@ -207,7 +208,7 @@
       <a href="{{ url_for('admin.casa_de_paz', id=recurso_id) if is_edit and recurso_id else url_for('admin.estructura') }}" class="btn-cancel">Cancelar</a>
     </div>
     {% if is_edit %}
-    <button type="button" class="btn-delete-text" onclick="if(confirm('¿Deseas dar de baja esta Casa de Paz? Si tiene reportes históricos será pausada para proteger las estadísticas.')) { document.getElementById('formEliminarCdp').submit(); }">
+    <button type="button" id="btnEliminarCdp" class="btn-delete-text">
         <span class="material-symbols-outlined">delete_outline</span>
         Eliminar / Pausar Casa
     </button>

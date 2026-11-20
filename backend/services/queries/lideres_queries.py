@@ -38,7 +38,7 @@ def get_lideres(conn, search='', rol='', red_id='', cdp_id='', supervisor_red_id
 
     cur.execute(f"""
         SELECT l.id, l.nombre, l.apellido, l.rol, l.telefono, l.is_active,
-               c.id AS cdp_id, c.codigo AS cdp_nombre, c.is_active AS cdp_is_active,
+               c.id AS cdp_id, c.codigo AS cdp_nombre, c.codigo AS cdp_codigo, c.is_active AS cdp_is_active,
                r.id AS red_id, r.nombre AS red_nombre
         FROM lider l
         JOIN cdp c ON c.id = l.cdp_id
@@ -81,11 +81,11 @@ def obtener_lideres_por_cdp(cursor: Cursor, cdp_id: int):
 
 def get_cdps_para_lideres(cursor: Cursor):
     """
-    Retorna las Casas de Paz activas junto con el nombre de su red
-    para los selectores de asignación en form_lider.html.
+    Retorna las Casas de Paz activas junto con el nombre e ID de su red y anfitrión
+    para los selectores de asignación y filtrado territorial.
     """
     query = """
-        SELECT c.id, c.codigo, c.direccion, r.nombre AS red_nombre
+        SELECT c.id, c.codigo, c.anfitrion, c.direccion, c.red_id, r.nombre AS red_nombre
         FROM cdp c
         LEFT JOIN red r ON c.red_id = r.id
         WHERE c.is_active = 1
@@ -103,7 +103,7 @@ def insertar_lider(cursor: Cursor, nombre:str, apellido:str, telefono:str, rol:s
         INSERT INTO lider (nombre, apellido, telefono, rol, is_active, cdp_id)
         VALUES (%s, %s, %s, %s, 1, %s)
     """
-    cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id))
+    cursor.execute(query, (nombre.strip(), apellido.strip(), (telefono or '').strip(), rol.strip(), cdp_id))
     return cursor.lastrowid
 
 
@@ -113,7 +113,7 @@ def obtener_lider_por_id(cursor: Cursor, lider_id:int):
     """
     query = """
         SELECT l.id, l.nombre, l.apellido, l.telefono, l.rol, l.is_active, l.cdp_id,
-        c.codigo AS cdp_codigo, c.direccion AS cdp_direccion,
+        c.codigo AS cdp_codigo, c.direccion AS cdp_direccion, c.red_id AS red_id,
         r.nombre AS red_nombre
         FROM lider l
         LEFT JOIN cdp c ON l.cdp_id = c.id
@@ -133,13 +133,13 @@ def actualizar_lider(cursor: Cursor, lider_id:int, nombre:str, apellido:str, tel
             UPDATE lider SET nombre = %s, apellido = %s, telefono = %s, rol = %s, cdp_id = %s, is_active = %s
             WHERE id = %s
         """
-        cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id, int(is_active), lider_id))
+        cursor.execute(query, (nombre.strip(), apellido.strip(), (telefono or '').strip(), rol.strip(), cdp_id, int(is_active), lider_id))
     else:
         query = """
             UPDATE lider SET nombre = %s, apellido = %s, telefono = %s, rol = %s, cdp_id = %s
             WHERE id = %s
         """
-        cursor.execute(query, (nombre.strip(), apellido.strip(), telefono.strip(), rol.strip(), cdp_id, lider_id))
+        cursor.execute(query, (nombre.strip(), apellido.strip(), (telefono or '').strip(), rol.strip(), cdp_id, lider_id))
     return cursor.rowcount >= 0
 
 

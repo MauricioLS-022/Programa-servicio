@@ -10,7 +10,7 @@ import time
 import threading
 import queue
 from dotenv import load_dotenv
-from flask import current_app, g, has_request_context
+from flask import current_app, g, has_app_context, has_request_context
 
 load_dotenv()
 
@@ -185,13 +185,24 @@ def get_db_connection():
 
 
 def close_db_connection(e=None):
-    """Devuelve la conexión activa al pool o la cierra al finalizar el ciclo de vida del request."""
-    if has_request_context():
+    """Devuelve la conexión activa al pool o la cierra al finalizar el ciclo de vida del request/app context.
+    Ejecuta rollback() defensivo antes de devolver la conexión al pool para evitar snapshots
+    InnoDB REPEATABLE READ obsoletos o transacciones sucias en peticiones subsecuentes.
+    """
+    if has_app_context():
         scoped = getattr(g, '_db_conn', None)
         if scoped is not None:
             real_conn = scoped._real_conn
             g._db_conn = None
             if real_conn and getattr(real_conn, 'open', False):
+                try:
+                    real_conn.rollback()
+                except Exception:
+                    try:
+                        real_conn.close()
+                    except Exception:
+                        pass
+                    return
                 try:
                     _pool.put_nowait(real_conn)
                 except (queue.Full, Exception):

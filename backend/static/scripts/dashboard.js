@@ -597,7 +597,7 @@
                     cumplimientoSubRed: 'Casas con reporte enviado esta semana',
                     trendTitleGen: 'Asistencia por Red esta Semana',
                     trendTitleRed: 'Asistencia por Casa esta Semana',
-                    trendSubGen: 'Desglose por Red del último reporte recibido',
+                    trendSubGen: 'Desglose por Red de los reportes de esta semana',
                     trendSubRed: `Desglose por Casa de Paz en ${data.nombre_red || ''}`,
                     distSubGen: 'Composición de membresía y consolidación de la semana activa',
                     distSubRed: `Composición de asistentes en ${data.nombre_red || ''}`,
@@ -682,7 +682,7 @@
                 if (frutoVis) frutoVis.textContent = (data.total_visitas || 0).toLocaleString();
 
                 // Tendencia de Asistencia General
-                renderTrendBars('Gen', data.tendencia_semanas, data.promedio_tendencia);
+                renderTrendBars('Gen', data.tendencia_semanas, data.promedio_tendencia, periodo);
 
                 // Distribución Donut General
                 renderDonut('Gen', data.distribucion, data.total_asistencia);
@@ -740,14 +740,14 @@
                 if (pillPend) pillPend.textContent = (data.casas_pendientes || 0);
 
                 // Tendencia de Asistencia de Red
-                renderTrendBars('Red', data.tendencia_semanas, data.promedio_tendencia);
+                renderTrendBars('Red', data.tendencia_semanas, data.promedio_tendencia, periodo);
 
                 // Distribución Donut de Red
                 renderDonut('Red', data.distribucion, data.asistencia_total);
             }
         }
 
-        function renderTrendBars(suffix, tendencia, promedio) {
+        function renderTrendBars(suffix, tendencia, promedio, periodo = 'semana') {
             const container = document.getElementById(`trendBars${suffix}`);
             const badgeContainer = document.getElementById(`trendBadge${suffix}`);
             if (!container) return;
@@ -762,9 +762,12 @@
                 if (chartArea) chartArea.classList.remove('has-scroll');
             }
 
-            // Variación respecto a la medición anterior o promedio
+            // Variación respecto a la medición anterior o promedio (solo para series temporales mes/año)
+            const isTimeSeries = periodo === 'mes' || periodo === 'anio';
             if (badgeContainer) {
-                if (tendencia && tendencia.length > 1 && (tendencia[tendencia.length - 2]?.asistencia || 0) > 0) {
+                if (!isTimeSeries) {
+                    badgeContainer.innerHTML = '';
+                } else if (tendencia && tendencia.length > 1 && (tendencia[tendencia.length - 2]?.asistencia || 0) > 0) {
                     const prev = tendencia[tendencia.length - 2].asistencia;
                     const curr = tendencia[tendencia.length - 1].asistencia;
                     const variacion = Math.round(((curr - prev) / prev * 100) * 10) / 10;
@@ -1096,6 +1099,20 @@
         initTrendBars();
         initPeriodToggle();
     }, 50);
+
+    // -------------------------------------------------------------------------
+    // Exportación consolidada real desde botones rápidos del Dashboard
+    // -------------------------------------------------------------------------
+    document.querySelectorAll('.export-btn[data-export-resource]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const resource = this.dataset.exportResource || 'reportes';
+            const format = this.dataset.exportFormat || 'pdf';
+            const params = new URLSearchParams({ format });
+            if (this.dataset.redId) params.set('red_id', this.dataset.redId);
+            if (this.dataset.cdpId) params.set('cdp_id', this.dataset.cdpId);
+            window.location.href = `/api/export/${resource}?${params.toString()}`;
+        });
+    });
 
     // -------------------------------------------------------------------------
     // Descarte global con tecla ESC para tooltips (WCAG 2.1 SC 1.4.13)

@@ -308,241 +308,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 3. EXPORTACIÓN DE REPORTES A EXCEL / PDF
+    // 3. EXPORTACIÓN REAL SERVER-SIDE A PDF / EXCEL (.xlsx)
     // ==========================================
     const btnExportPdf = document.querySelector('.footer-actions button:first-child');
     const btnExportExcel = document.querySelector('.footer-actions button:last-child');
 
+    function buildReportesExportUrl(format) {
+        const params = new URLSearchParams({ format });
+        if (searchInput && searchInput.value.trim()) params.set('q', searchInput.value.trim());
+        if (redSelect && redSelect.value.trim()) params.set('red_id', redSelect.value.trim());
+        if (cdpSelect && cdpSelect.value.trim()) params.set('cdp_id', cdpSelect.value.trim());
+        if (fechaDesde && fechaDesde.value.trim()) params.set('fecha_desde', fechaDesde.value.trim());
+        if (fechaHasta && fechaHasta.value.trim()) params.set('fecha_hasta', fechaHasta.value.trim());
+        return `/api/export/reportes?${params.toString()}`;
+    }
+
     if (btnExportExcel) {
-        btnExportExcel.addEventListener('click', exportReportsToCSV);
+        btnExportExcel.addEventListener('click', () => {
+            window.location.href = buildReportesExportUrl('xlsx');
+        });
     }
 
     if (btnExportPdf) {
-        btnExportPdf.addEventListener('click', exportReportsToPDF);
-    }
-
-    function getReportsData() {
-        const table = document.querySelector('table');
-        if (!table) return [];
-
-        const rows = table.querySelectorAll('tbody tr');
-        const data = [];
-
-        rows.forEach(tr => {
-            if (tr.querySelector('.empty-state')) return;
-            const fechaEl = tr.querySelector('td[data-label="Fecha"]');
-            const liderEl = tr.querySelector('.leader-cell .font-semibold');
-            const cdpEl = tr.querySelector('td[data-label="Casa de Paz"]');
-            const asisEl = tr.querySelector('td[data-label="Asistencia"] .badge');
-            const actionBtn = tr.querySelector('.btn-view') || tr.querySelector('.btn-edit');
-
-            const ofrendasUsd = actionBtn ? (actionBtn.dataset.ofrendasUsd || '0.00') : '0.00';
-            const ofrendasBs = actionBtn ? (actionBtn.dataset.ofrendasBs || '0.00') : '0.00';
-
-            data.push({
-                fecha: fechaEl ? fechaEl.textContent.trim() : '',
-                lider: liderEl ? liderEl.textContent.trim() : '',
-                cdp: cdpEl ? cdpEl.textContent.trim() : '',
-                asistencia: asisEl ? asisEl.textContent.trim() : '0',
-                ofrendas_usd: ofrendasUsd,
-                ofrendas_bs: ofrendasBs
-            });
+        btnExportPdf.addEventListener('click', () => {
+            window.location.href = buildReportesExportUrl('pdf');
         });
-
-        return data;
-    }
-
-    function exportReportsToCSV() {
-        const data = getReportsData();
-        if (!data.length) {
-            alert('No hay reportes para exportar.');
-            return;
-        }
-
-        let csv = '\uFEFF'; // UTF-8 BOM
-        csv += 'Fecha,Líder,Casa de Paz,Asistencia,Ofrendas ($ USD),Ofrendas (Bs)\n';
-
-        data.forEach(item => {
-            const fecha = `"${item.fecha.replace(/"/g, '""')}"`;
-            const lider = `"${item.lider.replace(/"/g, '""')}"`;
-            const cdp = `"${item.cdp.replace(/"/g, '""')}"`;
-            const asis = `"${item.asistencia.replace(/"/g, '""')}"`;
-            const ofrUsd = `"${item.ofrendas_usd.replace(/"/g, '""')}"`;
-            const ofrBs = `"${item.ofrendas_bs.replace(/"/g, '""')}"`;
-
-            csv += `${fecha},${lider},${cdp},${asis},${ofrUsd},${ofrBs}\n`;
-        });
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const today = new Date().toISOString().split('T')[0];
-        a.href = url;
-        a.download = `reportes_actividad_${today}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    function exportReportsToPDF() {
-        const data = getReportsData();
-        if (!data.length) {
-            alert('No hay reportes para exportar.');
-            return;
-        }
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('Por favor habilite las ventanas emergentes para generar el documento imprimible.');
-            return;
-        }
-
-        const today = new Date().toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        let rowsHtml = '';
-        let totalAsis = 0;
-        let totalOfrUsd = 0;
-        let totalOfrBs = 0;
-
-        data.forEach(item => {
-            const asisNum = parseInt(item.asistencia) || 0;
-            const ofrUsdNum = parseFloat(item.ofrendas_usd) || 0;
-            const ofrBsNum = parseFloat(item.ofrendas_bs) || 0;
-            totalAsis += asisNum;
-            totalOfrUsd += ofrUsdNum;
-            totalOfrBs += ofrBsNum;
-
-            rowsHtml += `
-                <tr>
-                    <td>${item.fecha}</td>
-                    <td><strong>${item.lider}</strong></td>
-                    <td>${item.cdp}</td>
-                    <td style="text-align:center;">${item.asistencia}</td>
-                    <td style="text-align:right;">$${ofrUsdNum.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td style="text-align:right;">Bs. ${ofrBsNum.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                </tr>
-            `;
-        });
-
-        const html = `
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-                <meta charset="UTF-8">
-                <title>Reportes de Actividad - Vino Nuevo</title>
-                <style>
-                    body {
-                        font-family: 'Segoe UI', Arial, sans-serif;
-                        color: #2b1111;
-                        padding: 30px;
-                        margin: 0;
-                    }
-                    .header {
-                        border-bottom: 2px solid #390002;
-                        padding-bottom: 15px;
-                        margin-bottom: 20px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-end;
-                    }
-                    h1 {
-                        color: #390002;
-                        font-size: 24px;
-                        margin: 0 0 5px 0;
-                    }
-                    .meta {
-                        font-size: 13px;
-                        color: #564240;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 15px;
-                        font-size: 13px;
-                    }
-                    th {
-                        background-color: #f8e4e3;
-                        color: #390002;
-                        font-weight: 700;
-                        text-align: left;
-                        padding: 10px 12px;
-                        border-bottom: 1px solid #ddc0bd;
-                    }
-                    td {
-                        padding: 10px 12px;
-                        border-bottom: 1px solid #eee;
-                    }
-                    tr:nth-child(even) td {
-                        background-color: #faf7f7;
-                    }
-                    .totals-row td {
-                        font-weight: 700;
-                        background-color: #f8e4e3 !important;
-                        color: #390002;
-                        border-top: 2px solid #390002;
-                    }
-                    .footer {
-                        margin-top: 30px;
-                        font-size: 11px;
-                        color: #888;
-                        text-align: center;
-                        border-top: 1px solid #ddd;
-                        padding-top: 10px;
-                    }
-                    @media print {
-                        body { padding: 0; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div>
-                        <h1>Comunidad Cristiana Vino Nuevo</h1>
-                        <div class="meta">Consolidado de Reportes de Actividad · Casas de Paz</div>
-                    </div>
-                    <div class="meta">Fecha de emisión: ${today}</div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Líder</th>
-                            <th>Casa de Paz</th>
-                            <th style="text-align:center;">Asistencia</th>
-                            <th style="text-align:right;">Ofrendas ($ USD)</th>
-                            <th style="text-align:right;">Ofrendas (Bs)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                        <tr class="totals-row">
-                            <td colspan="3">TOTALES REGISTRADOS</td>
-                            <td style="text-align:center;">${totalAsis}</td>
-                            <td style="text-align:right;">$${totalOfrUsd.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td style="text-align:right;">Bs. ${totalOfrBs.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="footer">
-                    Documento administrativo de auditoría generado por el sistema de Casas de Paz Vino Nuevo.
-                </div>
-                <script>
-                    window.onload = function() {
-                        window.print();
-                    };
-                </script>
-            </body>
-            </html>
-        `;
-
-        printWindow.document.open();
-        printWindow.document.write(html);
-        printWindow.document.close();
     }
 });
 

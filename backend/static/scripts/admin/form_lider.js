@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteInput = document.getElementById('deleteInput');
     const btnConfirm = document.getElementById('btnConfirmDelete');
     const formEliminar = document.getElementById('formEliminarLider');
+    const btnOpenDelete = document.getElementById('btnOpenDeleteModal');
+
+    if (btnOpenDelete) {
+        btnOpenDelete.addEventListener('click', openDeleteModal);
+    }
+
+    document.querySelectorAll('[data-close-delete-modal]').forEach(btn => {
+        btn.addEventListener('click', closeDeleteModal);
+    });
 
     if (deleteInput && btnConfirm) {
         deleteInput.addEventListener('input', () => {

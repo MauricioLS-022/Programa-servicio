@@ -27,6 +27,8 @@ from services.dashboard_service import mock_mode_enabled
 from werkzeug.security import generate_password_hash
 
 from utils.validators import validate_name_red, validate_phone, validate_person_name
+from services import red_service as _red_service
+from services import user_service as _user_service
 
 
 # =====================================================================
@@ -87,17 +89,23 @@ def get_lideres_context(search='', rol='', red_id='', cdp_id='', page=1, per_pag
         'cdp_id': cdp_id,
     }
 
+def _as_str(val, default: str = '') -> str:
+    if val is None:
+        return default
+    return str(val).strip()
+
+
 def crear_lider_servicio(form_data: dict) -> tuple[bool, str]:
     """
     Valida y registra un nuevo líder o sublíder asignado a una Casa de Paz activa.
     Retorna: (exito: bool, mensaje: str)
     """
 
-    nombre_raw = form_data.get('nombre', '').strip()
-    apellido_raw = form_data.get('apellido', '').strip()
-    telefono_raw = form_data.get('telefono', '').strip()
-    rol = form_data.get('rol', '').strip()
-    cdp_id_raw = form_data.get('cdp_id', '').strip()
+    nombre_raw = _as_str(form_data.get('nombre'))
+    apellido_raw = _as_str(form_data.get('apellido'))
+    telefono_raw = _as_str(form_data.get('telefono'))
+    rol = _as_str(form_data.get('rol'))
+    cdp_id_raw = _as_str(form_data.get('cdp_id'))
 
     # 1. Validaciones defensivas de nombres
     ok_nom, res_nom = validate_person_name(nombre_raw, 'Nombre')
@@ -162,7 +170,7 @@ def crear_lider_servicio(form_data: dict) -> tuple[bool, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al registrar líder: %s", e)
-        return False, f"Error interno al registrar el líder: {str(e)}"
+        return False, "Error interno al registrar el líder."
     finally:
         conn.close()
 
@@ -200,11 +208,11 @@ def actualizar_lider_servicio(lider_id: int, form_data: dict, is_active: int = N
     except (ValueError, TypeError):
         return False, "Identificador de líder no válido."
 
-    nombre_raw = form_data.get('nombre', '').strip()
-    apellido_raw = form_data.get('apellido', '').strip()
-    telefono_raw = form_data.get('telefono', '').strip()
-    rol = form_data.get('rol', '').strip()
-    cdp_id_raw = form_data.get('cdp_id', '').strip()
+    nombre_raw = _as_str(form_data.get('nombre'))
+    apellido_raw = _as_str(form_data.get('apellido'))
+    telefono_raw = _as_str(form_data.get('telefono'))
+    rol = _as_str(form_data.get('rol'))
+    cdp_id_raw = _as_str(form_data.get('cdp_id'))
 
     is_active_raw = is_active if is_active is not None else form_data.get('is_active')
     is_active_val = None
@@ -277,7 +285,7 @@ def actualizar_lider_servicio(lider_id: int, form_data: dict, is_active: int = N
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al actualizar líder %s: %s", lider_id, e)
-        return False, f"Error interno al actualizar el líder: {str(e)}"
+        return False, "Error interno al actualizar el líder."
     finally:
         conn.close()
 
@@ -314,7 +322,7 @@ def toggle_lider_servicio(lider_id: int) -> tuple[bool, str, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al alternar estado de líder %s: %s", lider_id, e)
-        return False, 'error', f"Error interno al alternar el estado del líder: {e}"
+        return False, 'error', "Error interno al alternar el estado del líder."
     finally:
         conn.close()
 
@@ -377,365 +385,71 @@ def eliminar_lider_servicio(lider_id_raw: int) -> tuple[bool, str, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error en baja de líder %s: %s", lider_id, e)
-        return False, "danger", f"Error interno al procesar la baja del líder: {e}"
+        return False, "danger", "Error interno al procesar la baja del líder."
     finally:
         conn.close()
 
 
 def crear_nuevo_usuario(form_data):
-    """
-    Lógica de negocio para crear un usuario con validaciones de seguridad defensivas.
-    """
-    from utils.validators import (
-        validate_username,
-        validate_password_strength,
-        validate_person_name
+    """Fachada retrocompatible hacia services.user_service.crear_nuevo_usuario."""
+    return _user_service.crear_nuevo_usuario(
+        form_data,
+        _conn_provider=get_db_connection,
+        _insertar_usuario_fn=insertar_usuario,
+        _asignar_sup_fn=asignar_supervisor_a_red,
+        _asignar_cdp_fn=asignar_usuario_a_cdp,
     )
-
-    username_raw = form_data.get('username', '')
-    password_raw = form_data.get('password', '')
-    nombre_raw = form_data.get('nombre', '')
-    apellido_raw = form_data.get('apellido', '')
-    tipo_usuario = form_data.get('tipo_usuario', '').strip()
-
-    # Validar Nombre y Apellido
-    ok_nom, res_nom = validate_person_name(nombre_raw, "Nombre")
-    if not ok_nom:
-        return False, res_nom
-
-    ok_ape, res_ape = validate_person_name(apellido_raw, "Apellido")
-    if not ok_ape:
-        return False, res_ape
-
-    # Validar Username
-    ok_user, res_user = validate_username(username_raw)
-    if not ok_user:
-        return False, res_user
-
-    # Validar Complejidad de Contraseña
-    ok_pass, res_pass = validate_password_strength(password_raw)
-    if not ok_pass:
-        return False, res_pass
-
-    # Validar Rol permitido
-    roles_permitidos = ('admin', 'supervisor', 'lider_cdp')
-    if tipo_usuario not in roles_permitidos:
-        return False, f"Rol no válido. Debe ser uno de: {', '.join(roles_permitidos)}."
-
-    conn = get_db_connection()
-    if not conn:
-        return False, "Error de conexión a la base de datos."
-
-    try:
-        with conn.cursor() as cursor:
-            # 1. Verificar si el username ya existe
-            cursor.execute("SELECT id FROM usuario WHERE username = %s", (res_user,))
-            if cursor.fetchone():
-                return False, f"El nombre de usuario '{res_user}' ya está en uso."
-
-            # 2. Encriptar la contraseña (NUNCA guardar en texto plano)
-            password_hash = generate_password_hash(password_raw)
-
-            # 3. Guardar en BD usando tu db_queries
-            nuevo_id = insertar_usuario(
-                cursor, res_user, password_hash, res_nom, res_ape, tipo_usuario
-            )
-
-            # 4. Asignación opcional según el rol seleccionado
-            red_id_raw = form_data.get('red_id', '').strip()
-            cdp_id_raw = form_data.get('cdp_id', '').strip()
-
-            if tipo_usuario == 'supervisor' and red_id_raw:
-                try:
-                    red_id = int(red_id_raw)
-                    asignar_supervisor_a_red(cursor, nuevo_id, red_id)
-                except (ValueError, TypeError):
-                    pass
-            elif tipo_usuario == 'lider_cdp' and cdp_id_raw:
-                try:
-                    cdp_id = int(cdp_id_raw)
-                    asignar_usuario_a_cdp(cursor, nuevo_id, cdp_id)
-                except (ValueError, TypeError):
-                    pass
-            
-        # Confirmar la transacción
-        conn.commit()
-        return True, "Usuario creado exitosamente."
-        
-    except Exception as e:
-        conn.rollback()
-        print(f"[Service] Error al crear usuario: {e}")
-        return False, "Ocurrió un error interno al crear el usuario."
-    finally:
-        conn.close()
 
 
 def get_opciones_asignacion(usuario_id=None):
-    """
-    Obtiene redes y CDPs disponibles para los selectores de asignación en form_usuario.
-    Si se proporciona usuario_id, incluye también las asignaciones actuales de ese usuario.
-    """
-    conn = get_db_connection()
-    if conn:
-        try:
-            with conn.cursor() as cursor:
-                redes = get_redes_disponibles(cursor, usuario_id=usuario_id)
-                cdps = get_cdps_disponibles(cursor, usuario_id=usuario_id)
-            return redes, cdps
-        except Exception as e:
-            current_app.logger.error("Error obteniendo opciones de asignación: %s", e)
-            return [], []
-        finally:
-            conn.close()
-    elif mock_mode_enabled():
-        redes_demo = get_redes_demo()
-        redes = [
-            {'id': r['id'], 'nombre': r['nombre']}
-            for r in redes_demo
-            if not r.get('supervisor_id') or (usuario_id and str(r.get('supervisor_id')) == str(usuario_id))
-        ]
-        casas_demo = get_casas_demo()
-        cdps = [
-            {
-                'id': c['id'],
-                'codigo': c['codigo'],
-                'direccion': c.get('direccion', ''),
-                'red_nombre': c.get('red_nombre', '')
-            }
-            for c in casas_demo
-            if not c.get('lider_id') or (usuario_id and str(c.get('lider_id')) == str(usuario_id))
-        ]
-        return redes, cdps
-    return [], []
+    """Fachada retrocompatible hacia services.user_service.get_opciones_asignacion."""
+    return _user_service.get_opciones_asignacion(usuario_id=usuario_id, _conn_provider=get_db_connection)
 
 
 def get_supervisores_disponibles_servicio():
-    """
-    Obtiene la lista de usuarios con rol supervisor que no tienen red asignada.
-    """
-    conn = get_db_connection()
-    if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            from mock_data import get_mock_usuarios, get_redes_demo
-            usuarios = get_mock_usuarios()
-            redes = get_redes_demo()
-            asignados_ids = {str(r.get('supervisor_id')) for r in redes if r.get('supervisor_id')}
-            return [
-                {
-                    'id': u['id'],
-                    'nombre': f"{u.get('nombre', '')} {u.get('apellido', '')}".strip() or u.get('username'),
-                    'username': u.get('username')
-                }
-                for u in usuarios
-                if u.get('rol') == 'supervisor' and str(u['id']) not in asignados_ids
-            ]
-        return []
-    try:
-        with conn.cursor() as cursor:
-            return get_supervisores_disponibles(cursor)
-    except Exception as e:
-        current_app.logger.error("Error obteniendo supervisores disponibles: %s", e)
-        return []
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.red_service.get_supervisores_disponibles_servicio."""
+    return _red_service.get_supervisores_disponibles_servicio(_conn_provider=get_db_connection)
 
 
 def crear_red_servicio(form_data: dict) -> tuple:
-    """
-    Valida y procesa la creación de una nueva red ministerial.
-    Retorna: (success: bool, message: str)
-    """
-    nombre_red_raw = form_data.get('nombre', '').strip()
-    supervisor_id = form_data.get('supervisor_id', '').strip()
-
-    is_valid, res_red = validate_name_red(nombre_red_raw)
-    if not is_valid:
-        return False, res_red
-
-    conn = get_db_connection()
-    if not conn:
-        return False, 'Error de conexión a la base de datos.'
-
-    try: 
-        with conn.cursor() as cursor:
-            #1. Verificar que no exista otra red con el mismo nombre
-            cursor.execute("SELECT id FROM red WHERE nombre = %s", (res_red,))
-
-            if cursor.fetchone():
-                return False, f"Ya existe una red con el nombre '{res_red}'."
-            #2. Validar supervisor si fue seleccionado
-            sup_final = None
-            if supervisor_id:
-                # Comprobar que usuario exista y sea supervisor
-                cursor.execute("SELECT id FROM usuario WHERE id = %s AND tipo_usuario = 'supervisor'", (supervisor_id,))
-                if not cursor.fetchone():
-                    return False, "El supervisor seleccionado no es válido."
-                # Comprobar regla 1 a 1: que no esté asignado a otra red
-                cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s", (supervisor_id,))
-                red_ocupada = cursor.fetchone()
-                if red_ocupada:
-                    return False, f"Este supervisor ya está asignado a la red '{red_ocupada['nombre']}'"
-
-                sup_final = supervisor_id
-
-            #3. Insertar la nueva red
-            insertar_red(cursor, res_red, sup_final)
-            conn.commit()
-
-            try:
-                invalidate_dashboard_cache()
-            except Exception:
-                pass
-
-            return True, "Red creada exitosamente."
-            
-    except Exception as e:
-        conn.rollback()
-        current_app.logger.error("Error creando red: %s", e)
-        return False, f"Error interno al crear la red: {str(e)}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.red_service.crear_red_servicio."""
+    return _red_service.crear_red_servicio(
+        form_data,
+        _conn_provider=get_db_connection,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
 
-def obtener_red_servicio(red_id:int):
-    """
-    Obtiene los datos de una red específica por su ID.
-    Retorna el diccionario de la red o None si no existe.
-    """
-    conn = get_db_connection()
-    if not conn:
-        return None
-    try: 
-        with conn.cursor() as cursor:
-            return obtener_red_por_id(cursor, red_id)
-    except Exception as e:
-        current_app.logger.error("Error al obtener red %s: %s",red_id, e)
-        return None
-    finally:
-        conn.close()
+def obtener_red_servicio(red_id: int):
+    """Fachada retrocompatible hacia services.red_service.obtener_red_servicio."""
+    return _red_service.obtener_red_servicio(red_id, _conn_provider=get_db_connection)
 
-def actualizar_red_servicio(red_id:int, form_data:dict) -> tuple[bool, str]:
-    """
-    Actualiza el nombre y supervisor de una red existente.
-    Retorna: (success: bool, message: str)
-    """
-    nombre_red_raw = form_data.get('nombre', '').strip()
-    supervisor_id = form_data.get('supervisor_id', '').strip()
 
-    is_valid, res_red = validate_name_red(nombre_red_raw)
-    if not is_valid:
-        return False, res_red
-    
-    conn = get_db_connection()
-    if not conn:
-        return False, 'Error de conexión a la base de datos.'
+def actualizar_red_servicio(red_id: int, form_data: dict) -> tuple[bool, str]:
+    """Fachada retrocompatible hacia services.red_service.actualizar_red_servicio."""
+    return _red_service.actualizar_red_servicio(
+        red_id,
+        form_data,
+        _conn_provider=get_db_connection,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
-    try:
-        with conn.cursor() as cursor:
-            #1. Verificar que la red exista
-            cursor.execute("SELECT id FROM red WHERE id = %s", (red_id,))
-            if not cursor.fetchone():
-                return False, "La red especificada no existe."
 
-            #2. Verificar que no exista otra red con el mismo nombre
-            cursor.execute("SELECT id FROM red WHERE nombre = %s AND id != %s", (res_red, red_id))
-            if cursor.fetchone():
-                return False, f"Ya existe otra red con el nombre '{res_red}'."
-            
-            #3. Validar supervisor si fue seleccionado
-            sup_final = None
-            if supervisor_id:
-                cursor.execute("SELECT id FROM usuario WHERE id = %s AND tipo_usuario = 'supervisor'", (supervisor_id,))
-                if not cursor.fetchone():
-                    return False, "El supervisor seleccionado no es válido."
-                # Comprobar que no este en otra red
-                cursor.execute("SELECT id, nombre FROM red WHERE supervisor_id = %s AND id != %s", (supervisor_id, red_id))
-                red_ocupada = cursor.fetchone()
-                if red_ocupada:
-                    return False, f"Este supervisor ya está asignado a la red '{red_ocupada['nombre']}'"
-                sup_final = supervisor_id
+def toggle_red_servicio(red_id: int) -> tuple[bool, str]:
+    """Fachada retrocompatible hacia services.red_service.toggle_red_servicio."""
+    return _red_service.toggle_red_servicio(
+        red_id,
+        _conn_provider=get_db_connection,
+        _toggle_fn=toggle_estado_red,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
-            #4. Actualizar la red
-            actualizar_red(cursor, red_id, res_red, sup_final)
-        conn.commit()
-        try:
-            invalidate_dashboard_cache()
-        except Exception:
-            pass
-        return True, "Red actualizada exitosamente."
-    except Exception as e:
-        conn.rollback()
-        current_app.logger.error("Error actualizando red: %s", e)
-        return False, f"Error interno al actualizar la red: {str(e)}"
-    finally:
-        conn.close()
 
-def toggle_red_servicio(red_id:int) -> tuple[bool, str]:
-    """
-    Pone en pausa o reactiva una red.
-    Retorna: (success: bool, message: str)
-    """
-    conn = get_db_connection()
-    if not conn: 
-        return False, 'Error de conexión a la base de datos.'
-
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT nombre FROM red WHERE id = %s", (red_id,))
-            red = cursor.fetchone()
-            if not red:
-                return False, "La red especificada no existe."
-
-            quedo_activa = toggle_estado_red(cursor, red_id)
-        conn.commit()
-
-        try:
-            invalidate_dashboard_cache()
-        except Exception:
-            pass
-
-        estado = 'reactivada' if quedo_activa else 'puesta en pausa'
-        return True, f"La red '{red['nombre']}' ha sido {estado} exitosamente."
-    
-    except Exception as e:
-        conn.rollback()
-        current_app.logger.error("Error al cambiar el estado de la red %s: %s", red_id, e)
-        return False, f"Error interno al cambiar el estado de la red"
-    finally:
-        conn.close()
-
-def eliminar_red_servicio(red_id:int) -> tuple[bool, str]:
-    """
-    Elimina una red si no tiene Casas de Paz vinculadas.
-    Retorna: (success: bool, message: str)
-    """
-    conn = get_db_connection()
-    if not conn:
-        return False, 'Error de conexión a la base de datos.'
-
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT nombre FROM red WHERE id = %s", (red_id,))
-            red = cursor.fetchone()
-            if not red:
-                return False, "La red especificada no existe."
-
-            exito = eliminar_red(cursor, red_id)
-            if not exito:
-                return False, f"No se puede eliminar la red '{red['nombre']}' porque tiene Casas de Paz vinculadas.  Reasigna las casas primero o pon la red en pausa."
-        conn.commit()
-
-        try:
-            invalidate_dashboard_cache()
-        except Exception:
-            pass
-
-        return True, f"La red '{red['nombre']}' ha sido eliminada exitosamente."
-
-    except Exception as e:
-        conn.rollback()
-        current_app.logger.error("Error al eliminar la red %s: %s", red_id, e)
-        return False, f"Error interno al eliminar la red"
-    finally:
-        conn.close()
+def eliminar_red_servicio(red_id: int) -> tuple[bool, str]:
+    """Fachada retrocompatible hacia services.red_service.eliminar_red_servicio."""
+    return _red_service.eliminar_red_servicio(
+        red_id,
+        _conn_provider=get_db_connection,
+        _eliminar_fn=eliminar_red,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )

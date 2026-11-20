@@ -107,6 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeDeleteModal();
     };
 
+    document.querySelectorAll('[data-close-delete-modal]').forEach(btn => {
+        btn.addEventListener('click', () => window.closeDeleteModal());
+    });
+
+    if (btnConfirmDelete) {
+        btnConfirmDelete.addEventListener('click', () => {
+            if (!btnConfirmDelete.disabled) window.confirmDeleteUser();
+        });
+    }
+
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) window.closeDeleteModal();

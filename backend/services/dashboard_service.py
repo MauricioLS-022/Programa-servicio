@@ -2,6 +2,7 @@
 Servicio de dashboard - Lógica de negocio para métricas del dashboard.
 Maneja la obtención y filtrado de métricas para Admin y Supervisor.
 """
+import logging
 from flask import current_app, session, request
 from database import get_db_connection
 from db_queries import formatear_horario_cdp, get_metricas_generales, get_metricas_red, get_metricas_cdp
@@ -11,6 +12,8 @@ from mock_data import (
     get_empty_generales, get_empty_red, get_empty_cdp,
 )
 from utils.cache import get_cached_value, set_cached_value
+
+logger = logging.getLogger(__name__)
 
 
 def mock_mode_enabled():
@@ -264,7 +267,9 @@ def get_supervisor_red_id(usuario_id):
         return None
     conn = get_db_connection()
     if not conn:
-        return 1  # Modo demo / offline cuando no hay base de datos conectada
+        if mock_mode_enabled():
+            return 1  # Modo demo explícito cuando MOCK_MODE=True
+        return None
     
     try:
         cur = conn.cursor()
@@ -277,7 +282,7 @@ def get_supervisor_red_id(usuario_id):
             return red_result['id']
         return None
     except Exception as e:
-        print(f"[DB] Error obteniendo red del supervisor: {e}")
+        logger.error("[DB] Error obteniendo red del supervisor: %s", e)
         return None
     finally:
         conn.close()
@@ -356,7 +361,7 @@ def get_selectores():
         set_cached_value(cache_key, result)
         return result
     except Exception as e:
-        print(f"[DB] Error obteniendo selectores: {e}")
+        logger.error("[DB] Error obteniendo selectores: %s", e)
         return [], []
     finally:
         conn.close()
@@ -506,7 +511,7 @@ def get_casas_sin_reporte_7d(red_id=None):
                 cur.execute(sql, tuple(params))
                 return cur.fetchall() or []
         except Exception as e:
-            print(f"[DB] Error al obtener casas sin reporte 7d: {e}")
+            logger.error("[DB] Error al obtener casas sin reporte 7d: %s", e)
             return []
         finally:
             conn.close()
@@ -590,9 +595,7 @@ def get_metricas(nivel, red_id=None, cdp_id=None, is_supervisor=False, superviso
                 else:
                     metricas = get_empty_cdp(cid)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"[Service] Error obteniendo métricas: {e}")
+        logger.exception("[Service] Error obteniendo métricas: %s", e)
         if nivel == 'red':
             metricas = get_empty_red(red_id or supervisor_red_id)
         elif nivel == 'cdp':

@@ -77,24 +77,71 @@ def validate_person_name(name: str, field_name: str = "Nombre") -> tuple[bool, s
     return True, cleaned
 
 
+def normalize_phone_e164(phone: str, default_country_code: str = "58") -> tuple[bool, str, str]:
+    """
+    Normaliza y valida un número telefónico al formato internacional estricto E.164
+    (+<código_país><número>, entre 8 y 14 dígitos, máximo 15 caracteres para varchar(15)).
+    Retorna (es_valido, telefono_e164, mensaje_error).
+    """
+    if phone is None or (isinstance(phone, str) and not phone.strip()):
+        return True, "", ""
+
+    if not isinstance(phone, str):
+        phone = str(phone)
+
+    cleaned = phone.strip()
+    if not re.match(r'^\+?[0-9\s\-().]{7,25}$', cleaned):
+        return False, "", "Formato de teléfono inválido. Usa formato internacional E.164 (ej: +58 412-1234567 o 0412-1234567)."
+
+    digits = re.sub(r'\D', '', cleaned)
+    if not digits:
+        return False, "", "El teléfono debe contener dígitos numéricos válidos."
+
+    if cleaned.startswith('+'):
+        e164_digits = digits
+    elif cleaned.startswith('00') and len(digits) > 2:
+        e164_digits = digits[2:]
+    elif digits.startswith('0') and len(digits) == 11:
+        # Formato local venezolano (0412/0414/0416/0424/0426/02XX...)
+        e164_digits = f"{default_country_code}{digits[1:]}"
+    elif len(digits) == 10 and digits[0] in ('2', '4'):
+        # Número local de 10 dígitos sin cero inicial
+        e164_digits = f"{default_country_code}{digits}"
+    elif digits.startswith(default_country_code) and 11 <= len(digits) <= 13:
+        e164_digits = digits
+    elif not digits.startswith('0') and 8 <= len(digits) <= 14:
+        e164_digits = digits
+    else:
+        return False, "", "Formato de teléfono inválido. Indica el código de país (ej: +58 412-1234567)."
+
+    if e164_digits.startswith('0') or len(e164_digits) < 8 or len(e164_digits) > 14:
+        return False, "", "El teléfono E.164 debe tener entre 8 y 14 dígitos (máximo 15 caracteres incluyendo '+')."
+
+    return True, f"+{e164_digits}", ""
+
+
+def format_whatsapp_digits(phone: any, default_country_code: str = "58") -> str:
+    """
+    Retorna los dígitos internacionales sin signo '+' listos para https://wa.me/<digitos>.
+    Normaliza registros históricos locales (ej. 0414-1234567 -> 584141234567).
+    """
+    if not phone:
+        return ""
+    ok, normalized, _ = normalize_phone_e164(str(phone), default_country_code=default_country_code)
+    if ok and normalized:
+        return normalized.lstrip('+')
+    digits = re.sub(r'\D', '', str(phone))
+    if digits.startswith('0') and len(digits) == 11:
+        return f"{default_country_code}{digits[1:]}"
+    return digits if len(digits) >= 8 else ""
+
+
 def validate_phone(phone: str) -> tuple[bool, str, str]:
     """
-    Normaliza y valida formato de número telefónico.
-    Retorna (es_valido, telefono_formateado, mensaje_error).
+    Valida y normaliza un número telefónico al formato internacional E.164.
+    Retorna (es_valido, telefono_e164, mensaje_error).
     """
-    if not phone or not isinstance(phone, str):
-        return True, "", ""  # Opcional
-        
-    cleaned = phone.strip()
-    # Permitir '+' al inicio y luego dígitos, espacios, guiones o paréntesis
-    if not re.match(r'^\+?[0-9\s\-()]{7,20}$', cleaned):
-        return False, "", "Formato de teléfono inválido (ejemplo: +58 412-1234567 o 04141234567)."
-        
-    digits_only = re.sub(r'\D', '', cleaned)
-    if len(digits_only) < 7 or len(digits_only) > 15:
-        return False, "", "El teléfono debe contener entre 7 y 15 dígitos numéricos."
-        
-    return True, cleaned, ""
+    return normalize_phone_e164(phone)
 
 
 def validate_uuid(val: str) -> bool:

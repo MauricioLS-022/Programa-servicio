@@ -187,7 +187,7 @@ def insertar_cdp(cursor: Cursor, codigo: str, anfitrion: str, direccion: str, te
         INSERT INTO cdp (codigo, anfitrion, direccion, is_active, telefono, red_id, usuario_id) 
         VALUES (%s, %s, %s, 1, %s, %s, %s)
     """
-    cursor.execute(query, (codigo.strip(), anfitrion.strip(), direccion.strip(), telefono.strip(), red_id, usuario_id))
+    cursor.execute(query, (codigo.strip(), anfitrion.strip(), direccion.strip(), (telefono or '').strip(), red_id, usuario_id))
     return cursor.lastrowid
 
 
@@ -217,14 +217,14 @@ def actualizar_cdp_admin(cursor: Cursor, cdp_id: int, codigo: str, anfitrion: st
         SET codigo = %s, anfitrion = %s, telefono = %s, direccion = %s, red_id = %s, is_active = %s
         WHERE id = %s
         """
-        cursor.execute(query, (codigo.strip(), anfitrion.strip(), telefono.strip(), direccion.strip(), red_id, int(is_active), cdp_id))
+        cursor.execute(query, (codigo.strip(), anfitrion.strip(), (telefono or '').strip(), direccion.strip(), red_id, int(is_active), cdp_id))
     else:
         query = """
         UPDATE cdp 
         SET codigo = %s, anfitrion = %s, telefono = %s, direccion = %s, red_id = %s
         WHERE id = %s
         """
-        cursor.execute(query, (codigo.strip(), anfitrion.strip(), telefono.strip(), direccion.strip(), red_id, cdp_id))
+        cursor.execute(query, (codigo.strip(), anfitrion.strip(), (telefono or '').strip(), direccion.strip(), red_id, cdp_id))
     return cursor.rowcount >= 0
 
 
@@ -326,5 +326,94 @@ def toggle_estado_cdp(cursor: Cursor, cdp_id: int) -> tuple[bool, str, str]:
         if usuario_id:
             cursor.execute("UPDATE usuario SET is_active = 0 WHERE id = %s", (usuario_id,))
         return True, 'pausada', f"La Casa de Paz '{codigo}' ha sido puesta en pausa y su cuenta de acceso desactivada."
+
+
+def listar_redes_con_supervisor(cursor: Cursor, supervisor_red_id=None):
+    """Retorna redes ministeriales con nombre de supervisor y total de Casas de Paz."""
+    query = """
+        SELECT r.id, r.nombre, r.is_active, r.supervisor_id,
+               CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellido, '')) AS supervisor_nombre,
+               u.username AS supervisor_username,
+               (SELECT COUNT(*) FROM cdp c WHERE c.red_id = r.id) AS total_casas
+        FROM red r
+        LEFT JOIN usuario u ON r.supervisor_id = u.id
+    """
+    params = []
+    if supervisor_red_id is not None:
+        query += " WHERE r.id = %s"
+        params.append(supervisor_red_id)
+    query += " ORDER BY r.nombre ASC"
+    cursor.execute(query, params)
+    return cursor.fetchall() or []
+
+
+def listar_casas_de_paz_filtradas(cursor: Cursor, red_id='', search='', filtro=''):
+    """
+    Retorna listado enriquecido de Casas de Paz (paridad 1:1 con get_estructura_context)
+    incluyendo líder principal, usuario vinculado, promedio real de asistencia y horario.
+    """
+    from .helpers import formatear_horario_cdp
+
+    query = """
+        SELECT c.id, c.codigo, c.codigo AS nombre, c.red_id, c.anfitrion, c.direccion, c.telefono,
+               c.is_active, c.usuario_id, r.nombre AS red_nombre,
+               u.username AS usuario_username,
+               CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellido, '')) AS usuario_nombre,
+               (SELECT COUNT(*) FROM lider l WHERE l.cdp_id = c.id AND l.is_active = 1) AS total_lideres,
+               COALESCE(
+                   (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.rol = 'Lider' AND l.is_active = 1 LIMIT 1),
+                   (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id AND l.is_active = 1 LIMIT 1),
+                   (SELECT CONCAT(l.nombre, ' ', l.apellido) FROM lider l WHERE l.cdp_id = c.id LIMIT 1)
+               ) AS lider,
+               COALESCE(
+                   (SELECT ROUND(AVG(nro_regulares + nro_niños + nro_visitas + nro_comprometidos))
+                    FROM reporte WHERE cdp_id = c.id),
+                   0
+               ) AS asistencia,
+               (
+                   SELECT r_last.hr_inicio
+                   FROM reporte r_last
+                   WHERE r_last.cdp_id = c.id AND r_last.hr_inicio IS NOT NULL
+                   ORDER BY r_last.fecha DESC, r_last.id DESC
+                   LIMIT 1
+               ) AS ultimo_hr_inicio,
+               (
+                   SELECT r_last.fecha
+                   FROM reporte r_last
+                   WHERE r_last.cdp_id = c.id AND r_last.hr_inicio IS NOT NULL
+                   ORDER BY r_last.fecha DESC, r_last.id DESC
+                   LIMIT 1
+               ) AS ultima_fecha
+        FROM cdp c
+        JOIN red r ON c.red_id = r.id
+        LEFT JOIN usuario u ON c.usuario_id = u.id
+        WHERE 1=1
+    """
+    params = []
+    if red_id:
+        query += " AND c.red_id = %s"
+        params.append(red_id)
+    if search:
+        query += " AND (c.codigo LIKE %s OR c.anfitrion LIKE %s OR c.direccion LIKE %s)"
+        term = f"%{search}%"
+        params.extend([term, term, term])
+    if filtro == 'activas':
+        query += " AND c.is_active = 1"
+    elif filtro == 'pausadas':
+        query += " AND c.is_active = 0"
+    query += " ORDER BY c.codigo ASC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall() or []
+
+    for c in rows:
+        hr_raw = c.pop('ultimo_hr_inicio', None)
+        fecha_raw = c.pop('ultima_fecha', None)
+        c['horario'] = formatear_horario_cdp(hr_raw, fecha_raw) if (hr_raw or fecha_raw) else 'Miércoles · 7:00 PM'
+        c['zona'] = c.get('direccion') or 'Sin zona asignada'
+        c['asistencia'] = int(c.get('asistencia') or 0)
+        if c.get('usuario_nombre'):
+            c['usuario_nombre'] = c['usuario_nombre'].strip()
+    return rows
+
 
 

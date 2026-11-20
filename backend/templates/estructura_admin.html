@@ -142,9 +142,15 @@
                     <h3 class="section-title">Casas de Paz</h3>
                     <p class="section-subtitle">Mostrando las casas de <strong id="casasFilterLabel">{% if selected_red_id and selected_red_id != 'all' %}{% set ns = namespace(found=false) %}{% for r in redes_estructura %}{% if (r.id|string == selected_red_id|string or r.slug == selected_red_id or ('red-' ~ r.id|string) == selected_red_id) and not ns.found %}{{ r.nombre }}{% set ns.found = true %}{% endif %}{% endfor %}{% if not ns.found %}todas las redes{% endif %}{% elif has_role("supervisor") and redes_estructura %}{{ redes_estructura[0].nombre }}{% else %}todas las redes{% endif %}</strong></p>
                 </div>
-                <div class="search-bar">
-                    <span class="material-symbols-outlined icon-search">search</span>
-                    <input type="text" id="casasSearchInput" value="{{ search_q or '' }}" placeholder="Buscar por código, líder, anfitrión o zona..." aria-label="Buscar Casas de Paz">
+                <div class="casas-header-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div class="search-bar">
+                        <span class="material-symbols-outlined icon-search">search</span>
+                        <input type="text" id="casasSearchInput" value="{{ search_q or '' }}" placeholder="Buscar por código, líder, anfitrión o zona..." aria-label="Buscar Casas de Paz">
+                    </div>
+                    <button type="button" id="btnExportCasasXlsx" class="btn btn-outline" aria-label="Exportar Casas de Paz a Excel" title="Exportar Casas de Paz a Excel (.xlsx)">
+                        <span class="material-symbols-outlined" aria-hidden="true">table_chart</span>
+                        <span>Excel</span>
+                    </button>
                 </div>
             </div>
 

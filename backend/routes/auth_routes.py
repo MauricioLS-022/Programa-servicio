@@ -5,6 +5,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from database import get_db_connection
 from werkzeug.security import check_password_hash, generate_password_hash
 from extensions import limiter
+import hmac
 import requests
 import os
 
@@ -92,7 +93,7 @@ def login():
                     elif not bool(r.get('is_active', 1)):
                         p = "Esta cuenta se encuentra inactiva o suspendida. Comuníquese con el administrador."
                     else:
-                        if r['password'] == contrasena:
+                        if hmac.compare_digest(r['password'], contrasena):
                             cur.execute(
                                 "UPDATE usuario SET password = %s WHERE id = %s",
                                 (generate_password_hash(contrasena), r['id'])
@@ -101,6 +102,7 @@ def login():
 
                         # Prevenir fijación de sesión limpiando cualquier dato residual
                         session.clear()
+                        session.permanent = True
                         session["usuario_id"] = str(r['id'])  # Convertir UUID a string
                         session["usuario"] = r['username']
                         # Normalizar 'cdp' a 'lider_cdp' si viene de BD legacy
@@ -116,16 +118,22 @@ def login():
                 # Modo demo: ESTRICTAMENTE habilitado SOLO en entorno de desarrollo
                 if is_dev and not is_production:
                     if usuario == "admin" and contrasena == "admin":
+                        session.clear()
+                        session.permanent = True
                         session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
                         session["usuario"] = "admin"
                         session["rol"] = "admin"
                         return _redirect_by_role("admin")
                     elif usuario == "supervisor" and contrasena == "supervisor":
+                        session.clear()
+                        session.permanent = True
                         session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
                         session["usuario"] = "supervisor"
                         session["rol"] = "supervisor"
                         return _redirect_by_role("supervisor")
                     elif usuario == "lider" and contrasena == "lider":
+                        session.clear()
+                        session.permanent = True
                         session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
                         session["usuario"] = "lider"
                         session["rol"] = "lider_cdp"
@@ -134,10 +142,14 @@ def login():
                         from mock_data import get_mock_usuarios
                         m_user = next((u for u in get_mock_usuarios() if u['username'] == usuario), None)
                         if m_user:
+                            session.clear()
+                            session.permanent = True
                             session["usuario_id"] = m_user['id']
                             session["usuario"] = m_user['username']
                             session["rol"] = m_user['rol']
                             return _redirect_by_role(m_user['rol'])
+                        session.clear()
+                        session.permanent = True
                         session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
                         session["usuario"] = usuario
                         session["rol"] = "lider_cdp"
@@ -157,7 +169,7 @@ def _check_password(stored_password, provided_password):
         return False
 
     if stored_password.count('$') < 2:
-        return stored_password == provided_password
+        return hmac.compare_digest(stored_password, provided_password)
 
     try:
         return check_password_hash(stored_password, provided_password)

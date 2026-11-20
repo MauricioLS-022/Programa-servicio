@@ -1,6 +1,9 @@
 """
-Servicio de Casa de Paz (CDP) - Lógica de negocio para reportes y perfiles.
+Servicio de Casa de Paz (CDP) - Lógica de negocio para Casas de Paz.
+Las funciones de perfil y reportes viven en `services.profile_service` y
+`services.report_service`, manteniéndose aquí como fachadas de compatibilidad hacia atrás.
 """
+import logging
 import uuid
 
 from flask import current_app, request
@@ -13,335 +16,50 @@ from utils.validators import (
     validate_username,
     validate_password_strength,
     validate_person_name,
-    validate_phone
+    validate_phone,
+    format_whatsapp_digits,
 )
+from services import profile_service as _profile_service
+from services import report_service as _report_service
+from services.report_service import ProcessReporteResult, _parse_cesta_amor
 
-class ProcessReporteResult(tuple):
-    """Tupla (success, message) que evalúa a booleano según success."""
-    def __bool__(self):
-        return bool(self[0])
-
-
-def _parse_cesta_amor(val):
-    if isinstance(val, bool):
-        return 1 if val else 0
-    if isinstance(val, (int, float)):
-        return 1 if val > 0 else 0
-    val_str = str(val).strip().lower()
-    return 1 if val_str in ('1', 'true', 'si', 'sí', 'on') else 0
+logger = logging.getLogger(__name__)
 
 
 def process_reporte(cdp_id, form_data):
-    """
-    Valida defensivamente y procesa el guardado de un reporte de Casa de Paz.
-    """
-    from utils.validators import validate_report_form
-    valido, error_msg, datos_reporte = validate_report_form(form_data, cdp_id)
-    if not valido:
-        return ProcessReporteResult((False, error_msg))
-
-    # Control de conexión a base de datos
-    conn = get_db_connection()
-    if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            return ProcessReporteResult((True, "Reporte guardado exitosamente."))
-        print("[ERROR] No se pudo establecer conexión a la base de datos.")
-        return ProcessReporteResult((False, "No se pudo conectar a la base de datos."))
-
-    try:
-        with conn.cursor() as cursor:
-            # Candado de unicidad e idempotencia: Comprobar si ya existe un reporte para esta Casa de Paz en la misma fecha
-            cursor.execute(
-                "SELECT id FROM reporte WHERE cdp_id = %s AND fecha = %s LIMIT 1",
-                (datos_reporte['cdp_id'], datos_reporte['fecha'])
-            )
-            reporte_existente = cursor.fetchone()
-            if reporte_existente:
-                fecha_str = str(datos_reporte['fecha'])
-                try:
-                    from utils.date_helpers import formatear_fecha_corta
-                    fecha_fmt = formatear_fecha_corta(datos_reporte['fecha'])
-                except Exception:
-                    fecha_fmt = fecha_str
-                return ProcessReporteResult((
-                    False,
-                    f"Ya existe un reporte registrado para esta Casa de Paz en la fecha {fecha_fmt}. Puedes consultarlo o editarlo en el historial."
-                ))
-
-            db_queries.insertar_reporte(cursor, datos_reporte)
-        conn.commit()  # Confirmar la transacción
-        
-        # Invalida cache del dashboard
-        try:
-            invalidate_dashboard_cache()
-        except Exception as cache_err:
-            print(f"[WARN] No se pudo invalidar la caché: {cache_err}")
-
-        return ProcessReporteResult((True, "Reporte guardado exitosamente."))
-    except Exception as e:
-        conn.rollback()  # Revertir en caso de error
-        print(f"[ERROR] Error al guardar reporte: {e}")
-        return ProcessReporteResult((False, "Error al guardar el reporte en la base de datos."))
-    finally:
-        conn.close()
-
+    """Fachada retrocompatible hacia services.report_service.process_reporte."""
+    return _report_service.process_reporte(
+        cdp_id,
+        form_data,
+        _conn_provider=get_db_connection,
+        _db_queries=db_queries,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
 
 def get_perfil_data(usuario_id):
-    """
-    Obtiene los datos del perfil del usuario, incluyendo su asignación de CDP o Red.
-    
-    Returns:
-        dict con los datos del perfil y asignaciones correspondientes
-    """
-    conn = get_db_connection()
-    if not conn:
-        from services.dashboard_service import mock_mode_enabled
-        if mock_mode_enabled():
-            from mock_data import get_mock_usuarios
-            usuarios = get_mock_usuarios()
-            user = next((u for u in usuarios if str(u['id']) == str(usuario_id) or str(u.get('username')) == str(usuario_id)), None)
-            if not user:
-                user = usuarios[0]
-            perfil = {
-                'id': user['id'],
-                'username': user['username'],
-                'nombre': user['nombre'],
-                'apellido': user['apellido'],
-                'tipo_usuario': user.get('tipo_usuario') or user.get('rol', '')
-            }
-            tipo = perfil['tipo_usuario']
-            if tipo == 'supervisor':
-                from mock_data import get_redes_demo
-                red = next((r for r in get_redes_demo() if str(r.get('supervisor_id')) == str(user['id'])), None)
-                if red:
-                    perfil['red_id'] = red.get('id')
-                    perfil['red_nombre'] = red.get('nombre')
-                    perfil['red_asignada'] = red.get('nombre')
-            elif tipo in ('lider_cdp', 'cdp'):
-                from mock_data import get_casas_demo, get_mock_lideres
-                casas = get_casas_demo()
-                casa = next((c for c in casas if str(c.get('lider_id')) == str(user['id'])), None)
-                if not casa:
-                    lideres_all = get_mock_lideres()
-                    lider_match = next((l for l in lideres_all if str(l.get('usuario_id')) == str(user['id'])), None)
-                    if lider_match:
-                        casa = next((c for c in casas if c['id'] == lider_match.get('cdp_id')), None)
-                if not casa and casas:
-                    casa = casas[0]
-                if casa:
-                    perfil['cdp_id'] = casa.get('id')
-                    perfil['cdp_codigo'] = casa.get('codigo')
-                    perfil['cdp_nombre'] = casa.get('nombre')
-                    perfil['cdp_anfitrion'] = casa.get('anfitrion')
-                    perfil['cdp_asignada'] = f'Casa "{casa.get("codigo")}"'
-                    perfil['red_id'] = casa.get('red_id')
-                    perfil['red_nombre'] = casa.get('red_nombre')
-                    perfil['red_asignada'] = casa.get('red_nombre')
-            elif tipo == 'admin':
-                perfil['asignacion_admin'] = 'Acceso Global'
-                perfil['red_asignada'] = 'Todas las Redes'
-
-            return perfil
-        return {}
-    
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    u.id, 
-                    u.username, 
-                    u.nombre, 
-                    u.apellido, 
-                    u.tipo_usuario,
-                    r_sup.id AS red_sup_id,
-                    r_sup.nombre AS red_sup_nombre,
-                    c.id AS cdp_id,
-                    c.codigo AS cdp_codigo,
-                    c.anfitrion AS cdp_anfitrion,
-                    r_cdp.id AS cdp_red_id,
-                    r_cdp.nombre AS cdp_red_nombre
-                FROM usuario u
-                LEFT JOIN red r_sup ON r_sup.supervisor_id = u.id
-                LEFT JOIN cdp c ON c.usuario_id = u.id
-                LEFT JOIN red r_cdp ON c.red_id = r_cdp.id
-                WHERE u.id = %s
-            """, (str(usuario_id),))
-            row = cursor.fetchone() or {}
-            if not row:
-                return {}
-
-            perfil = {
-                'id': row.get('id'),
-                'username': row.get('username'),
-                'nombre': row.get('nombre'),
-                'apellido': row.get('apellido'),
-                'tipo_usuario': row.get('tipo_usuario'),
-            }
-            tipo = perfil.get('tipo_usuario')
-            if tipo == 'supervisor':
-                perfil['red_id'] = row.get('red_sup_id')
-                perfil['red_nombre'] = row.get('red_sup_nombre')
-                perfil['red_asignada'] = row.get('red_sup_nombre')
-            elif tipo in ('lider_cdp', 'cdp'):
-                perfil['cdp_id'] = row.get('cdp_id')
-                perfil['cdp_codigo'] = row.get('cdp_codigo')
-                perfil['cdp_anfitrion'] = row.get('cdp_anfitrion')
-                if row.get('cdp_codigo'):
-                    perfil['cdp_asignada'] = f'Casa "{row.get("cdp_codigo")}"'
-                perfil['red_id'] = row.get('cdp_red_id')
-                perfil['red_nombre'] = row.get('cdp_red_nombre')
-                perfil['red_asignada'] = row.get('cdp_red_nombre')
-            elif tipo == 'admin':
-                perfil['asignacion_admin'] = 'Acceso Global'
-                perfil['red_asignada'] = 'Todas las Redes'
-            else:
-                if row.get('red_sup_nombre'):
-                    perfil['red_nombre'] = row.get('red_sup_nombre')
-                    perfil['red_asignada'] = row.get('red_sup_nombre')
-                if row.get('cdp_codigo'):
-                    perfil['cdp_codigo'] = row.get('cdp_codigo')
-                    perfil['cdp_asignada'] = f'Casa "{row.get("cdp_codigo")}"'
-                    perfil['red_nombre'] = row.get('cdp_red_nombre')
-                    perfil['red_asignada'] = row.get('cdp_red_nombre')
-
-            return perfil
-    except Exception as e:
-        print(f"[DB] Error perfil: {e}")
-        return {}
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.profile_service.get_perfil_data."""
+    return _profile_service.get_perfil_data(usuario_id, _conn_provider=get_db_connection)
 
 
 def update_perfil(usuario_id, nombre, apellido):
-    """
-    Actualiza los datos del perfil del usuario (nombre y apellido).
-    
-    Returns:
-        tuple: (success: bool, message: str)
-    """
-    conn = get_db_connection()
-    if not conn:
-        return False, "No se pudo conectar a la base de datos"
-    
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE usuario 
-                SET nombre = %s, apellido = %s
-                WHERE id = %s
-            """, (nombre, apellido, str(usuario_id)))
-        conn.commit()
-        return True, "Perfil actualizado exitosamente"
-    except Exception as e:
-        conn.rollback()
-        print(f"[DB] Error actualizando perfil: {e}")
-        return False, f"Error al actualizar perfil: {e}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.profile_service.update_perfil."""
+    return _profile_service.update_perfil(usuario_id, nombre, apellido, _conn_provider=get_db_connection)
 
 
 def cambiar_username(usuario_id, nuevo_username):
-    """
-    Cambia el nombre de usuario verificando que no exista duplicado.
-    
-    Returns:
-        tuple: (success: bool, message: str)
-    """
-    if not nuevo_username or len(nuevo_username.strip()) < 3:
-        return False, "El nombre de usuario debe tener al menos 3 caracteres"
-    
-    nuevo_username = nuevo_username.strip()
-    
-    if len(nuevo_username) > 30:
-        return False, "El nombre de usuario no puede exceder 30 caracteres"
-    
-    conn = get_db_connection()
-    if not conn:
-        return False, "No se pudo conectar a la base de datos"
-    
-    try:
-        with conn.cursor() as cursor:
-            # Verificar que el nuevo username no esté en uso por otro usuario
-            cursor.execute("""
-                SELECT id FROM usuario WHERE username = %s AND id != %s
-            """, (nuevo_username, str(usuario_id)))
-            
-            if cursor.fetchone():
-                return False, "Ese nombre de usuario ya está en uso"
-            
-            cursor.execute("""
-                UPDATE usuario SET username = %s WHERE id = %s
-            """, (nuevo_username, str(usuario_id)))
-        
-        conn.commit()
-        return True, "Nombre de usuario actualizado exitosamente"
-    except Exception as e:
-        conn.rollback()
-        print(f"[DB] Error cambiando username: {e}")
-        return False, f"Error al cambiar el nombre de usuario: {e}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.profile_service.cambiar_username."""
+    return _profile_service.cambiar_username(usuario_id, nuevo_username, _conn_provider=get_db_connection)
 
 
 def cambiar_password(usuario_id, password_actual, password_nueva):
-    """
-    Cambia la contraseña verificando la contraseña actual.
-    
-    Returns:
-        tuple: (success: bool, message: str)
-    """
-    #from werkzeug.security import generate_password_hash, check_password_hash
-    
-    if not password_nueva or len(password_nueva) < 6:
-        return False, "La nueva contraseña debe tener al menos 6 caracteres"
-    
-    conn = get_db_connection()
-    if not conn:
-        return False, "No se pudo conectar a la base de datos"
-    
-    try:
-        with conn.cursor() as cursor:
-            # Obtener hash almacenado
-            cursor.execute("""
-                SELECT password FROM usuario WHERE id = %s
-            """, (str(usuario_id),))
-            row = cursor.fetchone()
-            
-            if not row:
-                return False, "Usuario no encontrado"
-            
-            stored_hash = row.get('password', '')
-            
-            # Verificar contraseña actual (soporta hash Werkzeug y legacy plaintext)
-            password_valida = False
-            if stored_hash.count('$') < 2:
-                # Contraseña legacy (plaintext)
-                password_valida = (stored_hash == password_actual)
-            else:
-                try:
-                    password_valida = check_password_hash(stored_hash, password_actual)
-                except (ValueError, TypeError):
-                    password_valida = False
-            
-            if not password_valida:
-                return False, "La contraseña actual es incorrecta"
-            
-            # Generar nuevo hash y actualizar
-            nuevo_hash = generate_password_hash(password_nueva)
-            cursor.execute("""
-                UPDATE usuario SET password = %s WHERE id = %s
-            """, (nuevo_hash, str(usuario_id)))
-        
-        conn.commit()
-        return True, "Contraseña actualizada exitosamente"
-    except Exception as e:
-        conn.rollback()
-        print(f"[DB] Error cambiando password: {e}")
-        return False, f"Error al cambiar la contraseña: {e}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.profile_service.cambiar_password."""
+    return _profile_service.cambiar_password(
+        usuario_id,
+        password_actual,
+        password_nueva,
+        _conn_provider=get_db_connection,
+    )
 
 def get_cdp_datos_usuario(usuario_id):
     """
@@ -387,7 +105,7 @@ def get_cdp_datos_usuario(usuario_id):
             
             return cdp, lideres
     except Exception as e:
-        print(f'[DB] Error al consultar datos de CDP y líderes: {e}')
+        logger.error("[DB] Error al consultar datos de CDP y líderes: %s", e)
         return None, []
     finally:
         conn.close()
@@ -516,7 +234,7 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
                 'tiene_cdp': True
             }
     except Exception as e:
-        print(f"[DB] Error al cargar dashboard de líder CDP: {e}")
+        logger.error("[DB] Error al cargar dashboard de líder CDP: %s", e)
         return {
             'cdp': None,
             'lideres': [],
@@ -542,77 +260,26 @@ def get_lider_dashboard_data(usuario_id, page=1, per_page=5):
 
 
 def actualizar_reporte(reporte_id, cdp_id, form_data):
-    """
-    Valida y actualiza un reporte existente perteneciente a la CDP.
-    """
-    if not reporte_id:
-        return False, "Identificador de reporte no válido."
-
-    try:
-        cdp_id = int(cdp_id) if cdp_id else 0
-    except (ValueError, TypeError):
-        cdp_id = 0
-
-    if not cdp_id:
-        return False, "Identificador de Casa de Paz no válido."
-
-    conn = get_db_connection()
-    if not conn:
-        return False, "No se pudo conectar a la base de datos."
-
-    from utils.validators import validate_report_form
-    valido, error_msg, datos_reporte = validate_report_form(form_data, cdp_id)
-    if not valido:
-        return False, error_msg
-
-    try:
-        with conn.cursor() as cursor:
-            exito = db_queries.actualizar_reporte_cdp(cursor, reporte_id, cdp_id, datos_reporte)
-        conn.commit()
-
-        if exito:
-            try:
-                invalidate_dashboard_cache()
-            except Exception as cache_err:
-                print(f"[WARN] No se pudo invalidar la caché: {cache_err}")
-            return True, "Reporte actualizado exitosamente."
-        else:
-            return False, "No se encontró el reporte o no pertenece a tu Casa de Paz."
-    except Exception as e:
-        conn.rollback()
-        print(f"[ERROR] Error al actualizar reporte {reporte_id}: {e}")
-        return False, f"Error al guardar los cambios: {e}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.report_service.actualizar_reporte."""
+    return _report_service.actualizar_reporte(
+        reporte_id,
+        cdp_id,
+        form_data,
+        _conn_provider=get_db_connection,
+        _db_queries=db_queries,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
 
 def eliminar_reporte(reporte_id, cdp_id):
-    """
-    Elimina de forma segura un reporte perteneciente a la CDP.
-    """
-    conn = get_db_connection()
-    if not conn:
-        return False, "No se pudo conectar a la base de datos."
-
-    try:
-        with conn.cursor() as cursor:
-            exito = db_queries.eliminar_reporte_cdp(cursor, reporte_id, cdp_id)
-        conn.commit()
-
-        if exito:
-            try:
-                invalidate_dashboard_cache()
-            except Exception as cache_err:
-                print(f"[WARN] No se pudo invalidar la caché: {cache_err}")
-            return True, "Reporte eliminado exitosamente."
-        else:
-            return False, "No se encontró el reporte o no pertenece a tu Casa de Paz."
-    except Exception as e:
-        conn.rollback()
-        print(f"[ERROR] Error al eliminar reporte {reporte_id}: {e}")
-        return False, f"Error al eliminar el reporte: {e}"
-    finally:
-        conn.close()
+    """Fachada retrocompatible hacia services.report_service.eliminar_reporte."""
+    return _report_service.eliminar_reporte(
+        reporte_id,
+        cdp_id,
+        _conn_provider=get_db_connection,
+        _db_queries=db_queries,
+        _invalidate_cache=invalidate_dashboard_cache,
+    )
 
 
 def get_cdp_detalle(cdp_id):
@@ -667,14 +334,7 @@ def get_cdp_detalle(cdp_id):
                         ape = (l.get('apellido') or '').strip()
                         ini = (nom[:1] + ape[:1]).upper() if (nom and ape) else (nom[:2].upper() if nom else 'LP')
                         tel = (l.get('telefono') or '').strip()
-                        tel_clean = re.sub(r'\D', '', tel)
-                        # Si no empieza por código de país (ej. 0414...), ajustar para WhatsApp
-                        if tel_clean.startswith('0'):
-                            tel_wa = '58' + tel_clean[1:]
-                        elif len(tel_clean) == 10 and not tel_clean.startswith('58'):
-                            tel_wa = '58' + tel_clean
-                        else:
-                            tel_wa = tel_clean if len(tel_clean) >= 8 else None
+                        tel_wa = format_whatsapp_digits(tel) or None
 
                         team.append({
                             'id': l['id'],
@@ -692,13 +352,7 @@ def get_cdp_detalle(cdp_id):
                     tel_cdp = (cdp.get('telefono') or '').strip()
                     if tel_cdp and tel_cdp != 'No registrado':
                         telefono_contacto = tel_cdp
-                        tel_cdp_clean = re.sub(r'\D', '', tel_cdp)
-                        if tel_cdp_clean.startswith('0'):
-                            telefono_wa = '58' + tel_cdp_clean[1:]
-                        elif len(tel_cdp_clean) == 10 and not tel_cdp_clean.startswith('58'):
-                            telefono_wa = '58' + tel_cdp_clean
-                        else:
-                            telefono_wa = tel_cdp_clean if len(tel_cdp_clean) >= 8 else None
+                        telefono_wa = format_whatsapp_digits(tel_cdp) or None
                     else:
                         telefono_contacto = 'No registrado'
                         telefono_wa = None
@@ -793,19 +447,19 @@ def get_cdp_detalle(cdp_id):
                         'reportes': reportes_historial[:6]  # Mostrar los últimos 6
                     }
         except Exception as e:
-            print(f"[DB] Error al obtener detalles de CDP {cdp_id}: {e}")
+            logger.error("[DB] Error al obtener detalles de CDP %s: %s", cdp_id, e)
             return None
         finally:
             conn.close()
         return None
             
-    # En producción, NUNCA se hace fallback a datos mock bajo ninguna circunstancia
-    if current_app and current_app.config.get('FLASK_ENV') == 'production':
-        return None
+    # Fallback demo estrictamente cuando MOCK_MODE está habilitado (nunca en producción ni con MOCK_MODE=False)
+    from services.dashboard_service import mock_mode_enabled
+    if mock_mode_enabled():
+        from mock_data import get_mock_cdp_detalle
+        return get_mock_cdp_detalle(cdp_id)
 
-    # Fallback demo para desarrollo offline y pruebas automáticas cuando no hay BD
-    from mock_data import get_mock_cdp_detalle
-    return get_mock_cdp_detalle(cdp_id)
+    return None
 
 def get_lideres_cdp_disponibles_servicio(cdp_id=None):
     """
@@ -843,24 +497,35 @@ def get_lideres_cdp_disponibles_servicio(cdp_id=None):
     finally:
         conn.close()
 
+def _as_str(val, default: str = '') -> str:
+    """Convierte de forma segura cualquier valor (str, int, None) a cadena sin espacios externos."""
+    if val is None:
+        return default
+    return str(val).strip()
+
+
 def crear_cdp_servicio(form_data: dict) -> tuple[bool, str]:
     """
     Crea la cuenta de usuario líder o asigna un usuario existente y registra la nueva Casa de Paz de forma transaccional.
     """
-    codigo = form_data.get('codigo', '').strip()
-    anfitrion = form_data.get('anfitrion', '').strip()
-    telefono_raw = form_data.get('telefono', '').strip()
-    direccion = form_data.get('direccion', '').strip()
-    red_id_raw = form_data.get('red_id', '').strip()
+    codigo = _as_str(form_data.get('codigo'))
+    anfitrion = _as_str(form_data.get('anfitrion'))
+    telefono_raw = _as_str(form_data.get('telefono'))
+    direccion = _as_str(form_data.get('direccion'))
+    red_id_raw = _as_str(form_data.get('red_id'))
 
-    modo_usuario = form_data.get('modo_usuario', 'nuevo').strip()
-    usuario_existente_id = form_data.get('usuario_existente_id', '').strip()
+    modo_usuario = _as_str(form_data.get('modo_usuario'), 'nuevo')
+    usuario_existente_id = _as_str(
+        form_data.get('usuario_existente_id')
+        or form_data.get('usuario_id')
+        or form_data.get('lider_id')
+    )
 
     # Credenciales y datos del usuario (si es nuevo)
-    nombre_user = form_data.get('nombre', '').strip()
-    apellido_user = form_data.get('apellido', '').strip()
-    username_raw = form_data.get('username', '').strip()
-    password_raw = form_data.get('password', '').strip()
+    nombre_user = _as_str(form_data.get('nombre') or form_data.get('nuevo_usuario_nombre'))
+    apellido_user = _as_str(form_data.get('apellido') or form_data.get('nuevo_usuario_apellido'))
+    username_raw = _as_str(form_data.get('username') or form_data.get('nuevo_usuario_username'))
+    password_raw = _as_str(form_data.get('password') or form_data.get('nuevo_usuario_password'))
 
     # 1. Validaciones de datos de la Casa
     if not codigo or len(codigo) < 2:
@@ -973,7 +638,7 @@ def crear_cdp_servicio(form_data: dict) -> tuple[bool, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al crear CDP: %s", e)
-        return False, f"Error interno al registrar la Casa de Paz: {e}"
+        return False, "Error interno al registrar la Casa de Paz."
     finally:
         conn.close()
 
@@ -985,19 +650,23 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict, is_active: int = None)
     except (ValueError, TypeError):
         return False, "Identificador de Casa de Paz no válido."
 
-    codigo = form_data.get('codigo', '').strip()
-    anfitrion = form_data.get('anfitrion', '').strip()
-    telefono_raw = form_data.get('telefono', '').strip()
-    direccion = form_data.get('direccion', '').strip()
-    red_id_raw = form_data.get('red_id', '').strip()
+    codigo = _as_str(form_data.get('codigo'))
+    anfitrion = _as_str(form_data.get('anfitrion'))
+    telefono_raw = _as_str(form_data.get('telefono'))
+    direccion = _as_str(form_data.get('direccion'))
+    red_id_raw = _as_str(form_data.get('red_id'))
 
-    modo_usuario = form_data.get('modo_usuario', '').strip()
-    usuario_existente_id = form_data.get('usuario_existente_id', '').strip()
+    modo_usuario = _as_str(form_data.get('modo_usuario'))
+    usuario_existente_id = _as_str(
+        form_data.get('usuario_existente_id')
+        or form_data.get('usuario_id')
+        or form_data.get('lider_id')
+    )
 
-    nombre_user = form_data.get('nombre', '').strip()
-    apellido_user = form_data.get('apellido', '').strip()
-    username_raw = form_data.get('username', '').strip()
-    password_nueva = form_data.get('password', '').strip()
+    nombre_user = _as_str(form_data.get('nombre') or form_data.get('nuevo_usuario_nombre'))
+    apellido_user = _as_str(form_data.get('apellido') or form_data.get('nuevo_usuario_apellido'))
+    username_raw = _as_str(form_data.get('username') or form_data.get('nuevo_usuario_username'))
+    password_nueva = _as_str(form_data.get('password') or form_data.get('nuevo_usuario_password'))
 
     is_active_raw = is_active if is_active is not None else form_data.get('is_active')
     is_active_val = None
@@ -1023,9 +692,11 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict, is_active: int = None)
     except (ValueError, TypeError):
         return False, "Debe seleccionar una Red Ministerial válida."
 
-    es_modo_existente = (modo_usuario == 'existente') or (bool(usuario_existente_id) and not username_raw)
+    has_user_fields = bool(username_raw or nombre_user or apellido_user)
+    es_modo_existente = bool(usuario_existente_id) and not username_raw
 
-    if not es_modo_existente and (username_raw or nombre_user or apellido_user):
+    res_nom = res_ape = res_user = ''
+    if not es_modo_existente and has_user_fields:
         # 2. Validaciones de credenciales de usuario
         ok_nom, res_nom = validate_person_name(nombre_user, 'Nombre del Responsable')
         if not ok_nom:
@@ -1043,7 +714,7 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict, is_active: int = None)
             ok_pass, err_pass = validate_password_strength(password_nueva)
             if not ok_pass:
                 return False, err_pass
-    elif es_modo_existente and not usuario_existente_id:
+    elif modo_usuario == 'existente' and not usuario_existente_id and not form_data.get('_allow_keep_user', True):
         return False, "Debe seleccionar un usuario líder para la Casa de Paz."
 
     conn = get_db_connection()
@@ -1098,7 +769,7 @@ def actualizar_cdp_servicio(cdp_id: int, form_data: dict, is_active: int = None)
                     return False, f"El usuario '@{user_existente.get('username')}' ya está asignado a otra Casa de Paz ('{cdp_otra.get('codigo')}')."
 
                 cursor.execute("UPDATE cdp SET usuario_id = %s WHERE id = %s", (usuario_existente_id, cdp_id))
-            else:
+            elif has_user_fields:
                 # Comprobar unicidad de username excluyendo al usuario actual si existe
                 if user_id:
                     cursor.execute("SELECT id FROM usuario WHERE username = %s AND id != %s", (res_user, str(user_id)))
@@ -1193,7 +864,7 @@ def toggle_cdp_servicio(cdp_id: int) -> tuple[bool, str, str]:
     except Exception as e:
         conn.rollback()
         current_app.logger.error("Error al alternar estado de CDP %s: %s", cdp_id, e)
-        return False, 'error', f"Error interno al alternar el estado de la Casa de Paz: {e}"
+        return False, 'error', "Error interno al alternar el estado de la Casa de Paz."
     finally:
         conn.close()
 
@@ -1279,7 +950,7 @@ def check_cdp_reporte_7d(cdp_id) -> dict:
                     'estado': estado
                 }
         except Exception as e:
-            print(f"[DB] Error checking cdp 7d: {e}")
+            logger.error("[DB] Error checking cdp 7d: %s", e)
         finally:
             conn.close()
 

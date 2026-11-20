@@ -135,7 +135,7 @@
                     <span class="material-symbols-outlined">group</span>
                     <span>Directorio de Líderes</span>
                 </a>
-                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando resumen general consolidado en Excel/PDF...')">
+                <button type="button" class="quick-action-btn export-btn" data-export-resource="reportes" data-export-format="pdf" aria-label="Exportar resumen general consolidado en PDF">
                     <span class="material-symbols-outlined">download</span>
                     <span>Exportar Resumen</span>
                 </button>
@@ -213,9 +213,10 @@
                         <div class="chart-header">
                             <div>
                                 <h2 class="section-title" id="lblTrendTitleGen">{% if periodo == 'mes' %}Evolución Semanal del Mes ({{ metricas.periodo_nombre|default('Mes') }}){% elif periodo == 'anio' %}Evolución Mensual del Año ({{ metricas.periodo_nombre|default('Año') }}){% else %}Asistencia por Red esta Semana{% endif %}</h2>
-                                <p class="section-subtitle" id="lblTrendSubGen">{% if periodo == 'mes' %}Histórico semanal de {{ metricas.periodo_nombre|default('el mes en curso') }}{% elif periodo == 'anio' %}Histórico mes a mes de {{ metricas.periodo_nombre|default('el año en curso') }}{% else %}Desglose por Red del último reporte recibido{% endif %}</p>
+                                <p class="section-subtitle" id="lblTrendSubGen">{% if periodo == 'mes' %}Histórico semanal de {{ metricas.periodo_nombre|default('el mes en curso') }}{% elif periodo == 'anio' %}Histórico mes a mes de {{ metricas.periodo_nombre|default('el año en curso') }}{% else %}Desglose por Red de los reportes de esta semana{% endif %}</p>
                             </div>
                             <div id="trendBadgeGen">
+                            {% if periodo in ('mes', 'anio') %}
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
                             {% set asist_prev = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
                             {% set asist_curr = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
@@ -237,6 +238,7 @@
                                 <span class="material-symbols-outlined">trending_flat</span>
                                 <span>0.0% vs anterior</span>
                             </div>
+                            {% endif %}
                             {% endif %}
                             </div>
                         </div>
@@ -364,7 +366,7 @@
                                     <p class="alert-meta">{{ alerta.red }} · Líder: {{ alerta.lider }}</p>
                                     <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
+                                {% if alerta.telefono and format_whatsapp_digits(alerta.telefono) %}<a href="https://wa.me/{{ format_whatsapp_digits(alerta.telefono) }}" target="_blank" rel="noopener noreferrer" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
                                     <span class="material-symbols-outlined">support_agent</span>
                                     Atender
                                 </a>{% endif %}
@@ -500,7 +502,7 @@
                     <span class="material-symbols-outlined">group</span>
                     <span>Directorio de Líderes</span>
                 </a>
-                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando resumen de {{ metricas.nombre_red }} en formato Excel/PDF...')">
+                <button type="button" class="quick-action-btn export-btn" data-export-resource="reportes" data-export-format="pdf" data-red-id="{{ red_id or '' }}" aria-label="Exportar resumen de {{ metricas.nombre_red }} en PDF">
                     <span class="material-symbols-outlined">download</span>
                     <span>Exportar Resumen</span>
                 </button>
@@ -574,6 +576,7 @@
                                 <p class="section-subtitle" id="lblTrendSubRed">{% if periodo == 'mes' %}Histórico semanal de {{ metricas.periodo_nombre|default('el mes en curso') }} en {{ metricas.nombre_red }}{% elif periodo == 'anio' %}Histórico mes a mes de {{ metricas.periodo_nombre|default('el año en curso') }} en {{ metricas.nombre_red }}{% else %}Desglose por Casa de Paz en {{ metricas.nombre_red }}{% endif %}</p>
                             </div>
                             <div id="trendBadgeRed">
+                            {% if periodo in ('mes', 'anio') %}
                             {% if metricas.tendencia_semanas and metricas.tendencia_semanas|length > 1 and metricas.tendencia_semanas[-2].asistencia|default(0, true) > 0 %}
                             {% set asist_prev_red = metricas.tendencia_semanas[-2].asistencia|default(0, true) %}
                             {% set asist_curr_red = metricas.tendencia_semanas[-1].asistencia|default(0, true) %}
@@ -595,6 +598,7 @@
                                 <span class="material-symbols-outlined">trending_flat</span>
                                 <span>0.0% vs anterior</span>
                             </div>
+                            {% endif %}
                             {% endif %}
                             </div>
                         </div>
@@ -766,7 +770,7 @@
                                     <p class="alert-meta">Líder: {{ alerta.lider }}</p>
                                     <p class="alert-days"><span class="material-symbols-outlined text-danger" style="font-size: 0.9rem; vertical-align: middle;">warning</span> {{ alerta.motivo }}</p>
                                 </div>
-                                {% if alerta.telefono %}<a href="https://wa.me/{{ alerta.telefono|string|replace(' ', '')|replace('+', '') }}" target="_blank" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
+                                {% if alerta.telefono and format_whatsapp_digits(alerta.telefono) %}<a href="https://wa.me/{{ format_whatsapp_digits(alerta.telefono) }}" target="_blank" rel="noopener noreferrer" class="btn-contact-action" aria-label="Atender a {{ alerta.lider }} por WhatsApp" title="Atender por WhatsApp">
                                     <span class="material-symbols-outlined">support_agent</span>
                                     Atender
                                 </a>{% endif %}
@@ -844,11 +848,11 @@
                                     <p><span class="badge-code">{{ lid.cdp_codigo }}</span>{% if lid.cdp_anfitrion %} · {{ lid.cdp_anfitrion }}{% endif %}</p>
                                 </div>
                                 <div class="leader-actions">
-                                    {% if lid.telefono %}
-                                    <a href="https://wa.me/{{ lid.telefono|string|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="btn-icon-wa" aria-label="WhatsApp a {{ lid.nombre }}" title="Contactar por WhatsApp">
+                                    {% if lid.telefono and format_whatsapp_digits(lid.telefono) %}
+                                    <a href="https://wa.me/{{ format_whatsapp_digits(lid.telefono) }}" target="_blank" rel="noopener noreferrer" class="btn-icon-wa" aria-label="WhatsApp a {{ lid.nombre }}" title="Contactar por WhatsApp">
                                         <span class="material-symbols-outlined">chat</span>
                                     </a>
-                                    <a href="tel:{{ lid.telefono }}" class="btn-icon-call" aria-label="Llamar a {{ lid.nombre }}" title="Llamar {{ lid.nombre }}">
+                                    <a href="tel:{{ format_e164_phone(lid.telefono) }}" class="btn-icon-call" aria-label="Llamar a {{ lid.nombre }}" title="Llamar {{ lid.nombre }}">
                                         <span class="material-symbols-outlined">call</span>
                                     </a>
                                     {% endif %}
@@ -920,7 +924,7 @@
                     <span class="material-symbols-outlined">group</span>
                     <span>Directorio de Líderes</span>
                 </a>
-                <button type="button" class="quick-action-btn export-btn" onclick="alert('Exportando historial y métricas de {{ metricas.nombre_cdp }} en Excel/PDF...')">
+                <button type="button" class="quick-action-btn export-btn" data-export-resource="reportes" data-export-format="pdf" data-red-id="{{ red_id or '' }}" data-cdp-id="{{ cdp_id or '' }}" aria-label="Exportar historial y métricas de {{ metricas.nombre_cdp }} en PDF">
                     <span class="material-symbols-outlined">download</span>
                     <span>Exportar Resumen</span>
                 </button>
@@ -954,9 +958,9 @@
                         </div>
                     </div>
 
-                    {% if metricas.telefono_contacto %}
+                    {% if metricas.telefono_contacto and format_whatsapp_digits(metricas.telefono_contacto) %}
                     <div class="lider-actions">
-                        <a href="https://wa.me/{{ metricas.telefono_contacto|string|replace(' ', '')|replace('+', '') }}" target="_blank" rel="noopener noreferrer" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
+                        <a href="https://wa.me/{{ format_whatsapp_digits(metricas.telefono_contacto) }}" target="_blank" rel="noopener noreferrer" class="btn-full-outline" aria-label="Contactar líder de Casa de Paz por WhatsApp">
                             <span class="material-symbols-outlined">chat</span>
                             WhatsApp
                         </a>

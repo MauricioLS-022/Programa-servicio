@@ -23,6 +23,22 @@ window.closeDeleteModal = closeDeleteModal;
 document.addEventListener('DOMContentLoaded', () => {
     const deleteInput = document.getElementById('deleteInput');
     const btnConfirm = document.getElementById('btnConfirmDelete');
+    const btnOpenDelete = document.getElementById('btnOpenDeleteModal');
+    const formEliminarRed = document.getElementById('formEliminarRed');
+
+    if (btnOpenDelete) {
+        btnOpenDelete.addEventListener('click', openDeleteModal);
+    }
+
+    document.querySelectorAll('[data-close-delete-modal]').forEach(btn => {
+        btn.addEventListener('click', closeDeleteModal);
+    });
+
+    if (btnConfirm && formEliminarRed) {
+        btnConfirm.addEventListener('click', () => {
+            if (!btnConfirm.disabled) formEliminarRed.submit();
+        });
+    }
     if (deleteInput && btnConfirm) {
         deleteInput.addEventListener('input', () => {
             btnConfirm.disabled = deleteInput.value.trim().toUpperCase() !== 'ELIMINAR';

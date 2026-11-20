@@ -19,7 +19,9 @@ from .usuarios_queries import (
     get_usuarios,
     insertar_usuario,
     toggle_estado_usuario,
-    get_supervisores_disponibles
+    get_supervisores_disponibles,
+    obtener_usuario_por_username,
+    actualizar_password_usuario
 )
 
 from .lideres_queries import (
@@ -59,7 +61,9 @@ from .estructura_queries import (
     obtener_cdp_admin,
     actualizar_cdp_admin,
     eliminar_pausar_cdp,
-    toggle_estado_cdp
+    toggle_estado_cdp,
+    listar_redes_con_supervisor,
+    listar_casas_de_paz_filtradas
 )
 
 from .metricas_queries import (

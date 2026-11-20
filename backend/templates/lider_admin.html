@@ -114,10 +114,18 @@
                         <td data-label="Casa de Paz" class="text-variant">{{ lider.cdp_nombre or 'Sin asignar' }}</td>
                         <td data-label="Teléfono" class="font-bold">
                             {% if lider.telefono %}
-                            <a href="tel:{{ lider.telefono|replace(' ', '')|replace('-', '') }}" class="btn-call" aria-label="Llamar a {{ nombre }} al teléfono {{ lider.telefono }}" title="Llamar a {{ nombre }}">
-                                <span class="material-symbols-outlined" aria-hidden="true">call</span>
-                                <span>Llamar</span>
-                            </a>
+                            <div class="action-buttons" style="justify-content: flex-start; gap: 6px;">
+                                {% if format_whatsapp_digits(lider.telefono) %}
+                                <a href="https://wa.me/{{ format_whatsapp_digits(lider.telefono) }}" target="_blank" rel="noopener noreferrer" class="btn-call" aria-label="WhatsApp a {{ nombre }}" title="Contactar por WhatsApp">
+                                    <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+                                    <span>WhatsApp</span>
+                                </a>
+                                {% endif %}
+                                <a href="tel:{{ format_e164_phone(lider.telefono) }}" class="btn-call" aria-label="Llamar a {{ nombre }} al teléfono {{ format_e164_phone(lider.telefono) }}" title="Llamar a {{ nombre }}">
+                                    <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                                    <span>Llamar</span>
+                                </a>
+                            </div>
                             {% else %}
                             <span class="text-variant">Sin teléfono</span>
                             {% endif %}
@@ -222,7 +230,7 @@
         <p class="modal-text-bold">Escribe <span class="highlight">ELIMINAR</span> para confirmar:</p>
         <input type="text" id="deleteInput" class="modal-input" placeholder="ELIMINAR" autocomplete="off" aria-label="Escriba ELIMINAR para confirmar la baja del líder">
         <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+            <button type="button" class="btn-cancel" data-close-delete-modal>Cancelar</button>
             <form id="deleteLeaderForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <button type="submit" class="btn-confirm-delete" id="btnConfirmDelete" disabled>Eliminar</button>

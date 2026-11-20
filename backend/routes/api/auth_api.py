@@ -1,15 +1,30 @@
 """
 routes/api/auth_api.py - Endpoints REST de autenticación y verificación de sesión HttpOnly.
 """
+import hmac
 import requests
 from flask import request, jsonify, session, current_app
+from flask_wtf.csrf import generate_csrf
 from werkzeug.security import generate_password_hash
 from database import get_db_connection
 from extensions import limiter
+from repositories import unit_of_work
 from routes.auth_routes import _check_password
+from services.queries.usuarios_queries import (
+    obtener_usuario_por_username,
+    actualizar_password_usuario,
+)
 from services.cdp_service import get_perfil_data, cambiar_username, cambiar_password
+from utils.auth import api_auth_required
 from utils.validators import validate_password_strength, validate_username
+from schemas import parse_payload, PerfilUsernameDTO, PerfilPasswordDTO
 from .base import api_bp, _serialize_item
+
+
+@api_bp.route('/auth/csrf-token', methods=['GET'])
+def api_auth_csrf_token():
+    """Retorna un token CSRF vinculado a la sesión actual para mutaciones REST."""
+    return jsonify({"csrf_token": generate_csrf()}), 200
 
 
 @api_bp.route('/auth/config', methods=['GET'])
@@ -28,7 +43,8 @@ def api_auth_config():
     site_key = current_app.config.get("RECAPTCHA_SITE_KEY", "")
     return jsonify({
         "siteKey": site_key,
-        "isDev": is_dev
+        "isDev": is_dev,
+        "csrf_token": generate_csrf(),
     }), 200
 
 
@@ -93,57 +109,51 @@ def api_auth_login():
             "error": "Tráfico sospechoso o verificación de seguridad fallida. Inténtalo de nuevo."
         }), 400
 
-    conn = get_db_connection()
-    if conn:
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT id, username, password, tipo_usuario, is_active, nombre, apellido FROM usuario WHERE username = %s",
-                (usuario,)
-            )
-            r = cur.fetchone()
+    try:
+        with unit_of_work(conn_provider=get_db_connection, transactional=False) as uow:
+            if uow is not None:
+                cur = uow.cursor()
+                r = obtener_usuario_por_username(cur, usuario)
 
-            password_valid = bool(r and _check_password(r['password'], contrasena))
-            if not password_valid:
-                return jsonify({"success": False, "error": "Usuario o contraseña incorrectos"}), 401
+                password_valid = bool(r and _check_password(r['password'], contrasena))
+                if not password_valid:
+                    return jsonify({"success": False, "error": "Usuario o contraseña incorrectos"}), 401
 
-            if not bool(r.get('is_active', 1)):
-                return jsonify({"success": False, "error": "Esta cuenta se encuentra inactiva o suspendida"}), 403
+                if not bool(r.get('is_active', 1)):
+                    return jsonify({"success": False, "error": "Esta cuenta se encuentra inactiva o suspendida"}), 403
 
-            # Si la contraseña era texto plano legacy, actualizar hash
-            if r['password'] == contrasena:
-                cur.execute(
-                    "UPDATE usuario SET password = %s WHERE id = %s",
-                    (generate_password_hash(contrasena), r['id'])
-                )
-                conn.commit()
+                # Si la contraseña era texto plano legacy, actualizar hash
+                if hmac.compare_digest(r['password'], contrasena):
+                    actualizar_password_usuario(cur, r['id'], generate_password_hash(contrasena))
+                    uow.commit()
 
-            session.clear()
-            session["usuario_id"] = str(r['id'])
-            session["usuario"] = r['username']
-            rol_final = 'lider_cdp' if r['tipo_usuario'] == 'cdp' else r['tipo_usuario']
-            session["rol"] = rol_final
-            session["nombre"] = r.get('nombre', '')
-            session["apellido"] = r.get('apellido', '')
+                session.clear()
+                session.permanent = True
+                session["usuario_id"] = str(r['id'])
+                session["usuario"] = r['username']
+                rol_final = 'lider_cdp' if r['tipo_usuario'] == 'cdp' else r['tipo_usuario']
+                session["rol"] = rol_final
+                session["nombre"] = r.get('nombre', '')
+                session["apellido"] = r.get('apellido', '')
 
-            user_payload = {
-                "id": str(r['id']),
-                "username": r['username'],
-                "rol": rol_final,
-                "nombre": r.get('nombre', ''),
-                "apellido": r.get('apellido', '')
-            }
-            return jsonify({"success": True, "user": user_payload}), 200
-        except Exception as e:
-            current_app.logger.exception("[API Auth] Error en verificación: %s", e)
-            return jsonify({"success": False, "error": "Error interno al verificar credenciales"}), 500
-        finally:
-            conn.close()
-    else:
-        # Fallback a modo demo en entornos dev / testing
+                user_payload = {
+                    "id": str(r['id']),
+                    "username": r['username'],
+                    "rol": rol_final,
+                    "nombre": r.get('nombre', ''),
+                    "apellido": r.get('apellido', '')
+                }
+                return jsonify({"success": True, "user": user_payload, "csrf_token": generate_csrf()}), 200
+    except Exception as e:
+        current_app.logger.exception("[API Auth] Error en verificación: %s", e)
+        return jsonify({"success": False, "error": "Error interno al verificar credenciales"}), 500
+
+    # Fallback a modo demo en entornos dev / testing
+    if True:
         if is_dev and not is_production:
             if usuario == "admin" and contrasena == "admin":
                 session.clear()
+                session.permanent = True
                 session["usuario_id"] = "702f2129-7d4e-11f1-bf9e-2016d8516279"
                 session["usuario"] = "admin"
                 session["rol"] = "admin"
@@ -151,6 +161,7 @@ def api_auth_login():
                 session["apellido"] = "Sistema"
                 return jsonify({
                     "success": True,
+                    "csrf_token": generate_csrf(),
                     "user": {
                         "id": session["usuario_id"],
                         "username": "admin",
@@ -161,6 +172,7 @@ def api_auth_login():
                 }), 200
             elif usuario == "supervisor" and contrasena == "supervisor":
                 session.clear()
+                session.permanent = True
                 session["usuario_id"] = "ca58cfc6-8337-11f1-8217-2016d8516279"
                 session["usuario"] = "supervisor"
                 session["rol"] = "supervisor"
@@ -168,6 +180,7 @@ def api_auth_login():
                 session["apellido"] = "Red"
                 return jsonify({
                     "success": True,
+                    "csrf_token": generate_csrf(),
                     "user": {
                         "id": session["usuario_id"],
                         "username": "supervisor",
@@ -178,6 +191,7 @@ def api_auth_login():
                 }), 200
             elif usuario == "lider" and contrasena == "lider":
                 session.clear()
+                session.permanent = True
                 session["usuario_id"] = "1d4f7c99-7d51-11f1-bf9e-2016d8516279"
                 session["usuario"] = "lider"
                 session["rol"] = "lider_cdp"
@@ -185,6 +199,7 @@ def api_auth_login():
                 session["apellido"] = "CDP"
                 return jsonify({
                     "success": True,
+                    "csrf_token": generate_csrf(),
                     "user": {
                         "id": session["usuario_id"],
                         "username": "lider",
@@ -198,6 +213,7 @@ def api_auth_login():
                 m_user = next((u for u in get_mock_usuarios() if u['username'] == usuario), None)
                 if m_user:
                     session.clear()
+                    session.permanent = True
                     session["usuario_id"] = m_user['id']
                     session["usuario"] = m_user['username']
                     session["rol"] = m_user['rol']
@@ -205,6 +221,7 @@ def api_auth_login():
                     session["apellido"] = m_user.get('apellido', '')
                     return jsonify({
                         "success": True,
+                        "csrf_token": generate_csrf(),
                         "user": {
                             "id": m_user['id'],
                             "username": m_user['username'],
@@ -240,6 +257,7 @@ def api_auth_me():
 
     return jsonify({
         "authenticated": True,
+        "csrf_token": generate_csrf(),
         "user": {
             "id": usuario_id,
             "username": session.get("usuario"),
@@ -251,11 +269,10 @@ def api_auth_me():
 
 
 @api_bp.route('/perfil', methods=['GET'])
+@api_auth_required
 def api_get_perfil():
     """Retorna los datos de perfil del usuario autenticado con sus asignaciones."""
     usuario_id = session.get("usuario_id")
-    if not usuario_id:
-        return jsonify({"error": "No autenticado"}), 401
 
     perfil = get_perfil_data(str(usuario_id))
     return jsonify({
@@ -266,14 +283,14 @@ def api_get_perfil():
 
 
 @api_bp.route('/perfil/username', methods=['POST'])
+@api_auth_required
 def api_cambiar_perfil_username():
     """Actualiza el nombre de usuario verificando formato y unicidad."""
     usuario_id = session.get("usuario_id")
-    if not usuario_id:
-        return jsonify({"error": "No autenticado"}), 401
 
-    data = request.get_json(silent=True) or request.form.to_dict() or {}
-    nuevo_username = (data.get('nuevo_username') or data.get('username') or '').strip()
+    raw_data = request.get_json(silent=True) or request.form.to_dict() or {}
+    dto = parse_payload(PerfilUsernameDTO, raw_data)
+    nuevo_username = dto.nuevo_username or ''
 
     ok_user, res_user = validate_username(nuevo_username)
     if not ok_user:
@@ -287,25 +304,15 @@ def api_cambiar_perfil_username():
 
 
 @api_bp.route('/perfil/password', methods=['POST'])
+@api_auth_required
 def api_cambiar_perfil_password():
     """Cambia la contraseña validando la contraseña actual y políticas de complejidad."""
     usuario_id = session.get("usuario_id")
-    if not usuario_id:
-        return jsonify({"error": "No autenticado"}), 401
 
-    data = request.get_json(silent=True) or request.form.to_dict() or {}
-    password_actual = data.get('password_actual', '')
-    password_nueva = data.get('password_nueva', '')
-    password_confirmar = data.get('password_confirmar', '')
-
-    if not password_actual:
-        return jsonify({"success": False, "error": "Debe ingresar su contraseña actual"}), 400
-
-    if not password_nueva:
-        return jsonify({"success": False, "error": "Debe ingresar una nueva contraseña"}), 400
-
-    if password_confirmar and password_nueva != password_confirmar:
-        return jsonify({"success": False, "error": "Las contraseñas nuevas no coinciden"}), 400
+    raw_data = request.get_json(silent=True) or request.form.to_dict() or {}
+    dto = parse_payload(PerfilPasswordDTO, raw_data)
+    password_actual = dto.password_actual
+    password_nueva = dto.password_nueva
 
     ok_pass, msg_pass = validate_password_strength(password_nueva)
     if not ok_pass:

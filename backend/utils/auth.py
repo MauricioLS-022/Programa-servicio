@@ -2,8 +2,63 @@
 Decoradores de autenticación y autorización.
 """
 from functools import wraps
-from flask import redirect, url_for, session, abort, flash, current_app
+from flask import redirect, url_for, session, abort, flash, current_app, jsonify, request
 import uuid
+
+
+def _client_wants_json():
+    """Indica si el cliente declaró explícitamente preferencia por JSON."""
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    return (
+        best == 'application/json'
+        and request.accept_mimetypes[best] > request.accept_mimetypes['text/html']
+    )
+
+
+def api_auth_required(f=None, *, allow_legacy_redirect=False):
+    """
+    Decorador de autenticación para endpoints REST (/api/*).
+    Retorna 401 JSON por defecto. Si allow_legacy_redirect=True y el cliente no solicita
+    explícitamente JSON, mantiene la redirección 302 hacia login por compatibilidad SSR.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if "usuario_id" not in session or not session.get("usuario_id"):
+                if allow_legacy_redirect and not _client_wants_json():
+                    return redirect(url_for("auth.login"))
+                return jsonify({"error": "No autenticado"}), 401
+            return func(*args, **kwargs)
+        return wrapper
+
+    if f is not None:
+        return decorator(f)
+    return decorator
+
+
+def api_role_required(*roles, allow_legacy_redirect=False, forbidden_message=None):
+    """
+    Decorador de autorización por rol para endpoints REST (/api/*).
+    Verifica autenticación (401 JSON) y pertenencia a los roles permitidos (403 JSON).
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if "usuario_id" not in session or not session.get("usuario_id"):
+                if allow_legacy_redirect and not _client_wants_json():
+                    return redirect(url_for("auth.login"))
+                return jsonify({"error": "No autenticado"}), 401
+            if session.get("rol") not in roles:
+                if forbidden_message:
+                    msg = forbidden_message
+                elif roles == ('admin',):
+                    msg = "Acceso restringido a administradores"
+                else:
+                    msg = "No autorizado"
+                return jsonify({"error": msg}), 403
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def login_required(f):

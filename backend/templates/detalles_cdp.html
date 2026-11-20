@@ -23,7 +23,7 @@
     </div>
 
     <div class="detail-actions">
-      <button type="button" onclick="exportCdpToPDF(event)" class="btn-secondary btn-export-pdf" aria-label="Exportar Ficha Técnica de Casa de Paz en PDF">
+      <button type="button" id="btnExportCdpPdf" class="btn-secondary btn-export-pdf" aria-label="Exportar Ficha Técnica de Casa de Paz en PDF">
         <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
         <span>Exportar PDF</span>
       </button>
@@ -181,13 +181,14 @@
           </div>
           {% if cdp and cdp.telefono and cdp.telefono != 'No registrado' %}
           <div class="info-item-actions">
-            {% if cdp.telefono_wa %}
-            <a href="https://wa.me/{{ cdp.telefono_wa }}" target="_blank" rel="noopener noreferrer" class="btn-action-sm btn-whatsapp" aria-label="Contactar a la Casa por WhatsApp">
+            {% set cdp_wa = cdp.telefono_wa or format_whatsapp_digits(cdp.telefono) %}
+            {% if cdp_wa %}
+            <a href="https://wa.me/{{ cdp_wa }}" target="_blank" rel="noopener noreferrer" class="btn-action-sm btn-whatsapp" aria-label="Contactar a la Casa por WhatsApp">
               <span class="material-symbols-outlined" aria-hidden="true">chat</span>
               <span>WhatsApp</span>
             </a>
             {% endif %}
-            <a href="tel:{{ cdp.telefono }}" class="btn-action-sm btn-call" aria-label="Llamar al teléfono de la Casa">
+            <a href="tel:{{ format_e164_phone(cdp.telefono) }}" class="btn-action-sm btn-call" aria-label="Llamar al teléfono de la Casa">
               <span class="material-symbols-outlined" aria-hidden="true">call</span>
               <span>Llamar</span>
             </a>
@@ -251,13 +252,14 @@
               {% endif %}
             </div>
             <div class="team-member-actions">
-              {% if miembro.telefono_wa %}
-              <a href="https://wa.me/{{ miembro.telefono_wa }}" target="_blank" rel="noopener noreferrer" class="btn-icon-wa" aria-label="Enviar WhatsApp a {{ miembro.nombre_completo }}" title="WhatsApp">
+              {% set miembro_wa = miembro.telefono_wa or format_whatsapp_digits(miembro.telefono) %}
+              {% if miembro_wa %}
+              <a href="https://wa.me/{{ miembro_wa }}" target="_blank" rel="noopener noreferrer" class="btn-icon-wa" aria-label="Enviar WhatsApp a {{ miembro.nombre_completo }}" title="WhatsApp">
                 <span class="material-symbols-outlined" aria-hidden="true">chat</span>
               </a>
               {% endif %}
               {% if miembro.telefono %}
-              <a href="tel:{{ miembro.telefono }}" class="btn-icon-call" aria-label="Llamar a {{ miembro.nombre_completo }}" title="Llamar">
+              <a href="tel:{{ format_e164_phone(miembro.telefono) }}" class="btn-icon-call" aria-label="Llamar a {{ miembro.nombre_completo }}" title="Llamar">
                 <span class="material-symbols-outlined" aria-hidden="true">call</span>
               </a>
               {% endif %}

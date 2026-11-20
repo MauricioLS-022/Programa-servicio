@@ -2,11 +2,15 @@
 Punto de entrada de la aplicación Flask.
 Inicializa la app y registra los Blueprints.
 """
+import mimetypes
 import os
-from flask import Flask, render_template, request, url_for, send_from_directory
+from flask import Flask, jsonify, render_template, request, url_for, send_from_directory
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import safe_join
 
 from config import config
+from domain.exceptions import DomainError
 from extensions import csrf, limiter
 try:
     from flask_cors import CORS
@@ -27,6 +31,17 @@ app = Flask(__name__)
 app.config.from_object(config[env])
 config[env].init_app(app)
 app.secret_key = app.config['SECRET_KEY']
+
+# Confianza en reverse proxy TLS (Render/Nginx) en producción para request.is_secure y HSTS
+trust_proxy_hops = int(os.getenv('TRUST_PROXY_HOPS', '1' if env == 'production' else '0'))
+if trust_proxy_hops > 0:
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=trust_proxy_hops,
+        x_proto=trust_proxy_hops,
+        x_host=trust_proxy_hops,
+        x_prefix=trust_proxy_hops,
+    )
 
 # Inicializar extensiones de seguridad (CSRF y Rate Limiting)
 csrf.init_app(app)
@@ -95,10 +110,10 @@ def apply_security_headers(response):
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     
-    # Content-Security-Policy alineada con los estilos, iconos y fuentes del sistema
+    # Content-Security-Policy estricta sin 'unsafe-inline' en script-src
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://google.com/recaptcha/ https://www.google.com/recaptcha/ https://gstatic.com https://www.gstatic.com; "
+        "script-src 'self' https://cdn.jsdelivr.net https://google.com/recaptcha/ https://www.google.com/recaptcha/ https://gstatic.com https://www.gstatic.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: https:; "
@@ -139,21 +154,69 @@ def serve_spa(path):
 
 @app.route('/assets/<path:path>')
 def serve_spa_assets(path):
-    """Sirve los assets estáticos generados por Vite en dist/assets/."""
+    """Sirve los assets compilados por Vite en dist/assets/ negociando variantes .br / .gz."""
     assets_dir = os.path.join(frontend_dist_dir, 'assets')
-    if os.path.exists(os.path.join(assets_dir, path)):
-        return send_from_directory(assets_dir, path)
-    return render_template('404.html'), 404
+    plain_target = safe_join(assets_dir, path)
+    if not plain_target or not os.path.isfile(plain_target):
+        return render_template('404.html'), 404
+
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    original_mimetype = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+
+    chosen_path = path
+    chosen_encoding = None
+    if not path.endswith(('.br', '.gz')):
+        if 'br' in accept_encoding and os.path.exists(f'{plain_target}.br'):
+            chosen_path = f'{path}.br'
+            chosen_encoding = 'br'
+        elif 'gzip' in accept_encoding and os.path.exists(f'{plain_target}.gz'):
+            chosen_path = f'{path}.gz'
+            chosen_encoding = 'gzip'
+
+    response = send_from_directory(assets_dir, chosen_path, mimetype=original_mimetype)
+    if chosen_encoding:
+        response.headers['Content-Encoding'] = chosen_encoding
+    response.headers['Vary'] = 'Accept-Encoding'
+    response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return response
+
+
+def _wants_json_response():
+    """Determina si la respuesta debe serializarse en JSON (rutas /api/* o Accept JSON)."""
+    if request.path.startswith('/api/'):
+        return True
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    return (
+        best == 'application/json'
+        and request.accept_mimetypes[best] > request.accept_mimetypes['text/html']
+    )
+
+
+@app.errorhandler(DomainError)
+def handle_domain_error(e):
+    """Traduce excepciones semánticas de dominio a JSON o plantilla HTML según negociación."""
+    if _wants_json_response():
+        return jsonify(e.to_dict()), e.status_code
+    template_map = {400: '400.html', 403: '403.html', 404: '404.html', 429: '429.html', 500: '500.html'}
+    tpl = template_map.get(e.status_code, '400.html')
+    if tpl == '400.html':
+        return render_template('400.html', description=e.message), e.status_code
+    return render_template(tpl), e.status_code
 
 
 @app.errorhandler(404)
 def page_not_found(e):
+    if _wants_json_response():
+        return jsonify({"success": False, "error": "Recurso no encontrado", "code": "not_found"}), 404
     return render_template('404.html'), 404
 
 
 @app.errorhandler(403)
 def forbidden_error(e):
     """Error 403 - Acceso denegado (violación de propiedad o rol)."""
+    if _wants_json_response():
+        desc = getattr(e, 'description', None) or 'Acceso denegado.'
+        return jsonify({"success": False, "error": desc, "code": "forbidden"}), 403
     return render_template('403.html'), 403
 
 
@@ -161,12 +224,20 @@ def forbidden_error(e):
 def bad_request_error(e):
     """Error 400 - Solicitud inválida (validación fallida o CSRF)."""
     desc = getattr(e, 'description', None) or 'Los datos de la solicitud no son válidos o el token de seguridad expiró.'
+    if _wants_json_response():
+        return jsonify({"success": False, "error": desc, "code": "bad_request"}), 400
     return render_template('400.html', description=desc), 400
 
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
     """Error 429 - Límite de intentos excedido (Rate Limiting)."""
+    if _wants_json_response():
+        return jsonify({
+            "success": False,
+            "error": "Demasiados intentos. Por favor espera un minuto antes de reintentar.",
+            "code": "rate_limit_exceeded",
+        }), 429
     return render_template('429.html'), 429
 
 
@@ -174,6 +245,8 @@ def ratelimit_handler(e):
 def internal_server_error(e):
     """Error 500 - Error interno del servidor sin fugas de traza."""
     app.logger.error("Error 500: %s", e)
+    if _wants_json_response():
+        return jsonify({"success": False, "error": "Error interno del servidor.", "code": "internal_error"}), 500
     return render_template('500.html'), 500
 
 

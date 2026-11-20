@@ -2,6 +2,7 @@
 Context processors para inyectar funciones helper en las plantillas Jinja2.
 """
 from flask import session, url_for
+from utils.validators import format_whatsapp_digits, normalize_phone_e164
 
 
 def has_role(role_name):
@@ -53,6 +54,17 @@ def get_home_url():
     return url_for("auth.login")
 
 
+def format_e164_phone(phone):
+    """Retorna el teléfono normalizado en formato E.164 (+58...) para enlaces tel:."""
+    if not phone:
+        return ""
+    ok, normalized, _ = normalize_phone_e164(str(phone))
+    if ok and normalized:
+        return normalized
+    digits = format_whatsapp_digits(phone)
+    return f"+{digits}" if digits else str(phone).strip()
+
+
 # Diccionario de funciones para registrar como context processors
 context_functions = {
     'has_role': has_role,
@@ -60,4 +72,6 @@ context_functions = {
     'get_usuario_id': get_usuario_id,
     'get_usuario': get_usuario,
     'get_home_url': get_home_url,
+    'format_whatsapp_digits': format_whatsapp_digits,
+    'format_e164_phone': format_e164_phone,
 }
