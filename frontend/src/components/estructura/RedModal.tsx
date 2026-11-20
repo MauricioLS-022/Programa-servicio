@@ -10,7 +10,7 @@ interface RedModalProps {
   isOpen: boolean;
   onClose: () => void;
   red: Red | null; // Si es null => modo creación
-  supervisores: Array<{ id: number; nombre: string; apellido: string; username: string }>;
+  supervisores: Array<{ id: number | string; nombre: string; apellido: string; username: string }>;
   onSave: (data: { nombre: string; supervisor_id?: number | string | null }) => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
   isSaving?: boolean;
@@ -57,7 +57,7 @@ export const RedModal: React.FC<RedModalProps> = ({
     try {
       await onSave({
         nombre: nombre.trim(),
-        supervisor_id: supervisorId ? Number(supervisorId) : null,
+        supervisor_id: supervisorId ? supervisorId : null,
       });
       onClose();
     } catch (err: unknown) {
@@ -157,6 +157,17 @@ export const RedModal: React.FC<RedModalProps> = ({
               onChange={(e) => setSupervisorId(e.target.value)}
               options={[
                 { value: '', label: '-- Sin supervisor asignado --' },
+                ...(red?.supervisor_id &&
+                !supervisores.some((s) => String(s.id) === String(red.supervisor_id))
+                  ? [
+                      {
+                        value: String(red.supervisor_id),
+                        label: `${red.supervisor_nombre || red.supervisor || 'Supervisor actual'}${
+                          red.supervisor_username ? ` (@${red.supervisor_username})` : ''
+                        }`,
+                      },
+                    ]
+                  : []),
                 ...supervisores.map((s) => ({
                   value: String(s.id),
                   label: `${s.nombre} ${s.apellido} (@${s.username})`,

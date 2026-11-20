@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AlertaSeguimiento } from '../../types/estructura';
+import { formatWhatsappUrl } from '../../utils/phone';
 
 export interface DashboardAlertsCardProps {
   alertas?: AlertaSeguimiento[];
@@ -44,9 +45,7 @@ export const DashboardAlertsCard: React.FC<DashboardAlertsCardProps> = ({
       <div className="alert-list">
         {total > 0 ? (
           alertas.map((alerta, index) => {
-            const cleanPhone = alerta.telefono
-              ? alerta.telefono.replace(/[\s+-]/g, '')
-              : '';
+            const waUrl = formatWhatsappUrl(alerta.telefono);
 
             return (
               <article key={`${alerta.codigo}-${index}`} className="alert-item">
@@ -67,9 +66,9 @@ export const DashboardAlertsCard: React.FC<DashboardAlertsCardProps> = ({
                     {alerta.motivo}
                   </p>
                 </div>
-                {cleanPhone && (
+                {waUrl && (
                   <a
-                    href={`https://wa.me/${cleanPhone}`}
+                    href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-contact-action"

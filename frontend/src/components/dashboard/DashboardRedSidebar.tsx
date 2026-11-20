@@ -1,6 +1,7 @@
 import React from 'react';
 import type { AlertaSeguimiento, TopCrecimiento, LiderRedItem } from '../../types/estructura';
 import { DashboardAlertsCard } from './DashboardAlertsCard';
+import { formatWhatsappUrl, formatTelUrl } from '../../utils/phone';
 
 export interface DashboardRedSidebarProps {
   redNombre?: string;
@@ -126,7 +127,8 @@ export const DashboardRedSidebar: React.FC<DashboardRedSidebarProps> = ({
         <div className="lideres-red-list">
           {lideresRed.length > 0 ? (
             lideresRed.map((lid, idx) => {
-              const cleanTel = lid.telefono ? lid.telefono.replace(/[\s+-]/g, '') : '';
+              const waUrl = formatWhatsappUrl(lid.telefono);
+              const telUrl = formatTelUrl(lid.telefono);
               return (
                 <div key={`${lid.nombre}-${idx}`} className="leader-card-item">
                   <div className="leader-avatar">
@@ -142,10 +144,10 @@ export const DashboardRedSidebar: React.FC<DashboardRedSidebarProps> = ({
                     </p>
                   </div>
                   <div className="leader-actions">
-                    {cleanTel && (
+                    {waUrl && (
                       <>
                         <a
-                          href={`https://wa.me/${cleanTel}`}
+                          href={waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn-icon-wa"
@@ -155,7 +157,7 @@ export const DashboardRedSidebar: React.FC<DashboardRedSidebarProps> = ({
                           <span className="material-symbols-outlined">chat</span>
                         </a>
                         <a
-                          href={`tel:${cleanTel}`}
+                          href={telUrl}
                           className="btn-icon-call"
                           aria-label={`Llamar a ${lid.nombre}`}
                           title={`Llamar a ${lid.nombre}`}

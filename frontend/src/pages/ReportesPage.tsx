@@ -12,6 +12,7 @@ import { Modal } from '../components/ui/Modal';
 import { Icon } from '../components/ui/Icon';
 import { Pagination } from '../components/ui/Pagination';
 import { ReporteModal } from '../components/reportes/ReporteModal';
+import { downloadExport, type ExportFormat } from '../utils/downloadExport';
 import type { Reporte } from '../types/reporte';
 import '../styles/shared-tables.css';
 import '../styles/reportes.css';
@@ -67,6 +68,9 @@ export const ReportesPage: React.FC = () => {
     total,
     pages,
     isLoading,
+    isError,
+    error: queryError,
+    refetch,
     actualizarReporte,
     isActualizando,
     eliminarReporte,
@@ -89,6 +93,30 @@ export const ReportesPage: React.FC = () => {
 
   // Estado para modal de confirmación de eliminación
   const [reporteEliminar, setReporteEliminar] = useState<Reporte | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+
+  const handleExportReportes = async (format: ExportFormat) => {
+    setExportingFormat(format);
+    try {
+      await downloadExport({
+        resource: 'reportes',
+        format,
+        params: {
+          q: search,
+          red_id: selectedRed || undefined,
+          cdp_id: selectedCdp || undefined,
+          fecha_desde: fechaDesde,
+          fecha_hasta: fechaHasta,
+        },
+      });
+      success(`Reportes exportados en formato ${format.toUpperCase()} exitosamente.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al exportar los reportes.';
+      error(msg);
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   // Guardar actualización de reporte
   const handleGuardarReporte = async (id: string, data: Partial<Reporte>) => {
@@ -251,10 +279,49 @@ export const ReportesPage: React.FC = () => {
       {/* Tabla de Reportes */}
       <section className="table-wrapper">
         <div className="table-header">
-          <h2>Reportes de Actividad</h2>
-          <span className="text-xs font-semibold text-white/85">
-            {total} {total === 1 ? 'registro' : 'registros'}
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2>Reportes de Actividad</h2>
+            <span className="text-xs font-semibold text-white/85">
+              {total} {total === 1 ? 'registro' : 'registros'}
+            </span>
+          </div>
+          {(isAdmin || isSupervisor) && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleExportReportes('pdf')}
+                disabled={exportingFormat !== null}
+                title="Exportar consolidado a PDF"
+                aria-label="Exportar reportes a PDF"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Icon name="picture_as_pdf" size={14} />
+                <span>{exportingFormat === 'pdf' ? 'Generando...' : 'Exportar PDF'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExportReportes('xlsx')}
+                disabled={exportingFormat !== null}
+                title="Exportar consolidado a Excel (.xlsx)"
+                aria-label="Exportar reportes a Excel"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Icon name="table_chart" size={14} />
+                <span>{exportingFormat === 'xlsx' ? 'Generando...' : 'Exportar Excel'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExportReportes('csv')}
+                disabled={exportingFormat !== null}
+                title="Exportar consolidado a CSV"
+                aria-label="Exportar reportes a CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Icon name="download" size={14} />
+                <span>{exportingFormat === 'csv' ? 'Generando...' : 'CSV'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -263,6 +330,20 @@ export const ReportesPage: React.FC = () => {
             <p className="text-sm font-medium text-text-muted dark:text-[#d4c2bf]">
               Consultando reportes ministeriales...
             </p>
+          </div>
+        ) : isError ? (
+          <div className="py-16 px-4 text-center text-text-muted dark:text-[#d4c2bf] text-sm flex flex-col items-center gap-3">
+            <Icon name="warning" size={40} className="text-amber-600" />
+            <p className="font-semibold text-text-main dark:text-[#f8f2f0]">
+              No se pudieron cargar los reportes ministeriales
+            </p>
+            <p className="text-xs max-w-md">
+              {(queryError as Error)?.message || 'Servicio temporalmente no disponible. Intenta nuevamente.'}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <Icon name="refresh" size={16} />
+              <span>Reintentar</span>
+            </Button>
           </div>
         ) : reportes.length === 0 ? (
           <div className="py-16 text-center text-text-muted dark:text-[#d4c2bf] text-sm flex flex-col items-center gap-2">
@@ -318,12 +399,17 @@ export const ReportesPage: React.FC = () => {
                     {/* Casa de Paz */}
                     <td className="py-3.5 px-4">
                       <div className="font-medium text-text-main dark:text-[#f8f2f0]">
-                        {rep.cdp_codigo || `CDP #${rep.cdp_id}`}
-                        {rep.cdp_nombre && (
+                        {rep.cdp_codigo || rep.cdp_nombre || `CDP #${rep.cdp_id}`}
+                        {rep.cdp_anfitrion ? (
+                          <span className="text-text-muted dark:text-[#d4c2bf] font-normal ml-1">
+                            · {rep.cdp_anfitrion}
+                          </span>
+                        ) : !rep.cdp_codigo && rep.cdp_nombre ? null : rep.cdp_nombre &&
+                          !rep.cdp_nombre.startsWith(rep.cdp_codigo || '') ? (
                           <span className="text-text-muted dark:text-[#d4c2bf] font-normal ml-1">
                             · {rep.cdp_nombre}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       {rep.red_nombre && (
                         <span className="block text-[11px] text-text-muted dark:text-[#d4c2bf] italic">
@@ -423,7 +509,12 @@ export const ReportesPage: React.FC = () => {
       <ReporteModal
         isOpen={!!reporteModalData.reporte}
         onClose={() => setReporteModalData({ reporte: null, mode: 'view' })}
-        reporte={reporteModalData.reporte}
+        reporte={
+          reporteModalData.reporte
+            ? reportes.find((r) => String(r.id) === String(reporteModalData.reporte?.id)) ??
+              reporteModalData.reporte
+            : null
+        }
         initialMode={reporteModalData.mode}
         canEdit={!isSupervisor}
         onGuardar={handleGuardarReporte}

@@ -63,14 +63,17 @@ export function useUsuarioOpcionesAsignacion(usuarioId?: string | null) {
 export function useUsuarioMutations() {
   const queryClient = useQueryClient();
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-    queryClient.invalidateQueries({ queryKey: ['usuario-opciones-asignacion'] });
-    queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] });
-    queryClient.invalidateQueries({ queryKey: ['lideres'] });
-    queryClient.invalidateQueries({ queryKey: ['redes'] });
-    queryClient.invalidateQueries({ queryKey: ['casas'] });
-  };
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
+      queryClient.invalidateQueries({ queryKey: ['usuario-opciones-asignacion'] }),
+      queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] }),
+      queryClient.invalidateQueries({ queryKey: ['lideres'] }),
+      queryClient.invalidateQueries({ queryKey: ['redes'] }),
+      queryClient.invalidateQueries({ queryKey: ['casas'] }),
+      queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]);
 
   const crearMutation = useMutation({
     mutationFn: (data: UsuarioInput) =>

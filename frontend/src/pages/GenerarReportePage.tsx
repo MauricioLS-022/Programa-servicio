@@ -1,186 +1,58 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useReportes } from '../hooks/useReportes';
-import { useAuth } from '../hooks/useAuth';
+import React from 'react';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { usePerfil } from '../hooks/usePerfil';
-import { useCasasDePaz, useLideres } from '../hooks/useDashboard';
-import { useToast } from '../context/ToastContext';
+import { useGenerarReporteForm } from '../hooks/useGenerarReporteForm';
 import { Icon } from '../components/ui/Icon';
 import '../styles/generar_reporte.css';
 
 export const GenerarReportePage: React.FC = () => {
   useDocumentTitle('Generar Reporte');
 
-  const { user } = useAuth();
-  const { perfil, isLoading: isPerfilLoading } = usePerfil();
-  const { crearReporte, isCreando } = useReportes();
-  const { success, error } = useToast();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  // Fecha de hoy por defecto (inamovible por regla canónica Jinja)
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-
-  // CDP ID contextual (si viene por query param o por perfil)
-  const initialCdpId = useMemo(() => {
-    const fromParam = searchParams.get('cdp_id');
-    if (fromParam) return Number(fromParam);
-    if (perfil?.cdp_id) return perfil.cdp_id;
-    return undefined;
-  }, [searchParams, perfil]);
-
-  const [selectedCdpId, setSelectedCdpId] = useState<number | undefined>(initialCdpId);
-
-  useEffect(() => {
-    if (initialCdpId && !selectedCdpId) {
-      setSelectedCdpId(initialCdpId);
-    }
-  }, [initialCdpId, selectedCdpId]);
-
-  // Consultar casas para administradores
-  const { casas } = useCasasDePaz();
-  // Consultar líderes asociados a la Casa de Paz seleccionada
-  const { lideres } = useLideres({ cdp_id: selectedCdpId });
-
-  // Estado del Formulario
-  const [liderId, setLiderId] = useState<string>('');
-  const [fecha] = useState<string>(todayStr);
-  const [hrInicio, setHrInicio] = useState<string>('');
-  const [hrFin, setHrFin] = useState<string>('');
-
-  // Métricas de Asistencia
-  const [nroRegulares, setNroRegulares] = useState<number | ''>('');
-  const [nroNinos, setNroNinos] = useState<number | ''>('');
-  const [nroVisitas, setNroVisitas] = useState<number | ''>('');
-  const [nroComprometidos, setNroComprometidos] = useState<number | ''>('');
-
-  // Fruto Espiritual
-  const [reconciliaciones, setReconciliaciones] = useState<number | ''>('');
-  const [confesiones, setConfesiones] = useState<number | ''>('');
-
-  // Finanzas y Recursos
-  const [ofrendasBs, setOfrendasBs] = useState<string>('');
-  const [ofrendasUsd, setOfrendasUsd] = useState<string>('');
-  const [cestaAmor, setCestaAmor] = useState<number>(0);
-
-  // Tema y Observaciones
-  const [tema, setTema] = useState<string>('');
-  const [observaciones, setObservaciones] = useState<string>('');
-
-  // Cálculo Dinámico en Tiempo Real de Asistencia Total
-  const totalAsistencia = useMemo(() => {
-    const reg = Number(nroRegulares) || 0;
-    const nin = Number(nroNinos) || 0;
-    const vis = Number(nroVisitas) || 0;
-    const com = Number(nroComprometidos) || 0;
-    return reg + nin + vis + com;
-  }, [nroRegulares, nroNinos, nroVisitas, nroComprometidos]);
-
-  // Ruta canónica de retorno según el rol
-  const returnUrl = user?.rol === 'admin' ? '/reportes' : '/dashboard';
-
-  // Datos de la Casa de Paz para el Badge
-  const cdpInfo = useMemo(() => {
-    if (user?.rol === 'admin' && selectedCdpId) {
-      const match = casas.find((c) => c.id === selectedCdpId);
-      if (match) return { codigo: match.codigo, nombre: match.nombre || match.anfitrion || 'Casa de Paz' };
-    }
-    if (perfil?.cdp_codigo) {
-      return { codigo: perfil.cdp_codigo, nombre: perfil.cdp_nombre || perfil.cdp_anfitrion || 'Casa de Paz' };
-    }
-    return null;
-  }, [user?.rol, selectedCdpId, casas, perfil]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 1. Validar Casa de Paz
-    const effectiveCdpId = user?.rol === 'admin' ? selectedCdpId : (perfil?.cdp_id || selectedCdpId);
-    if (!effectiveCdpId) {
-      error(
-        user?.rol === 'admin'
-          ? 'Debes seleccionar la Casa de Paz que reporta.'
-          : 'No se encontró una Casa de Paz asignada para registrar este reporte.'
-      );
-      return;
-    }
-
-    // 2. Validar Horarios
-    if (!hrInicio || !hrFin) {
-      error('Debes ingresar la hora de inicio y de finalización.');
-      return;
-    }
-
-    if (hrFin <= hrInicio) {
-      error('La hora de finalización debe ser posterior a la hora de inicio.');
-      return;
-    }
-
-    // 3. Validar Tema
-    const temaTrim = tema.trim();
-    if (!temaTrim || temaTrim.length < 2) {
-      error('El tema desarrollado es obligatorio y debe tener al menos 2 caracteres.');
-      return;
-    }
-
-    // 4. Validar Asistencia
-    if (totalAsistencia <= 0) {
-      error('Debes registrar al menos un asistente en la reunión.');
-      return;
-    }
-
-    // 5. Validar Ofrendas (no negativas)
-    const bsNum = ofrendasBs === '' ? 0 : parseFloat(ofrendasBs);
-    const usdNum = ofrendasUsd === '' ? 0 : parseFloat(ofrendasUsd);
-
-    if (isNaN(bsNum) || bsNum < 0) {
-      error('El monto en Bolívares (Bs.) debe ser un número válido mayor o igual a cero.');
-      return;
-    }
-    if (isNaN(usdNum) || usdNum < 0) {
-      error('El monto en USD ($) debe ser un número válido mayor o igual a cero.');
-      return;
-    }
-
-    try {
-      const payload = {
-        cdp_id: effectiveCdpId,
-        lider_id: liderId ? Number(liderId) : undefined,
-        fecha,
-        hr_inicio: hrInicio,
-        hr_fin: hrFin,
-        tema: temaTrim,
-        nro_regulares: Number(nroRegulares) || 0,
-        nro_ninos: Number(nroNinos) || 0,
-        nro_visitas: Number(nroVisitas) || 0,
-        nro_comprometidos: Number(nroComprometidos) || 0,
-        reconciliaciones: Number(reconciliaciones) || 0,
-        confesiones: Number(confesiones) || 0,
-        cesta_amor: cestaAmor,
-        ofrendas_usd: usdNum,
-        ofrendas_bs: bsNum,
-        observaciones: observaciones.trim() || undefined,
-      };
-
-      const res = await crearReporte(payload);
-      if (res.success) {
-        success('¡Reporte ministerial registrado exitosamente!');
-        navigate(returnUrl);
-      } else {
-        error(res.error || 'No se pudo guardar el reporte ministerial.');
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        error(err.message || 'Error de conexión al procesar el reporte.');
-      } else {
-        error('Error inesperado al guardar el reporte.');
-      }
-    }
-  };
+  const {
+    user,
+    isCreando,
+    sinCdpAsignada,
+    casas,
+    lideres,
+    cdpInfo,
+    returnUrl,
+    navigate,
+    selectedCdpId,
+    setSelectedCdpId,
+    liderId,
+    setLiderId,
+    fecha,
+    hrInicio,
+    setHrInicio,
+    hrFin,
+    setHrFin,
+    nroRegulares,
+    setNroRegulares,
+    nroNinos,
+    setNroNinos,
+    nroVisitas,
+    setNroVisitas,
+    nroComprometidos,
+    setNroComprometidos,
+    reconciliaciones,
+    setReconciliaciones,
+    confesiones,
+    setConfesiones,
+    ofrendasBs,
+    setOfrendasBs,
+    ofrendasUsd,
+    setOfrendasUsd,
+    cestaAmor,
+    setCestaAmor,
+    tema,
+    setTema,
+    observaciones,
+    setObservaciones,
+    totalAsistencia,
+    handleSubmit,
+  } = useGenerarReporteForm();
 
   // Candado institucional: Líder de Casa de Paz sin CDP asignada
-  if (!isPerfilLoading && user?.rol === 'lider_cdp' && !perfil?.cdp_id) {
+  if (sinCdpAsignada) {
     return (
       <div className="generar-reporte-wrapper">
         <main className="crud-container report-container">
@@ -350,7 +222,7 @@ export const GenerarReportePage: React.FC = () => {
                     name="fecha"
                     value={fecha}
                     readOnly
-                    max={todayStr}
+                    max={fecha}
                     required
                     title="La fecha del reporte se fija automáticamente al día actual."
                   />

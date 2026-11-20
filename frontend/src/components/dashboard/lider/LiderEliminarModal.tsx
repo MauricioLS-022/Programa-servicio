@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Modal } from '../../ui/Modal';
 import { Icon } from '../../ui/Icon';
 import { api } from '../../../api/client';
@@ -17,6 +18,7 @@ export const LiderEliminarModal: React.FC<LiderEliminarModalProps> = ({
   reporte,
   onSuccess,
 }) => {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -27,6 +29,13 @@ export const LiderEliminarModal: React.FC<LiderEliminarModalProps> = ({
 
     try {
       await api.delete(`/reportes/${reporte.id}`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lider-dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['reportes'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['casas'] }),
+        queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      ]);
       onSuccess();
       onClose();
     } catch (err: unknown) {

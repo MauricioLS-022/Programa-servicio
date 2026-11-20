@@ -3,7 +3,7 @@
  * Libre de acoplamiento al DOM para futura exportación a React Native.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { api, resetCsrfToken } from '../api/client';
 import type { AuthConfigResponse, AuthMeResponse, AuthResponse, LoginCredentials, User } from '../types/auth';
 
 export const AUTH_CONFIG_QUERY_KEY = ['auth', 'config'];
@@ -61,6 +61,7 @@ export function useAuth(options?: UseAuthOptions) {
   const logoutMutation = useMutation<AuthResponse, Error, void>({
     mutationFn: () => api.post<AuthResponse>('/auth/logout'),
     onSuccess: () => {
+      resetCsrfToken();
       queryClient.setQueryData(AUTH_QUERY_KEY, {
         authenticated: false,
         user: undefined,

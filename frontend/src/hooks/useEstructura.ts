@@ -50,14 +50,17 @@ export function useEstructuraSelectores(cdpId?: number | string) {
 export function useEstructuraMutations() {
   const queryClient = useQueryClient();
 
-  const invalidateEstructura = () => {
-    queryClient.invalidateQueries({ queryKey: ['redes'] });
-    queryClient.invalidateQueries({ queryKey: ['casas'] });
-    queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] });
-    queryClient.invalidateQueries({ queryKey: ['lideres'] });
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] });
-  };
+  const invalidateEstructura = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['redes'] }),
+      queryClient.invalidateQueries({ queryKey: ['casas'] }),
+      queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      queryClient.invalidateQueries({ queryKey: ['lideres'] }),
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
+      queryClient.invalidateQueries({ queryKey: ['usuario-opciones-asignacion'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] }),
+    ]);
 
   // Mutaciones de Red
   const crearRedMutation = useMutation({

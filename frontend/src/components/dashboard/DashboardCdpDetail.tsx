@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DashboardMetricas } from '../../types/estructura';
+import { formatWhatsappUrl } from '../../utils/phone';
 
 export interface DashboardCdpDetailProps {
   metricas?: DashboardMetricas;
@@ -12,7 +13,7 @@ export const DashboardCdpDetail: React.FC<DashboardCdpDetailProps> = ({
 }) => {
   const liderNombre = metricas?.lider || 'Sin líder asignado';
   const telefonoLider = metricas?.telefono || '';
-  const cleanPhone = telefonoLider.replace(/\D/g, '');
+  const waUrl = formatWhatsappUrl(telefonoLider);
   const reporteAlDia = metricas?.estado_reporte === 'enviado' || metricas?.reporte_al_dia;
   const diasSinReporte = metricas?.dias_desde_reporte;
   const historial = metricas?.historial || [];
@@ -67,9 +68,9 @@ export const DashboardCdpDetail: React.FC<DashboardCdpDetailProps> = ({
           </div>
 
           {/* Botón directo de contacto por WhatsApp */}
-          {cleanPhone && (
+          {waUrl && (
             <a
-              href={`https://wa.me/${cleanPhone}`}
+              href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-contact-action"

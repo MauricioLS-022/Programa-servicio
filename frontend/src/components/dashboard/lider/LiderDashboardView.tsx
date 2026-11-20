@@ -55,19 +55,26 @@ export const LiderDashboardView: React.FC = () => {
 
   const handleCloseView = () => {
     setIsViewOpen(false);
+    setSelectedReporte(null);
   };
 
   const handleCloseEdit = () => {
     setIsEditOpen(false);
+    setSelectedReporte(null);
   };
 
   const handleCloseDelete = () => {
     setIsDeleteOpen(false);
+    setSelectedReporte(null);
   };
 
-  const handleMutationSuccess = () => {
-    refetch();
+  const handleMutationSuccess = async () => {
+    await refetch();
   };
+
+  const activeSelectedReporte = selectedReporte
+    ? reportes.find((r) => String(r.id) === String(selectedReporte.id)) ?? selectedReporte
+    : null;
 
   if (isLoading && !metricas) {
     return (
@@ -177,13 +184,13 @@ export const LiderDashboardView: React.FC = () => {
       <LiderDetalleModal
         isOpen={isViewOpen}
         onClose={handleCloseView}
-        reporte={selectedReporte}
+        reporte={activeSelectedReporte}
       />
 
       <LiderEditarModal
         isOpen={isEditOpen}
         onClose={handleCloseEdit}
-        reporte={selectedReporte}
+        reporte={activeSelectedReporte}
         lideres={lideres}
         onSuccess={handleMutationSuccess}
       />
@@ -191,7 +198,7 @@ export const LiderDashboardView: React.FC = () => {
       <LiderEliminarModal
         isOpen={isDeleteOpen}
         onClose={handleCloseDelete}
-        reporte={selectedReporte}
+        reporte={activeSelectedReporte}
         onSuccess={handleMutationSuccess}
       />
     </div>

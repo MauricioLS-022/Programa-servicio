@@ -20,7 +20,7 @@ export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({
 }) => {
   // Título y subtítulo dinámicos
   let title = 'Asistencia por Red esta Semana';
-  let subtitle = 'Desglose por Red del último reporte recibido';
+  let subtitle = 'Desglose por Red de los reportes de esta semana';
 
   if (nivel === 'red') {
     if (periodo === 'mes') {
@@ -46,11 +46,12 @@ export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({
     }
   }
 
-  // Cálculo de variación porcentual
+  // Cálculo de variación porcentual (solo aplica a series temporales, no a desgloses categóricos por Red o CDP)
+  const isTimeSeries = nivel === 'cdp' || periodo === 'mes' || periodo === 'anio';
   let variacion: number | null = null;
   let variacionTipo: 'vs anterior' | 'vs promedio' = 'vs anterior';
 
-  if (tendencia.length > 1) {
+  if (isTimeSeries && tendencia.length > 1) {
     const curr = tendencia[tendencia.length - 1]?.asistencia || 0;
     const prev = tendencia[tendencia.length - 2]?.asistencia || 0;
     if (prev > 0) {

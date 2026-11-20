@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DashboardMetricas } from '../../types/estructura';
+import { formatWhatsappUrl } from '../../utils/phone';
 
 export interface DashboardCdpFichaProps {
   metricas?: DashboardMetricas;
@@ -8,7 +9,7 @@ export interface DashboardCdpFichaProps {
 export const DashboardCdpFicha: React.FC<DashboardCdpFichaProps> = ({ metricas }) => {
   const liderNombre = metricas?.lider || 'Sin asignar';
   const telefonoLider = String(metricas?.telefono || metricas?.telefono_contacto || '');
-  const cleanPhone = telefonoLider.replace(/\D/g, '');
+  const waUrl = formatWhatsappUrl(telefonoLider);
   const reporteAlDia = metricas?.estado_reporte === 'enviado' || metricas?.reporte_al_dia;
   const diasSinReporte = metricas?.dias_desde_reporte;
   const historial = metricas?.historial || [];
@@ -52,10 +53,10 @@ export const DashboardCdpFicha: React.FC<DashboardCdpFichaProps> = ({ metricas }
           </div>
         </div>
 
-        {cleanPhone && (
+        {waUrl && (
           <div className="lider-actions">
             <a
-              href={`https://wa.me/${cleanPhone}`}
+              href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-full-outline"

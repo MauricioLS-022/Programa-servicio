@@ -32,13 +32,18 @@ export function useReportes(filtros: ReporteFiltros = {}) {
       }),
   });
 
+  const invalidateAll = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: REPORTES_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      queryClient.invalidateQueries({ queryKey: ['lider-dashboard'] }),
+      queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      queryClient.invalidateQueries({ queryKey: ['casas'] }),
+    ]);
+
   const crearReporteMutation = useMutation<ProcesarReporteResponse, Error, ReporteFormPayload>({
     mutationFn: (payload) => api.post<ProcesarReporteResponse>('/reportes', payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: REPORTES_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['casas'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const actualizarReporteMutation = useMutation<
@@ -47,10 +52,7 @@ export function useReportes(filtros: ReporteFiltros = {}) {
     { id: string | number; data: Partial<ReporteFormPayload> }
   >({
     mutationFn: ({ id, data }) => api.put<ProcesarReporteResponse>(`/reportes/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: REPORTES_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const eliminarReporteMutation = useMutation<
@@ -62,10 +64,7 @@ export function useReportes(filtros: ReporteFiltros = {}) {
       api.delete<ProcesarReporteResponse>(`/reportes/${id}`, {
         params: cdp_id ? { cdp_id } : undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: REPORTES_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   return {

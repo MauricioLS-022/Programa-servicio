@@ -8,6 +8,8 @@ import { Button } from '../components/ui/Button';
 import { CasaDePazModal } from '../components/estructura/CasaDePazModal';
 import { LiderModal } from '../components/estructura/LiderModal';
 import { Icon } from '../components/ui/Icon';
+import { exportCdpPdf } from '../utils/exportCdpPdf';
+import { formatWhatsappUrl, formatTelUrl } from '../utils/phone';
 import type { CdpInput, LiderInput } from '../types/estructura';
 import '../styles/detalles_cdp.css';
 
@@ -38,234 +40,7 @@ export const DetallesCdpPage: React.FC = () => {
   // Exportar Ficha Técnica a PDF (Paridad con static/scripts/admin/detalles_cdp.js)
   const handleExportPDF = () => {
     if (!cdp) return;
-
-    try {
-      const today = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-
-      const oldIframe = document.getElementById('print-cdp-iframe');
-      if (oldIframe) oldIframe.remove();
-
-      const printIframe = document.createElement('iframe');
-      printIframe.id = 'print-cdp-iframe';
-      printIframe.style.position = 'fixed';
-      printIframe.style.right = '0';
-      printIframe.style.bottom = '0';
-      printIframe.style.width = '0';
-      printIframe.style.height = '0';
-      printIframe.style.border = '0';
-      printIframe.style.visibility = 'hidden';
-      document.body.appendChild(printIframe);
-
-      const teamRows = (cdp.lideres || [])
-        .map(
-          (m) => `
-          <tr>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>${m.nombre_completo}</strong></td>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${m.rol}</td>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">${m.telefono || 'No registrado'}</td>
-          </tr>`
-        )
-        .join('');
-
-      const reportRows = (cdp.reportes || [])
-        .map(
-          (r) => `
-          <tr>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>${r.fecha_formateada || r.fecha || ''}</strong></td>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">
-              <strong>${r.tema || 'Sin tema registrado'}</strong>
-              ${r.observaciones ? `<div style="font-size: 10px; color: #666; margin-top: 2px;">${r.observaciones}</div>` : ''}
-            </td>
-            <td style="text-align: center; padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>${r.asistencia || 0}</strong></td>
-            <td style="font-size: 11px; padding: 6px 8px; border-bottom: 1px solid #eee;">Reg: ${r.nro_regulares || 0} · Niñ: ${r.nro_ninos || r.nro_niños || 0} · Vis: ${r.nro_visitas || 0}</td>
-            <td style="padding: 6px 8px; border-bottom: 1px solid #eee;">$${Number(r.ofrendas_usd || 0).toFixed(2)} · Bs. ${Number(r.ofrendas_bs || 0).toFixed(2)}</td>
-            <td style="text-align: center; padding: 6px 8px; border-bottom: 1px solid #eee;">${r.cesta_amor ? 'Sí' : 'No'}</td>
-          </tr>`
-        )
-        .join('');
-
-      const html = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <title>Ficha Técnica Oficial - Casa de Paz ${cdp.codigo}</title>
-          <style>
-            @page { size: letter portrait; margin: 12mm 15mm; }
-            * { box-sizing: border-box; }
-            body {
-              font-family: 'Segoe UI', Arial, -apple-system, sans-serif;
-              color: #2b1111;
-              background: #ffffff;
-              padding: 15px;
-              margin: 0;
-              font-size: 12px;
-              line-height: 1.4;
-            }
-            .doc-header {
-              border-bottom: 2.5px solid #390002;
-              padding-bottom: 12px;
-              margin-bottom: 16px;
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-end;
-            }
-            .brand-title {
-              font-size: 22px;
-              font-weight: 800;
-              color: #390002;
-              margin: 0 0 2px 0;
-            }
-            .brand-subtitle {
-              font-size: 12px;
-              color: #564240;
-              text-transform: uppercase;
-              letter-spacing: 0.08em;
-              font-weight: 600;
-            }
-            .section-title {
-              font-size: 13px;
-              font-weight: 700;
-              color: #390002;
-              text-transform: uppercase;
-              letter-spacing: 0.05em;
-              border-bottom: 1px solid #e8d0cc;
-              padding-bottom: 4px;
-              margin: 14px 0 8px 0;
-            }
-            .kpi-container {
-              display: flex;
-              gap: 8px;
-              margin-bottom: 14px;
-            }
-            .kpi-box {
-              flex: 1;
-              background: #faf5f3;
-              border: 1px solid #e8d0cc;
-              border-radius: 6px;
-              padding: 8px 10px;
-              text-align: center;
-            }
-            .kpi-label { font-size: 9.5px; text-transform: uppercase; font-weight: 700; color: #5a4240; }
-            .kpi-val { font-size: 16px; font-weight: 800; color: #390002; margin: 3px 0; }
-            .kpi-sub { font-size: 9.5px; color: #700204; font-weight: 600; }
-            table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
-            th {
-              background-color: #f8e4e3;
-              color: #390002;
-              font-weight: 700;
-              text-align: left;
-              padding: 6px 8px;
-              border-bottom: 1.5px solid #ddc0bd;
-              font-size: 10px;
-              text-transform: uppercase;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="doc-header">
-            <div>
-              <div class="brand-title">Comunidad Cristiana Vino Nuevo</div>
-              <div class="brand-subtitle">Ficha Técnica Oficial · Casa "${cdp.codigo}"</div>
-            </div>
-            <div style="text-align: right; font-size: 11px;">
-              <div>Emisión: ${today}</div>
-              <div>Red: <strong>${cdp.red_nombre}</strong> · Supervisor: <strong>${cdp.supervisor_nombre}</strong></div>
-            </div>
-          </div>
-
-          <div class="section-title">1. Resumen de Desempeño y Crecimiento</div>
-          <div class="kpi-container">
-            <div class="kpi-box">
-              <div class="kpi-label">Asistencia Prom.</div>
-              <div class="kpi-val">${cdp.asistencia_promedio}</div>
-              <div class="kpi-sub">personas / reunión</div>
-            </div>
-            <div class="kpi-box">
-              <div class="kpi-label">Reportes Totales</div>
-              <div class="kpi-val">${cdp.total_reportes}</div>
-              <div class="kpi-sub">semanas reportadas</div>
-            </div>
-            <div class="kpi-box">
-              <div class="kpi-label">Ofrendas Totales</div>
-              <div class="kpi-val">$${Number(cdp.ofrendas_usd_totales || 0).toFixed(2)}</div>
-              <div class="kpi-sub">Bs. ${Number(cdp.ofrendas_bs_totales || 0).toFixed(2)}</div>
-            </div>
-            <div class="kpi-box">
-              <div class="kpi-label">Visitas & Conversiones</div>
-              <div class="kpi-val">${cdp.visitas_totales}</div>
-              <div class="kpi-sub">${cdp.conversiones_totales} conversiones</div>
-            </div>
-          </div>
-
-          <div class="section-title">2. Información del Centro</div>
-          <table>
-            <tr>
-              <td style="width: 25%; font-weight: bold; padding: 4px 6px;">Dirección:</td>
-              <td style="width: 25%; padding: 4px 6px;">${cdp.direccion || 'No registrada'}</td>
-              <td style="width: 25%; font-weight: bold; padding: 4px 6px;">Anfitrión:</td>
-              <td style="width: 25%; padding: 4px 6px;">${cdp.anfitrion || 'Sin asignar'}</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold; padding: 4px 6px;">Teléfono:</td>
-              <td style="padding: 4px 6px;">${cdp.telefono || 'No registrado'}</td>
-              <td style="font-weight: bold; padding: 4px 6px;">Horario:</td>
-              <td style="padding: 4px 6px;">${cdp.horario || 'Miércoles · 7:00 PM'}</td>
-            </tr>
-          </table>
-
-          <div class="section-title">3. Equipo de Liderazgo Responsable</div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 45%;">Nombre Completo</th>
-                <th style="width: 30%;">Rol</th>
-                <th style="width: 25%;">Teléfono</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${teamRows || '<tr><td colspan="3" style="text-align: center; padding: 8px;">No hay líderes asignados.</td></tr>'}
-            </tbody>
-          </table>
-
-          <div class="section-title">4. Historial Reciente de Reportes</div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 14%;">Fecha</th>
-                <th style="width: 34%;">Tema</th>
-                <th style="width: 12%; text-align: center;">Asistencia</th>
-                <th style="width: 20%;">Desglose</th>
-                <th style="width: 12%;">Ofrendas</th>
-                <th style="width: 8%; text-align: center;">Cesta</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${reportRows || '<tr><td colspan="6" style="text-align: center; padding: 8px;">Sin reportes registrados aún.</td></tr>'}
-            </tbody>
-          </table>
-        </body>
-        </html>
-      `;
-
-      const frameDoc = printIframe.contentWindow?.document;
-      if (frameDoc) {
-        frameDoc.open();
-        frameDoc.write(html);
-        frameDoc.close();
-        setTimeout(() => {
-          printIframe.contentWindow?.focus();
-          printIframe.contentWindow?.print();
-        }, 300);
-      }
-    } catch (err) {
-      console.error('Error exportando PDF:', err);
-      window.print();
-    }
+    exportCdpPdf(cdp);
   };
 
   const handleToggleEstado = async () => {
@@ -289,7 +64,7 @@ export const DetallesCdpPage: React.FC = () => {
       const res = await editarCdp({ id: cdp.id, data });
       if (res.success) {
         success('¡Casa de Paz actualizada exitosamente!');
-        refetch();
+        await refetch();
       } else {
         error(res.message || 'Error al actualizar Casa de Paz.');
       }
@@ -315,7 +90,7 @@ export const DetallesCdpPage: React.FC = () => {
         const res = await editarLider({ id: selectedLider.id, data });
         if (res.success) {
           success(res.message || 'Líder actualizado exitosamente.');
-          refetch();
+          await refetch();
         } else {
           error(res.message || 'Error al actualizar líder.');
         }
@@ -323,7 +98,7 @@ export const DetallesCdpPage: React.FC = () => {
         const res = await crearLider(data);
         if (res.success) {
           success(res.message || 'Líder asignado exitosamente.');
-          refetch();
+          await refetch();
         } else {
           error(res.message || 'Error al asignar líder.');
         }
@@ -366,7 +141,8 @@ export const DetallesCdpPage: React.FC = () => {
     );
   }
 
-  const cleanPhone = (cdp.telefono || '').replace(/[^0-9]/g, '');
+  const cdpWaUrl = formatWhatsappUrl(cdp.telefono && cdp.telefono !== 'No registrado' ? cdp.telefono : '');
+  const cdpTelUrl = formatTelUrl(cdp.telefono && cdp.telefono !== 'No registrado' ? cdp.telefono : '');
   const isActive = Boolean(cdp.is_active);
 
   return (
@@ -577,10 +353,10 @@ export const DetallesCdpPage: React.FC = () => {
                 <span className="info-label">Teléfono de la Casa</span>
                 <span className="info-value">{cdp.telefono || 'No registrado'}</span>
               </div>
-              {cdp.telefono && cdp.telefono !== 'No registrado' && (
+              {cdpWaUrl && (
                 <div className="flex items-center gap-1.5">
                   <a
-                    href={`https://wa.me/${cleanPhone}`}
+                    href={cdpWaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-action-icon btn-wa"
@@ -589,7 +365,7 @@ export const DetallesCdpPage: React.FC = () => {
                     <Icon name="chat" size={16} />
                   </a>
                   <a
-                    href={`tel:${cleanPhone}`}
+                    href={cdpTelUrl}
                     className="btn-action-icon"
                     title="Llamar"
                   >
@@ -657,7 +433,8 @@ export const DetallesCdpPage: React.FC = () => {
           <div className="team-list">
             {cdp.lideres && cdp.lideres.length > 0 ? (
               cdp.lideres.map((m) => {
-                const memberPhone = (m.telefono || '').replace(/[^0-9]/g, '');
+                const memberWaUrl = formatWhatsappUrl(m.telefono);
+                const memberTelUrl = formatTelUrl(m.telefono);
                 return (
                   <div key={m.id} className="team-member">
                     <div className="avatar" aria-hidden="true">
@@ -669,10 +446,10 @@ export const DetallesCdpPage: React.FC = () => {
                       {m.telefono && <span className="text-xs text-text-muted">{m.telefono}</span>}
                     </div>
                     <div className="team-member-actions">
-                      {m.telefono && (
+                      {memberWaUrl && (
                         <>
                           <a
-                            href={`https://wa.me/${memberPhone}`}
+                            href={memberWaUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-action-icon btn-wa"
@@ -681,7 +458,7 @@ export const DetallesCdpPage: React.FC = () => {
                             <Icon name="chat" size={16} />
                           </a>
                           <a
-                            href={`tel:${memberPhone}`}
+                            href={memberTelUrl}
                             className="btn-action-icon"
                             title={`Llamar a ${m.nombre_completo}`}
                           >
@@ -818,7 +595,11 @@ export const DetallesCdpPage: React.FC = () => {
             setIsLiderModalOpen(false);
             setSelectedLider(null);
           }}
-          lider={selectedLider}
+          lider={
+            selectedLider
+              ? cdp.lideres?.find((m) => String(m.id) === String(selectedLider.id)) ?? selectedLider
+              : null
+          }
           cdpId={cdp.id}
           cdpCodigo={cdp.codigo}
           onSave={handleGuardarLider}

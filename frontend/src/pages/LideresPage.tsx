@@ -12,6 +12,8 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Icon } from '../components/ui/Icon';
 import { Pagination } from '../components/ui/Pagination';
+import { formatWhatsappUrl, formatTelUrl } from '../utils/phone';
+import { downloadExport } from '../utils/downloadExport';
 import type { Lider, LiderInput } from '../types/estructura';
 import '../styles/shared-tables.css';
 import '../styles/lideres.css';
@@ -33,19 +35,38 @@ export const LideresPage: React.FC = () => {
 
   // Filtros client-side y reactivos
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [remoteSearchEnabled, setRemoteSearchEnabled] = useState(false);
   const [rolFiltro, setRolFiltro] = useState('');
   const [cdpFiltro, setCdpFiltro] = useState('');
   const [redFiltro, setRedFiltro] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [exportingFormat, setExportingFormat] = useState<'xlsx' | 'csv' | null>(null);
 
   // Efectiva red a filtrar: si es supervisor, forzada a su red
   const effectiveRedId = isSupervisor && supervisorRedId ? String(supervisorRedId) : redFiltro;
 
-  const { lideres, isLoading, isError, error, refetch } = useLideres({
+  const { lideres, total, isLoading, isError, error, refetch } = useLideres({
+    q: remoteSearchEnabled ? debouncedSearch || undefined : undefined,
     red_id: effectiveRedId || undefined,
     cdp_id: cdpFiltro || undefined,
     rol: rolFiltro || undefined,
   });
+
+  // Activar sincronización remota con debounce si el total excede el bloque precargado (100)
+  useEffect(() => {
+    if (total > 100 && !remoteSearchEnabled) {
+      setRemoteSearchEnabled(true);
+    }
+  }, [total, remoteSearchEnabled]);
+
+  useEffect(() => {
+    if (!remoteSearchEnabled) return;
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, remoteSearchEnabled]);
 
   const {
     crearLider,
@@ -159,31 +180,30 @@ export const LideresPage: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
-    if (!filteredLideres.length) {
+  const handleExport = async (format: 'xlsx' | 'csv') => {
+    if (!filteredLideres.length && total === 0) {
       info('No hay líderes para exportar.');
       return;
     }
-    const headers = ['ID', 'Nombre', 'Apellido', 'Rol', 'Red', 'Casa de Paz', 'Teléfono', 'Estado'];
-    const rows = filteredLideres.map((l) => [
-      l.id,
-      `"${l.nombre || ''}"`,
-      `"${l.apellido || ''}"`,
-      `"${l.rol || ''}"`,
-      `"${l.red_nombre || ''}"`,
-      `"${l.cdp_codigo || ''}"`,
-      `"${l.telefono || ''}"`,
-      l.is_active ? 'Activo' : 'Inactivo',
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `directorio_lideres_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setExportingFormat(format);
+    try {
+      await downloadExport({
+        resource: 'lideres',
+        format,
+        params: {
+          q: searchQuery || undefined,
+          rol: rolFiltro || undefined,
+          red_id: effectiveRedId || undefined,
+          cdp_id: cdpFiltro || undefined,
+        },
+      });
+      success(`Directorio de liderazgo exportado en formato ${format.toUpperCase()}.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al exportar el directorio de líderes.';
+      toastError(msg);
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   return (
@@ -357,7 +377,8 @@ export const LideresPage: React.FC = () => {
                   const iniciales = `${(l.nombre || '')[0] || ''}${(l.apellido || '')[0] || ''}`.toUpperCase();
                   const isActivo = l.is_active !== undefined ? Boolean(l.is_active) : true;
                   const isSub = l.rol?.toLowerCase().includes('sub');
-                  const cleanPhone = l.telefono ? l.telefono.replace(/[^0-9]/g, '') : '';
+                  const waUrl = formatWhatsappUrl(l.telefono);
+                  const telUrl = formatTelUrl(l.telefono);
 
                   return (
                     <tr key={l.id}>
@@ -393,15 +414,15 @@ export const LideresPage: React.FC = () => {
 
                       {/* Casa de Paz */}
                       <td className="font-medium text-text-main dark:text-neutral-200">
-                        {l.cdp_codigo || 'Sin asignar'}
+                        {l.cdp_codigo || l.cdp_nombre || 'Sin asignar'}
                       </td>
 
                       {/* Teléfono y WhatsApp Directo (Sin texto de número plano según feedback) */}
                       <td>
-                        {l.telefono ? (
+                        {waUrl ? (
                           <div className="inline-flex items-center gap-2">
                             <a
-                              href={`https://wa.me/${cleanPhone}`}
+                              href={waUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-950/40 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-xs font-semibold transition-colors"
@@ -412,7 +433,7 @@ export const LideresPage: React.FC = () => {
                               <span>WhatsApp</span>
                             </a>
                             <a
-                              href={`tel:${cleanPhone}`}
+                              href={telUrl}
                               className="btn-call"
                               title={`Llamar a ${nombreCompleto}`}
                               aria-label={`Llamar a ${nombreCompleto}`}
@@ -512,20 +533,30 @@ export const LideresPage: React.FC = () => {
           </p>
           <p className="quote-author">Mateo 18:20</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExportCSV}
+            onClick={() => handleExport('xlsx')}
+            disabled={exportingFormat !== null}
             icon={<Icon name="table_chart" size={16} />}
           >
-            Exportar Excel / CSV
+            {exportingFormat === 'xlsx' ? 'Generando...' : 'Exportar Excel'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport('csv')}
+            disabled={exportingFormat !== null}
+            icon={<Icon name="download" size={16} />}
+          >
+            {exportingFormat === 'csv' ? 'Generando...' : 'Exportar CSV'}
           </Button>
           <Button
             variant="secondary"
             size="sm"
             onClick={() => window.print()}
-            icon={<Icon name="download" size={16} />}
+            icon={<Icon name="description" size={16} />}
           >
             Imprimir Directorio
           </Button>
@@ -535,8 +566,15 @@ export const LideresPage: React.FC = () => {
       {/* Modales */}
       <LiderFormModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        lider={selectedLider}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedLider(null);
+        }}
+        lider={
+          selectedLider
+            ? lideres.find((l) => String(l.id) === String(selectedLider.id)) ?? selectedLider
+            : null
+        }
         casasDePaz={casasDePaz}
         supervisorRedId={supervisorRedId}
         onSave={handleSaveLider}
@@ -545,8 +583,15 @@ export const LideresPage: React.FC = () => {
 
       <DeleteLiderModal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        lider={liderToDelete}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setLiderToDelete(null);
+        }}
+        lider={
+          liderToDelete
+            ? lideres.find((l) => String(l.id) === String(liderToDelete.id)) ?? liderToDelete
+            : null
+        }
         onConfirmDelete={handleConfirmDelete}
         isDeleting={isEliminando}
       />

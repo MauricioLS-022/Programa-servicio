@@ -31,6 +31,7 @@ export interface CasaDePaz {
   zona?: string;
   lider?: string;
   asistencia?: number;
+  usuario_id?: string | number | null;
   usuario_username?: string;
   usuario_nombre?: string;
   horario?: string;
@@ -44,6 +45,7 @@ export interface Lider {
   rol?: string;
   cdp_id?: number | null;
   cdp_codigo?: string;
+  cdp_nombre?: string;
   red_id?: number;
   red_nombre?: string;
   is_active: number | boolean;
@@ -340,13 +342,13 @@ export interface CdpDetalleResponse {
 
 export interface EstructuraSelectoresResponse {
   supervisores: Array<{
-    id: number;
+    id: number | string;
     nombre: string;
     apellido: string;
     username: string;
   }>;
   lideres_cdp: Array<{
-    id: number;
+    id: number | string;
     nombre: string;
     apellido: string;
     username?: string;
@@ -377,8 +379,13 @@ export interface CdpInput {
   direccion: string;
   telefono: string;
   is_active?: number | boolean | string;
+  usuario_existente_id?: string | null;
   lider_id?: number | string | null;
   modo_usuario?: 'existente' | 'nuevo';
+  nombre?: string;
+  apellido?: string;
+  username?: string;
+  password?: string;
   nuevo_usuario_nombre?: string;
   nuevo_usuario_apellido?: string;
   nuevo_usuario_username?: string;

@@ -56,7 +56,7 @@ export const ReporteModal: React.FC<ReporteModalProps> = ({
         hr_fin: reporte.hr_fin ? reporte.hr_fin.slice(0, 5) : '19:30',
         tema: reporte.tema || '',
         nro_regulares: reporte.nro_regulares || 0,
-        nro_ninos: reporte.nro_ninos || 0,
+        nro_ninos: reporte.nro_niños ?? reporte.nro_ninos ?? 0,
         nro_visitas: reporte.nro_visitas || 0,
         nro_comprometidos: reporte.nro_comprometidos || 0,
         reconciliaciones: reporte.reconciliaciones || 0,
@@ -124,8 +124,9 @@ export const ReporteModal: React.FC<ReporteModalProps> = ({
       return;
     }
 
-    const payload: Partial<Reporte> = {
+    const payload: Partial<Reporte> & { lider_id?: number } = {
       cdp_id: reporte.cdp_id,
+      ...(reporte.enviado_por_lider_id ? { lider_id: reporte.enviado_por_lider_id } : {}),
       fecha: formData.fecha,
       hr_inicio: formData.hr_inicio,
       hr_fin: formData.hr_fin,

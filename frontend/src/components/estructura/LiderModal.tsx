@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Icon } from '../ui/Icon';
+import { normalizePhoneE164 } from '../../utils/phone';
 import type { LiderInput } from '../../types/estructura';
 
 export interface LiderModalProps {
@@ -80,9 +81,9 @@ export const LiderModal: React.FC<LiderModalProps> = ({
       return;
     }
 
-    const cleanPhone = telefono.replace(/[^0-9]/g, '');
-    if (!telefono.trim() || cleanPhone.length < 8) {
-      setErrorLocal('Ingresa un teléfono válido de al menos 8 dígitos (ej: +58 412 1234567).');
+    const phoneCheck = normalizePhoneE164(telefono);
+    if (!telefono.trim() || !phoneCheck.valid || !phoneCheck.e164) {
+      setErrorLocal(phoneCheck.error || 'Ingresa un teléfono válido en formato internacional (ej: +58 412-1234567).');
       return;
     }
 
@@ -92,7 +93,7 @@ export const LiderModal: React.FC<LiderModalProps> = ({
       await onSave({
         nombre: nombre.trim(),
         apellido: apellido.trim(),
-        telefono: telefono.trim(),
+        telefono: phoneCheck.e164,
         rol,
         cdp_id: cdpId,
         is_active: isActive === '1',
@@ -164,9 +165,14 @@ export const LiderModal: React.FC<LiderModalProps> = ({
           <Input
             label="Teléfono Móvil / WhatsApp"
             id="lider-telefono"
-            placeholder="Ej: +58 412 1234567"
+            type="tel"
+            placeholder="Ej: +58 412-1234567"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            onBlur={() => {
+              const norm = normalizePhoneE164(telefono);
+              if (norm.valid && norm.e164) setTelefono(norm.e164);
+            }}
             required
           />
           <Select

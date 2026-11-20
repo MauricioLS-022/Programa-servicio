@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Modal } from '../../ui/Modal';
 import { Icon } from '../../ui/Icon';
 import { Input } from '../../ui/Input';
@@ -21,6 +22,7 @@ export const LiderEditarModal: React.FC<LiderEditarModalProps> = ({
   lideres,
   onSuccess,
 }) => {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     lider_id: '',
     fecha: '',
@@ -51,7 +53,7 @@ export const LiderEditarModal: React.FC<LiderEditarModalProps> = ({
         hr_inicio: reporte.hr_inicio ? reporte.hr_inicio.slice(0, 5) : '',
         hr_fin: reporte.hr_fin ? reporte.hr_fin.slice(0, 5) : '',
         nro_regulares: Number(reporte.nro_regulares || 0),
-        nro_ninos: Number(reporte.nro_niños || 0),
+        nro_ninos: Number(reporte.nro_niños ?? (reporte as { nro_ninos?: number }).nro_ninos ?? 0),
         nro_visitas: Number(reporte.nro_visitas || 0),
         nro_comprometidos: Number(reporte.nro_comprometidos || 0),
         reconciliaciones: Number(reporte.reconciliaciones || 0),
@@ -70,7 +72,7 @@ export const LiderEditarModal: React.FC<LiderEditarModalProps> = ({
       });
       setErrorMessage(null);
     }
-  }, [reporte]);
+  }, [reporte, isOpen]);
 
   const totalAsistencia = useMemo(() => {
     return (
@@ -122,6 +124,13 @@ export const LiderEditarModal: React.FC<LiderEditarModalProps> = ({
         asistencia: totalAsistencia,
         cesta_amor: formData.cesta_amor === '1' ? 'Sí' : 'No',
       });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lider-dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['reportes'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['casas'] }),
+        queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      ]);
       onSuccess();
       onClose();
     } catch (err: unknown) {

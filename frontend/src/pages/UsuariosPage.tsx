@@ -10,6 +10,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Icon } from '../components/ui/Icon';
 import { Pagination } from '../components/ui/Pagination';
+import { downloadExport } from '../utils/downloadExport';
 import type { Usuario, UsuarioInput } from '../types/usuario';
 import '../styles/shared-tables.css';
 import '../styles/usuarios.css';
@@ -21,7 +22,35 @@ export const UsuariosPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { success, error: toastError, info } = useToast();
 
-  const { usuarios, totalActivos, isLoading, isError, error, refetch } = useUsuarios();
+  // Estados de filtros client-side (Live Search instantáneo Requerimiento #25)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [remoteSearchEnabled, setRemoteSearchEnabled] = useState(false);
+  const [rolFiltro, setRolFiltro] = useState('');
+  const [page, setPage] = useState(1);
+  const [exportingFormat, setExportingFormat] = useState<'xlsx' | 'csv' | null>(null);
+
+  const { usuarios, total, totalActivos, isLoading, isError, error, refetch } = useUsuarios(
+    remoteSearchEnabled
+      ? { q: debouncedSearch || undefined, rol: rolFiltro || undefined }
+      : {}
+  );
+
+  // Activar sincronización con backend cuando el total supera el bloque precargado (100)
+  useEffect(() => {
+    if (total > 100 && !remoteSearchEnabled) {
+      setRemoteSearchEnabled(true);
+    }
+  }, [total, remoteSearchEnabled]);
+
+  useEffect(() => {
+    if (!remoteSearchEnabled) return;
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, remoteSearchEnabled]);
+
   const {
     crearUsuario,
     isCreando,
@@ -31,11 +60,6 @@ export const UsuariosPage: React.FC = () => {
     eliminarUsuario,
     isEliminando,
   } = useUsuarioMutations();
-
-  // Estados de filtros client-side (Live Search instantáneo Requerimiento #25)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [rolFiltro, setRolFiltro] = useState('');
-  const [page, setPage] = useState(1);
 
   // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -122,31 +146,28 @@ export const UsuariosPage: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
-    if (!filteredUsuarios.length) {
+  const handleExport = async (format: 'xlsx' | 'csv') => {
+    if (!filteredUsuarios.length && total === 0) {
       info('No hay usuarios para exportar con los filtros actuales.');
       return;
     }
-    const headers = ['ID', 'Nombre', 'Apellido', 'Username', 'Rol', 'Estado', 'Red', 'Casa de Paz'];
-    const rows = filteredUsuarios.map((u) => [
-      u.id,
-      `"${u.nombre || ''}"`,
-      `"${u.apellido || ''}"`,
-      `"@${u.username}"`,
-      `"${u.tipo_usuario || u.rol || ''}"`,
-      u.is_active ? 'Activo' : 'Inactivo',
-      `"${u.red_nombre || ''}"`,
-      `"${u.cdp_codigo || ''}"`,
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `usuarios_vino_nuevo_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setExportingFormat(format);
+    try {
+      await downloadExport({
+        resource: 'usuarios',
+        format,
+        params: {
+          q: searchQuery || undefined,
+          rol: rolFiltro || undefined,
+        },
+      });
+      success(`Directorio de usuarios exportado en formato ${format.toUpperCase()}.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al exportar el directorio de usuarios.';
+      toastError(msg);
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   return (
@@ -220,12 +241,25 @@ export const UsuariosPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleExportCSV}
+                onClick={() => handleExport('xlsx')}
+                disabled={exportingFormat !== null}
+                title="Exportar a Excel (.xlsx)"
+                aria-label="Exportar usuarios a Excel"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Icon name="table_chart" size={14} />
+                <span>{exportingFormat === 'xlsx' ? 'Generando...' : 'Exportar Excel'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('csv')}
+                disabled={exportingFormat !== null}
                 title="Exportar a CSV"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer"
+                aria-label="Exportar usuarios a CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer disabled:opacity-50"
               >
                 <Icon name="download" size={14} />
-                <span>Exportar CSV</span>
+                <span>{exportingFormat === 'csv' ? 'Generando...' : 'Exportar CSV'}</span>
               </button>
             </div>
           </div>
@@ -386,16 +420,30 @@ export const UsuariosPage: React.FC = () => {
       {/* Modales */}
       <UsuarioModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        usuario={selectedUsuario}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedUsuario(null);
+        }}
+        usuario={
+          selectedUsuario
+            ? usuarios.find((u) => String(u.id) === String(selectedUsuario.id)) ?? selectedUsuario
+            : null
+        }
         onSave={handleSaveUsuario}
         isSaving={isCreando || isEditando}
       />
 
       <DeleteUsuarioModal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        usuario={usuarioToDelete}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setUsuarioToDelete(null);
+        }}
+        usuario={
+          usuarioToDelete
+            ? usuarios.find((u) => String(u.id) === String(usuarioToDelete.id)) ?? usuarioToDelete
+            : null
+        }
         currentUserId={currentUser?.id}
         onConfirmDelete={handleConfirmDelete}
         isDeleting={isEliminando}

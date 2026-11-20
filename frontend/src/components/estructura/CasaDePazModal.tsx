@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Icon } from '../ui/Icon';
+import { normalizePhoneE164 } from '../../utils/phone';
 import type { CasaDePaz, CdpInput } from '../../types/estructura';
 
 interface CasaDePazModalProps {
@@ -11,7 +12,7 @@ interface CasaDePazModalProps {
   onClose: () => void;
   casa: CasaDePaz | null; // Si es null => modo creación
   redes: Array<{ id: number; nombre: string; is_active?: number | boolean }>;
-  lideresDisponibles: Array<{ id: number; nombre: string; apellido: string; username?: string }>;
+  lideresDisponibles: Array<{ id: number | string; nombre: string; apellido: string; username?: string }>;
   defaultRedId?: number | string;
   onSave: (data: CdpInput) => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
@@ -61,7 +62,7 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
       setDireccion(casa.direccion || '');
       setIsActive(casa.is_active ? '1' : '0');
       setModoUsuario('existente');
-      setLiderId('');
+      setLiderId(casa.usuario_id ? String(casa.usuario_id) : '');
     } else {
       setCodigo('');
       setRedId(defaultRedId ? String(defaultRedId) : (redes.length > 0 ? String(redes[0].id) : ''));
@@ -87,9 +88,15 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
       return;
     }
 
+    const phoneCheck = normalizePhoneE164(telefono);
+    if (!phoneCheck.valid || !phoneCheck.e164) {
+      setErrorLocal(phoneCheck.error || 'Ingresa un teléfono válido en formato E.164 (ej: +58 412-1234567).');
+      return;
+    }
+
     if (!isEdit && modoUsuario === 'nuevo') {
-      if (!nuevoNombre.trim() || !nuevoUsername.trim() || !nuevoPassword.trim()) {
-        setErrorLocal('Por favor completa los datos de la nueva cuenta de usuario (nombre, usuario y contraseña).');
+      if (!nuevoNombre.trim() || !nuevoApellido.trim() || !nuevoUsername.trim() || !nuevoPassword.trim()) {
+        setErrorLocal('Por favor completa los datos de la nueva cuenta de usuario (nombre, apellido, usuario y contraseña).');
         return;
       }
     }
@@ -98,17 +105,26 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
 
     const payload: CdpInput = {
       codigo: codigo.trim(),
-      red_id: redId,
+      red_id: Number(redId),
       anfitrion: anfitrion.trim(),
-      telefono: telefono.trim(),
+      telefono: phoneCheck.e164,
       direccion: direccion.trim(),
       is_active: isActive === '1',
-      modo_usuario: modoUsuario,
-      lider_id: modoUsuario === 'existente' && liderId ? Number(liderId) : null,
-      nuevo_usuario_nombre: nuevoNombre.trim(),
-      nuevo_usuario_apellido: nuevoApellido.trim(),
-      nuevo_usuario_username: nuevoUsername.trim(),
-      nuevo_usuario_password: nuevoPassword,
+      ...(!isEdit
+        ? {
+            modo_usuario: modoUsuario,
+            usuario_existente_id: modoUsuario === 'existente' && liderId ? liderId : null,
+            nombre: modoUsuario === 'nuevo' ? nuevoNombre.trim() : undefined,
+            apellido: modoUsuario === 'nuevo' ? nuevoApellido.trim() : undefined,
+            username: modoUsuario === 'nuevo' ? nuevoUsername.trim() : undefined,
+            password: modoUsuario === 'nuevo' ? nuevoPassword : undefined,
+          }
+        : liderId
+        ? {
+            modo_usuario: 'existente' as const,
+            usuario_existente_id: liderId,
+          }
+        : {}),
     };
 
     try {
@@ -240,9 +256,14 @@ export const CasaDePazModal: React.FC<CasaDePazModalProps> = ({
                 </label>
                 <Input
                   id="cdpTelefono"
+                  type="tel"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
-                  placeholder="Ej. 0414-1234567"
+                  onBlur={() => {
+                    const norm = normalizePhoneE164(telefono);
+                    if (norm.valid && norm.e164) setTelefono(norm.e164);
+                  }}
+                  placeholder="Ej. +58 412-1234567"
                   required
                 />
               </div>

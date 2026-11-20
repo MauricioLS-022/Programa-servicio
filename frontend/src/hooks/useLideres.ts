@@ -43,13 +43,14 @@ export function useLideres(params: UseLideresParams = {}) {
 export function useLiderMutations() {
   const queryClient = useQueryClient();
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['lideres'] });
-    queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] });
-    queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] });
-    queryClient.invalidateQueries({ queryKey: ['casas'] });
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-  };
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['lideres'] }),
+      queryClient.invalidateQueries({ queryKey: ['cdp-detalle'] }),
+      queryClient.invalidateQueries({ queryKey: ['selectores-estructura'] }),
+      queryClient.invalidateQueries({ queryKey: ['casas'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]);
 
   const crearMutation = useMutation({
     mutationFn: (data: LiderInput) =>
