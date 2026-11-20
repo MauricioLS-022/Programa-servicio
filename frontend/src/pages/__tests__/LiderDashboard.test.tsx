@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardPage } from '../DashboardPage';
 
 // Mocks
@@ -102,10 +103,15 @@ describe('LiderDashboardView Integration and Parity Tests', () => {
   });
 
   const renderDashboard = () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     return render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <DashboardPage />
+        </MemoryRouter>
+      </QueryClientProvider>
     );
   };
 

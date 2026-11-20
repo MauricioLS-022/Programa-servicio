@@ -90,6 +90,8 @@ const mockCdpDetalleData: CdpDetalle = {
   ],
 };
 
+let mockCdpDetalleCurrent: CdpDetalle | undefined = mockCdpDetalleData;
+let mockCdpIsError = false;
 const mockRefetch = vi.fn();
 const mockToggleCdp = vi.fn().mockResolvedValue({ success: true, message: 'Estado modificado' });
 const mockEditarCdp = vi.fn().mockResolvedValue({ success: true, message: 'Casa editada' });
@@ -98,9 +100,9 @@ const mockEditarLider = vi.fn().mockResolvedValue({ success: true, message: 'Lí
 
 vi.mock('../../hooks/useEstructura', () => ({
   useCdpDetalle: () => ({
-    cdp: mockCdpDetalleData,
+    cdp: mockCdpDetalleCurrent,
     isLoading: false,
-    isError: false,
+    isError: mockCdpIsError,
     refetch: mockRefetch,
   }),
   useEstructuraSelectores: () => ({
@@ -126,6 +128,8 @@ vi.mock('../../hooks/useEstructura', () => ({
 describe('DetallesCdpPage Component (Paridad Jinja2 detalles_cdp.html)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCdpDetalleCurrent = mockCdpDetalleData;
+    mockCdpIsError = false;
   });
 
   it('renderiza la Ficha Técnica canónica con encabezado, los 6 KPIs balanceados, equipo e historial', () => {
@@ -232,6 +236,24 @@ describe('DetallesCdpPage Component (Paridad Jinja2 detalles_cdp.html)', () => {
     const btnExportPdf = screen.getByRole('button', { name: /Exportar Ficha Técnica de Casa de Paz en PDF/i });
     expect(btnExportPdf).toBeInTheDocument();
     expect(() => fireEvent.click(btnExportPdf)).not.toThrow();
+  });
+
+  it('muestra degradación controlada y botón Reintentar ante fallo del backend (500/503)', () => {
+    mockCdpDetalleCurrent = undefined;
+    mockCdpIsError = true;
+
+    render(
+      <MemoryRouter initialEntries={['/casa-de-paz/10']}>
+        <Routes>
+          <Route path="/casa-de-paz/:id" element={<DetallesCdpPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('No se pudo cargar la Casa de Paz')).toBeInTheDocument();
+    const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
+    fireEvent.click(retryBtn);
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 });
 

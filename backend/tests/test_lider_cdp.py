@@ -165,9 +165,14 @@ class TestLiderCDPRoutes(unittest.TestCase):
     """Pruebas de integración de las rutas /lider_cdp."""
 
     def setUp(self):
+        self._orig_mock = app.config.get('MOCK_MODE', False)
         app.config['TESTING'] = True
+        app.config['MOCK_MODE'] = True
         app.config['SECRET_KEY'] = 'test-secret-key-123'
         self.client = app.test_client()
+
+    def tearDown(self):
+        app.config['MOCK_MODE'] = self._orig_mock
 
     def test_dashboard_requiere_login(self):
         """El acceso sin sesión debe redirigir al login (/iniciar_sesion)."""

@@ -84,19 +84,29 @@ const mockCrearUsuario = vi.fn();
 const mockEditarUsuario = vi.fn();
 const mockToggleUsuario = vi.fn().mockResolvedValue({ success: true, message: 'Estado alternado' });
 const mockEliminarUsuario = vi.fn().mockResolvedValue({ success: true, message: 'Usuario eliminado' });
+const mockDownloadExport = vi.fn().mockResolvedValue('directorio_usuarios.xlsx');
+let mockTotalUsuarios = mockUsuariosList.length;
+const mockUseUsuariosSpy = vi.fn();
+
+vi.mock('../../utils/downloadExport', () => ({
+  downloadExport: (...args: unknown[]) => mockDownloadExport(...args),
+}));
 
 vi.mock('../../hooks/useUsuarios', () => ({
-  useUsuarios: () => ({
-    usuarios: mockUsuariosList,
-    total: mockUsuariosList.length,
-    totalActivos: 3,
-    page: 1,
-    pages: 1,
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useUsuarios: (params?: unknown) => {
+    mockUseUsuariosSpy(params);
+    return {
+      usuarios: mockUsuariosList,
+      total: mockTotalUsuarios,
+      totalActivos: 3,
+      page: 1,
+      pages: 1,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
   useUsuarioOpcionesAsignacion: () => ({
     redes: [{ id: 1, nombre: 'Red Norte' }],
     casasDePaz: [{ id: 10, codigo: 'CDP-001' }],
@@ -118,6 +128,7 @@ vi.mock('../../hooks/useUsuarios', () => ({
 describe('UsuariosPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTotalUsuarios = mockUsuariosList.length;
     mockCurrentUser = {
       id: 'usr-admin-1',
       username: 'admin',
@@ -250,6 +261,49 @@ describe('UsuariosPage Component', () => {
     expect(screen.getByText('Acceso denegado')).toBeInTheDocument();
     expect(screen.getByText(/no tienes permiso para acceder a esta página/i)).toBeInTheDocument();
     expect(screen.queryByText('Usuarios del Sistema')).not.toBeInTheDocument();
+  });
+
+  it('exporta usuarios en Excel y CSV invocando el endpoint del servidor con filtros activos', async () => {
+    render(
+      <MemoryRouter>
+        <UsuariosPage />
+      </MemoryRouter>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre o usuario...');
+    fireEvent.change(searchInput, { target: { value: 'Elena' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar usuarios a Excel/i }));
+    await waitFor(() => {
+      expect(mockDownloadExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource: 'usuarios',
+          format: 'xlsx',
+          params: expect.objectContaining({ q: 'Elena' }),
+        })
+      );
+    });
+  });
+
+  it('activa búsqueda sincronizada con backend (debounce) cuando total > 100', async () => {
+    mockTotalUsuarios = 150;
+    render(
+      <MemoryRouter>
+        <UsuariosPage />
+      </MemoryRouter>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre o usuario...');
+    fireEvent.change(searchInput, { target: { value: 'remoto' } });
+
+    await waitFor(
+      () => {
+        expect(mockUseUsuariosSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ q: 'remoto' })
+        );
+      },
+      { timeout: 1000 }
+    );
   });
 });
 

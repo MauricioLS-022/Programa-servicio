@@ -4,13 +4,13 @@ import React from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useUrlFilters } from '../useUrlFilters';
 
-interface TestFilters {
+type TestFilters = {
   nivel: 'general' | 'red' | 'cdp';
   red_id: string;
   periodo: 'semana' | 'mes' | 'historico';
   q: string;
   page: number;
-}
+};
 
 const defaultFilters: TestFilters = {
   nivel: 'general',

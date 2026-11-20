@@ -8,6 +8,10 @@ import type { Reporte } from '../../types/reporte';
 // Mocks
 const mockSuccess = vi.fn();
 const mockError = vi.fn();
+const mockDownloadExport = vi.fn().mockResolvedValue('reportes_consolidado.pdf');
+vi.mock('../../utils/downloadExport', () => ({
+  downloadExport: (...args: unknown[]) => mockDownloadExport(...args),
+}));
 vi.mock('../../context/ToastContext', () => ({
   useToast: () => ({
     success: mockSuccess,
@@ -83,6 +87,9 @@ let mockReportesList: Reporte[] = [mockReporteItem];
 let mockActualizarReporte = vi.fn();
 let mockEliminarReporte = vi.fn();
 let mockIsLoading = false;
+let mockIsError = false;
+let mockQueryError: Error | null = null;
+const mockReportesRefetch = vi.fn();
 let mockIsActualizando = false;
 let mockIsEliminando = false;
 let lastReportesArgs: any = null;
@@ -96,11 +103,13 @@ vi.mock('../../hooks/useReportes', () => ({
       pages: 1,
       page: 1,
       isLoading: mockIsLoading,
+      isError: mockIsError,
+      error: mockQueryError,
       actualizarReporte: mockActualizarReporte,
       isActualizando: mockIsActualizando,
       eliminarReporte: mockEliminarReporte,
       isEliminando: mockIsEliminando,
-      refetch: vi.fn(),
+      refetch: mockReportesRefetch,
     };
   },
 }));
@@ -116,6 +125,8 @@ describe('ReportesPage (Paridad 1 a 1 reportes_admin.html)', () => {
     };
     mockReportesList = [mockReporteItem];
     mockIsLoading = false;
+    mockIsError = false;
+    mockQueryError = null;
     mockIsActualizando = false;
     mockIsEliminando = false;
     mockActualizarReporte = vi.fn().mockResolvedValue({ success: true, message: 'OK' });
@@ -325,6 +336,57 @@ describe('ReportesPage (Paridad 1 a 1 reportes_admin.html)', () => {
       red_id: undefined,
       cdp_id: undefined,
       page: 1,
+    });
+  });
+
+  it('degrada elegantemente ante error 500/503 en carga de reportes y permite reintentar', () => {
+    mockReportesList = [];
+    mockIsError = true;
+    mockQueryError = new Error('Error HTTP 503: Service Unavailable');
+
+    render(
+      <MemoryRouter initialEntries={['/reportes']}>
+        <ReportesPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('No se pudieron cargar los reportes ministeriales')).toBeInTheDocument();
+    expect(screen.getByText('Error HTTP 503: Service Unavailable')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
+    expect(mockReportesRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('exporta reportes consolidados en PDF y Excel enviando los filtros activos de la URL', async () => {
+    render(
+      <MemoryRouter initialEntries={['/reportes?q=fe&red_id=1&fecha_desde=2026-10-01']}>
+        <ReportesPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar reportes a PDF/i }));
+    await waitFor(() => {
+      expect(mockDownloadExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource: 'reportes',
+          format: 'pdf',
+          params: expect.objectContaining({
+            q: 'fe',
+            red_id: '1',
+            fecha_desde: '2026-10-01',
+          }),
+        })
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar reportes a Excel/i }));
+    await waitFor(() => {
+      expect(mockDownloadExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource: 'reportes',
+          format: 'xlsx',
+        })
+      );
     });
   });
 });

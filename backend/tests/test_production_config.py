@@ -218,6 +218,40 @@ class TestProductionAuthHardening(unittest.TestCase):
         self.assertNotIn("Entorno de Desarrollo", html)
         self.assertNotIn("Usuarios de prueba", html)
 
+    def test_proxy_fix_recognizes_https_and_emits_hsts_in_production(self):
+        """Detrás de reverse proxy TLS (X-Forwarded-Proto: https), ProxyFix habilita HSTS."""
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.config['DEBUG'] = False
+        orig_wsgi = app.wsgi_app
+        app.wsgi_app = ProxyFix(orig_wsgi, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+        try:
+            client = app.test_client()
+            resp = client.get('/api/health', headers={'X-Forwarded-Proto': 'https'})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(
+                resp.headers.get('Strict-Transport-Security'),
+                'max-age=31536000; includeSubDomains',
+            )
+        finally:
+            app.wsgi_app = orig_wsgi
+
+    def test_render_yaml_builds_spa_with_pnpm_and_configures_health_check(self):
+        """render.yaml debe compilar frontend/dist con pnpm, configurar healthCheckPath y DB_SSL."""
+        import os
+
+        render_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'render.yaml'))
+        with open(render_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        self.assertIn('pip install -r requirements.txt', content)
+        self.assertIn('pnpm --dir frontend install --frozen-lockfile', content)
+        self.assertIn('pnpm --dir frontend run build', content)
+        self.assertIn('healthCheckPath: /api/health', content)
+        self.assertIn('key: DB_SSL', content)
+        self.assertIn('key: TRUST_PROXY_HOPS', content)
+        self.assertIn('startCommand: gunicorn --chdir backend app:app', content)
+
 
 if __name__ == '__main__':
     unittest.main()

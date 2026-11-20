@@ -276,7 +276,7 @@ class TestCdpCrudService(unittest.TestCase):
             self.assertTrue(ok)
             self.assertIn("actualizada exitosamente", msg)
             mock_actualizar_admin.assert_called_once_with(
-                mock_cursor, 5, 'SUR-002', 'Hnos Rodríguez', '+58 414 1234567', 'Sector Sur Calle 4', 2
+                mock_cursor, 5, 'SUR-002', 'Hnos Rodríguez', '+584141234567', 'Sector Sur Calle 4', 2
             )
             mock_conn.commit.assert_called_once()
 

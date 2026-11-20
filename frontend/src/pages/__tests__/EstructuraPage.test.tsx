@@ -4,6 +4,11 @@ import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { EstructuraPage } from '../EstructuraPage';
 
+const mockDownloadExport = vi.fn().mockResolvedValue('directorio_casas_de_paz.xlsx');
+vi.mock('../../utils/downloadExport', () => ({
+  downloadExport: (...args: unknown[]) => mockDownloadExport(...args),
+}));
+
 // Mocks
 const mockSuccess = vi.fn();
 const mockError = vi.fn();
@@ -215,7 +220,7 @@ describe('EstructuraPage Component (Paridad Jinja2 estructura_admin.html)', () =
     // Llenar campos
     fireEvent.change(screen.getByPlaceholderText(/Ej. SUR-001/i), { target: { value: 'SUR-002' } });
     fireEvent.change(screen.getByPlaceholderText(/Ej. Familia Gómez Ríos/i), { target: { value: 'Familia Silva' } });
-    fireEvent.change(screen.getByPlaceholderText(/0414-1234567/i), { target: { value: '+58 412 9999999' } });
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. \+58 412-1234567/i), { target: { value: '+58 412 9999999' } });
     fireEvent.change(screen.getByPlaceholderText(/Calle, sector, punto de referencia/i), { target: { value: 'Calle 5 con Av 2' } });
 
     const btnSubmit = screen.getByRole('button', { name: 'Registrar Casa' });
@@ -226,7 +231,7 @@ describe('EstructuraPage Component (Paridad Jinja2 estructura_admin.html)', () =
         expect.objectContaining({
           codigo: 'SUR-002',
           anfitrion: 'Familia Silva',
-          telefono: '+58 412 9999999',
+          telefono: '+584129999999',
           direccion: 'Calle 5 con Av 2',
         })
       );
@@ -341,5 +346,24 @@ describe('EstructuraPage Component (Paridad Jinja2 estructura_admin.html)', () =
     // Restaurar usuario
     mockUser.rol = 'admin';
     mockUser.nombre = 'Administrador';
+  });
+
+  it('exporta el directorio de Casas de Paz a Excel respetando la red filtrada', async () => {
+    render(
+      <MemoryRouter initialEntries={['/estructura?red_id=1']}>
+        <EstructuraPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar Casas de Paz a Excel/i }));
+    await waitFor(() => {
+      expect(mockDownloadExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource: 'casas_de_paz',
+          format: 'xlsx',
+          params: expect.objectContaining({ red_id: '1' }),
+        })
+      );
+    });
   });
 });

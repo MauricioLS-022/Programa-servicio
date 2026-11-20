@@ -1143,6 +1143,8 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
         self.assertIn('data-periodo="anio"', html_sem)
         self.assertIn('Cumplimiento Semanal', html_sem)
         self.assertIn('Asistencia por Red esta Semana', html_sem)
+        self.assertIn('Desglose por Red de los reportes de esta semana', html_sem)
+        self.assertNotIn('trend-badge-pill', html_sem)
 
         # Mes
         res_mes = self.client.get('/admin/dashboard?nivel=general&periodo=mes')
@@ -1174,6 +1176,7 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
         self.assertEqual(res_red_sem.status_code, 200)
         html_red_sem = res_red_sem.get_data(as_text=True)
         self.assertIn('Asistencia por Casa esta Semana', html_red_sem)
+        self.assertNotIn('trend-badge-pill', html_red_sem)
 
         # Mes
         res_red_mes = self.client.get('/admin/dashboard?nivel=red&red_id=1&periodo=mes')
@@ -1302,44 +1305,49 @@ class TestDashboardMetricsAndVisuals(unittest.TestCase):
 
 
 
-    def test_get_metricas_generales_week_fallback_to_latest_report(self):
-        """Si en la semana actual no hay reportes, get_metricas_generales debe sincronizar con la semana del último reporte recibido."""
+    def test_get_metricas_generales_week_uses_current_week_without_fallback(self):
+        """Si en la semana actual no hay reportes, get_metricas_generales debe devolver 0 para esta semana sin retroceder a reportes pasados."""
         mock_conn = MagicMock()
         mock_cur = MagicMock()
         mock_conn.cursor.return_value = mock_cur
 
         mock_cur.fetchone.side_effect = [
-            {'total_sem': 0},        # conteo semana actual: 0 reportes
-            {'max_fecha': date(2026, 9, 20)},  # último reporte recibido
-            {                        # KPIs de esa semana activa
-                'total_asistencia': 45,
-                'regulares': 30,
-                'ninos': 5,
-                'visitas': 6,
-                'comprometidos': 4,
-                'ofrendas_usd': 50.0,
-                'ofrendas_bs': 750.0,
-                'conversiones': 3,
-                'reconciliaciones': 1,
-                'cestas_amor': 2,
-                'total_visitas': 6,
-                'reportes_enviados': 2,
+            {                        # KPIs de la semana actual (sin reportes)
+                'total_asistencia': 0,
+                'regulares': 0,
+                'ninos': 0,
+                'visitas': 0,
+                'comprometidos': 0,
+                'ofrendas_usd': 0.0,
+                'ofrendas_bs': 0.0,
+                'conversiones': 0,
+                'reconciliaciones': 0,
+                'cestas_amor': 0,
+                'total_visitas': 0,
+                'reportes_enviados': 0,
             },
             {'total': 5},            # total casas activas
         ]
         mock_cur.fetchall.side_effect = [
-            [],                      # casas sin reporte
-            [{'id': 1, 'nombre_red': 'Red Central', 'asistencia': 45}],  # tendencia
-            [{'nombre': 'Red Central', 'total_casas': 5, 'casas_reportadas': 2, 'asistencia_semana': 45, 'asistencia_total': 180, 'cumplimiento': 40, 'supervisor': 'Carlos'}], # ranking
+            [{'id': 1, 'codigo': 'SUR-001'}],                      # casas sin reporte
+            [
+                {'id': 1, 'nombre_red': 'Cielos Abiertos', 'asistencia': 0},
+                {'id': 2, 'nombre_red': 'Red Sur', 'asistencia': 0},
+            ],  # tendencia semanal por red
+            [{'nombre': 'Red Sur', 'total_casas': 5, 'casas_reportadas': 0, 'asistencia_semana': 0, 'asistencia_total': 180, 'cumplimiento': 0, 'supervisor': 'Carlos'}], # ranking
             [],                      # alertas
         ]
 
         with patch('db_queries._ensure_currency_columns'):
             res = db_queries.get_metricas_generales(mock_conn, periodo='semana')
-            self.assertEqual(res['total_asistencia'], 45)
-            self.assertEqual(res['distribucion']['regulares'], 30)
-            self.assertEqual(res['cumplimiento'], 40)
-            self.assertIn("Semana", res['periodo_nombre'])
+            self.assertEqual(res['total_asistencia'], 0)
+            self.assertEqual(res['distribucion']['regulares'], 0)
+            self.assertEqual(res['cumplimiento'], 0)
+            self.assertEqual(res['periodo_nombre'], 'Esta Semana')
+            self.assertTrue(all(item['asistencia'] == 0 for item in res['tendencia_semanas']))
+            # Verifica que no se consultó MAX(rep.fecha) para hacer fallback
+            executed_sql = " ".join(str(call.args[0]) for call in mock_cur.execute.call_args_list)
+            self.assertNotIn('MAX(rep.fecha) AS max_fecha', executed_sql)
 
 if __name__ == '__main__':
     unittest.main()

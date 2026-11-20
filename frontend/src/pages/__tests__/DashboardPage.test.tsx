@@ -31,6 +31,8 @@ let mockCasasData: any[] = [
 let mockMetricasData: any = {};
 let mockIsLoading = false;
 let mockIsError = false;
+let mockErrorObj: Error | null = null;
+const mockDashboardRefetch = vi.fn();
 let lastDashboardArgs: any = null;
 
 vi.mock('../../hooks/useDashboard', () => ({
@@ -40,8 +42,8 @@ vi.mock('../../hooks/useDashboard', () => ({
       metricas: mockMetricasData,
       isLoading: mockIsLoading,
       isError: mockIsError,
-      error: null,
-      refetch: vi.fn(),
+      error: mockErrorObj,
+      refetch: mockDashboardRefetch,
     };
   },
   useRedes: () => ({
@@ -59,6 +61,7 @@ describe('DashboardPage Component (Paridad Estructural Jinja)', () => {
     vi.clearAllMocks();
     mockIsLoading = false;
     mockIsError = false;
+    mockErrorObj = null;
     mockCasasData = [
       { id: 10, codigo: 'HEB-001', red_id: 1, anfitrion: 'Familia Gómez', is_active: 1 },
     ];
@@ -251,5 +254,25 @@ describe('DashboardPage Component (Paridad Estructural Jinja)', () => {
       nivel: 'red',
       red_id: '1',
     });
+  });
+
+  it('muestra estado de error controlado y permite reintentar ante fallo 503 del servidor', () => {
+    mockUser.rol = 'admin';
+    mockIsError = true;
+    mockErrorObj = new Error('Servicio temporalmente no disponible (Circuit Breaker OPEN)');
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('No se pudieron cargar los datos del dashboard')).toBeInTheDocument();
+    expect(
+      screen.getByText('Servicio temporalmente no disponible (Circuit Breaker OPEN)')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
+    expect(mockDashboardRefetch).toHaveBeenCalledTimes(1);
   });
 });

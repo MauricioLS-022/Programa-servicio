@@ -9,6 +9,8 @@ from utils.validators import (
     validate_password_strength,
     validate_person_name,
     validate_phone,
+    normalize_phone_e164,
+    format_whatsapp_digits,
     validate_uuid,
     validate_positive_int,
     validate_currency,
@@ -90,19 +92,41 @@ class TestValidators(unittest.TestCase):
         self.assertFalse(ok)
 
     def test_validate_phone(self):
-        # Válidos
+        # Válidos normalizados a E.164 (<= 15 chars)
         ok, phone, msg = validate_phone("+58 412-1234567")
         self.assertTrue(ok)
-        self.assertEqual(phone, "+58 412-1234567")
+        self.assertEqual(phone, "+584121234567")
+        self.assertLessEqual(len(phone), 15)
 
         ok, phone, msg = validate_phone("04141234567")
         self.assertTrue(ok)
+        self.assertEqual(phone, "+584141234567")
+
+        ok, phone, msg = normalize_phone_e164("0414-123-4567")
+        self.assertTrue(ok)
+        self.assertEqual(phone, "+584141234567")
+
+        ok, phone, msg = normalize_phone_e164("+57 300-1234567")
+        self.assertTrue(ok)
+        self.assertEqual(phone, "+573001234567")
+
+        ok, phone, msg = normalize_phone_e164("+1 (305) 555-0199")
+        self.assertTrue(ok)
+        self.assertEqual(phone, "+13055550199")
+
+        # Enlaces WhatsApp (sin + ni cero local)
+        self.assertEqual(format_whatsapp_digits("0414-1234567"), "584141234567")
+        self.assertEqual(format_whatsapp_digits("+58 412 1234567"), "584121234567")
+        self.assertEqual(format_whatsapp_digits("+573001234567"), "573001234567")
 
         # Inválidos
         ok, phone, msg = validate_phone("123")  # Muy corto
         self.assertFalse(ok)
 
         ok, phone, msg = validate_phone("telefono-invalido")
+        self.assertFalse(ok)
+
+        ok, phone, msg = validate_phone("+1234567890123456")  # Excede 15 chars
         self.assertFalse(ok)
 
     def test_validate_uuid(self):
@@ -247,6 +271,14 @@ class TestValidators(unittest.TestCase):
         self.assertEqual(formatear_hora("19:00"), "19:00")
         self.assertEqual(formatear_hora(None), "")
         self.assertEqual(formatear_hora(""), "")
+
+    def test_jinja_context_whatsapp_e164_helpers(self):
+        """Verifica que los helpers de contexto Jinja2 generen enlaces wa.me y tel: E.164."""
+        from utils.context import context_functions
+        self.assertEqual(context_functions['format_whatsapp_digits']('0414-1234567'), '584141234567')
+        self.assertEqual(context_functions['format_e164_phone']('0414-1234567'), '+584141234567')
+        self.assertEqual(context_functions['format_whatsapp_digits']('+57 300 1234567'), '573001234567')
+        self.assertEqual(context_functions['format_e164_phone']('+57 300 1234567'), '+573001234567')
 
 
 if __name__ == '__main__':

@@ -102,18 +102,28 @@ const mockCrearLider = vi.fn();
 const mockEditarLider = vi.fn();
 const mockToggleLider = vi.fn().mockResolvedValue({ success: true, message: 'Estado alternado' });
 const mockEliminarLider = vi.fn().mockResolvedValue({ success: true, message: 'Líder eliminado' });
+const mockDownloadExport = vi.fn().mockResolvedValue('directorio_lideres.xlsx');
+let mockTotalLideres = mockLideresList.length;
+const mockUseLideresSpy = vi.fn();
+
+vi.mock('../../utils/downloadExport', () => ({
+  downloadExport: (...args: unknown[]) => mockDownloadExport(...args),
+}));
 
 vi.mock('../../hooks/useLideres', () => ({
-  useLideres: () => ({
-    lideres: mockLideresList,
-    total: mockLideresList.length,
-    page: 1,
-    pages: 1,
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useLideres: (params?: unknown) => {
+    mockUseLideresSpy(params);
+    return {
+      lideres: mockLideresList,
+      total: mockTotalLideres,
+      page: 1,
+      pages: 1,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    };
+  },
   useLiderMutations: () => ({
     crearLider: mockCrearLider,
     isCreando: false,
@@ -144,6 +154,7 @@ vi.mock('../../hooks/useEstructura', () => ({
 describe('LideresPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTotalLideres = mockLideresList.length;
     mockCurrentUser = {
       id: 'usr-admin-1',
       username: 'admin',
@@ -247,6 +258,49 @@ describe('LideresPage Component', () => {
     await waitFor(() => {
       expect(mockEliminarLider).toHaveBeenCalledWith(101);
     });
+  });
+
+  it('exporta líderes en Excel invocando downloadExport con filtros activos', async () => {
+    render(
+      <MemoryRouter>
+        <LideresPage />
+      </MemoryRouter>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre o teléfono...');
+    fireEvent.change(searchInput, { target: { value: 'Salazar' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar Excel/i }));
+    await waitFor(() => {
+      expect(mockDownloadExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource: 'lideres',
+          format: 'xlsx',
+          params: expect.objectContaining({ q: 'Salazar' }),
+        })
+      );
+    });
+  });
+
+  it('activa búsqueda sincronizada con backend (debounce) cuando total > 100', async () => {
+    mockTotalLideres = 140;
+    render(
+      <MemoryRouter>
+        <LideresPage />
+      </MemoryRouter>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre o teléfono...');
+    fireEvent.change(searchInput, { target: { value: 'Mendoza' } });
+
+    await waitFor(
+      () => {
+        expect(mockUseLideresSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ q: 'Mendoza' })
+        );
+      },
+      { timeout: 1000 }
+    );
   });
 });
 

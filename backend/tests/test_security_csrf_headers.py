@@ -31,10 +31,31 @@ class TestSecurityHeadersAndCookies(unittest.TestCase):
         # Permissions-Policy
         self.assertIn('geolocation=()', response.headers.get('Permissions-Policy', ''))
 
-        # Content-Security-Policy
+        # Content-Security-Policy estricta sin 'unsafe-inline' en script-src
         csp = response.headers.get('Content-Security-Policy', '')
         self.assertIn("default-src 'self'", csp)
         self.assertIn("frame-ancestors 'self'", csp)
+        script_src = next((part.strip() for part in csp.split(';') if part.strip().startswith('script-src')), '')
+        self.assertTrue(script_src)
+        self.assertNotIn("'unsafe-inline'", script_src)
+
+    def test_no_inline_js_handlers_in_jinja_templates(self):
+        """Ninguna plantilla HTML debe contener atributos inline on*= ni bloques <script> sin src."""
+        import os
+        import re
+        templates_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+        inline_attr_re = re.compile(r'\son[a-z]+\s*=', re.IGNORECASE)
+        inline_script_re = re.compile(r'<script(?![^>]*\bsrc=)[^>]*>', re.IGNORECASE)
+        offenders = []
+        for fname in sorted(os.listdir(templates_dir)):
+            if not fname.endswith('.html'):
+                continue
+            fpath = os.path.join(templates_dir, fname)
+            with open(fpath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if inline_attr_re.search(content) or inline_script_re.search(content):
+                offenders.append(fname)
+        self.assertEqual(offenders, [], f'Se encontraron manejadores JS inline en: {offenders}')
 
     def test_session_cookie_security_config(self):
         """Verifica la configuración de endurecimiento de cookies de sesión."""
